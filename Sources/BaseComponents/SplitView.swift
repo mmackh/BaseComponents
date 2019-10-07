@@ -8,9 +8,9 @@
 /*
  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 import UIKit
@@ -26,6 +26,8 @@ public enum SplitViewLayoutType: Int {
     case fixed
     case percentage
 }
+
+
 
 private class SplitViewHandler {
     var layoutType: SplitViewLayoutType = .fixed
@@ -276,11 +278,11 @@ public class SplitView: UIView {
 
 /// UIView functions that have to be overwritten
 extension SplitView {
-    override public func willRemoveSubview(_ subview: UIView) {
+    public override func willRemoveSubview(_ subview: UIView) {
         handlerContainer.removeValueHandlerForView(subview)
     }
 
-    override public func layoutIfNeeded() {
+    public override func layoutIfNeeded() {
         if preventAnimations {
             CATransaction.begin()
             CATransaction.setDisableActions(true)
@@ -292,8 +294,8 @@ extension SplitView {
 
         super.layoutIfNeeded()
     }
-    
-    override public func layoutSubviews() {
+
+    public override func layoutSubviews() {
         willLayoutSubviews?()
 
         if preventAnimations {
