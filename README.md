@@ -4,6 +4,8 @@
 
 BaseComponents aims to provide easily reusable and understandable components to increase productivity with UIKit. Formerly written in Objective-C and used extensivly in production, the time has come to transition to Swift.
 
+**Important Note: API for Components is currently unstable.**
+
 ### Components Roadmap
 - [x] DataRender
 - [x] SplitView

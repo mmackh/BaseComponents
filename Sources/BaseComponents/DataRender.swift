@@ -32,51 +32,64 @@ public enum DataRenderType: Int {
 }
 
 extension UITableViewCell {
-    
-    @objc func bindObject(_ obj: AnyObject) {
+    @objc open func bindObject(_ obj: AnyObject) {
         
     }
 }
 
 extension UICollectionViewCell {
-    
-    @objc func bindObject(_ obj: AnyObject) {
+    @objc open func bindObject(_ obj: AnyObject) {
         
     }
 }
 
 /// Configuration requires either a subclass of UITableViewCell or UICollectionViewCell to be passed in as cellClass
-public struct DataRenderConfiguration {
+public class DataRenderConfiguration {
     
     /// Subclass either UITableViewCell or UICollectionView and implement bindObject
-    let cellClass: AnyClass
+    public var cellClass: AnyClass
     
     /// Render class can be either a subclass of UITableView or UICollectionView
-    var renderClass: AnyClass?
+    public var renderClass: AnyClass?
     
     /// Reverses scrolling direction. Array rendering is inverted and DataRender will now scroll from bottom to top first
-    public var reverseScollingDirection: Bool? = false
+    public var reverseScrollingDirection: Bool? = false
     
     /// Only applies to UICollectionView
     public var scrollDirection: DataRenderScrollDirection? = .vertical
+    
+    public init(cellClass: AnyClass) {
+        self.cellClass = cellClass
+    }
+    
+    public init(cellClass: AnyClass, renderClass: AnyClass) {
+        self.cellClass = cellClass
+        self.renderClass = renderClass
+    }
+    
+    public init(cellClass: AnyClass, renderClass: AnyClass, reverseScrollingDirection: Bool) {
+        self.cellClass = cellClass
+        self.renderClass = renderClass
+        self.reverseScrollingDirection = reverseScrollingDirection
+    }
 }
 
-struct DataRenderItemLayoutProperties {
-    var indexPath: IndexPath?
-    var renderBounds: CGRect = CGRect.zero
-    var insets: UIEdgeInsets = UIEdgeInsets.zero
-    var spacing: CGFloat = 0
-    weak var render: DataRender?
+public struct DataRenderItemLayoutProperties {
+    public var indexPath: IndexPath?
+    public var renderBounds: CGRect = CGRect.zero
+    public var insets: UIEdgeInsets = UIEdgeInsets.zero
+    public var spacing: CGFloat = 0
+    public weak var render: DataRender?
 }
 
-struct DataRenderItemRenderProperties {
-    var indexPath: IndexPath
-    weak var cell: UIView?
-    weak var object: AnyObject! = nil
-    weak var render: DataRender?
+public struct DataRenderItemRenderProperties {
+    public var indexPath: IndexPath
+    public weak var cell: UIView?
+    public weak var object: AnyObject! = nil
+    public weak var render: DataRender?
 }
 
-class DataRender: UIView {
+public class DataRender: UIView {
     fileprivate var array: Array<AnyObject> = []
     fileprivate var arrayBackup: Array<AnyObject> = []
     
@@ -160,7 +173,7 @@ class DataRender: UIView {
     // Common customisations
     public var shouldPersistObjectSelections = false
     
-    override var backgroundColor: UIColor? {
+    override public var backgroundColor: UIColor? {
         didSet {
             tableView?.backgroundColor = backgroundColor
             collectionView?.backgroundColor = backgroundColor
@@ -203,7 +216,7 @@ class DataRender: UIView {
     // MARK: Init
     
     /// Designated initialiser, pass in superview und DataRenderConfiguration
-    required init(configuration: DataRenderConfiguration) {
+    public required init(configuration: DataRenderConfiguration) {
         
         super.init(frame: CGRect.zero)
         
@@ -233,7 +246,7 @@ class DataRender: UIView {
                 if #available(iOS 11, *) {
                     tableView.contentInsetAdjustmentBehavior = .never
                 }
-                if (configuration.reverseScollingDirection!) {
+                if (configuration.reverseScrollingDirection!) {
                     tableView.transform = CGAffineTransform(scaleX: 1, y: -1);
                 }
                 addSubview(tableView)
@@ -258,7 +271,7 @@ class DataRender: UIView {
                 if #available(iOS 11, *) {
                     collectionView.contentInsetAdjustmentBehavior = .never
                 }
-                if (configuration.reverseScollingDirection!) {
+                if (configuration.reverseScrollingDirection!) {
                     collectionView.transform = CGAffineTransform(scaleX: -1, y: -1);
                 }
                 addSubview(collectionView)
@@ -271,7 +284,7 @@ class DataRender: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    override func willMove(toSuperview newSuperview: UIView?) {
+    override public func willMove(toSuperview newSuperview: UIView?) {
         frame = newSuperview?.bounds ?? CGRect.zero
     }
     
@@ -289,7 +302,7 @@ class DataRender: UIView {
             }
         }
         
-        if (configuration.reverseScollingDirection!) {
+        if (configuration.reverseScrollingDirection!) {
             if (renderMultiDimensionalArray) {
                 var tempArray: Array<Array> = [] as! Array<Array<Any>>
                 for subArray in array.reversed() {
@@ -344,7 +357,7 @@ class DataRender: UIView {
 
 extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     
-    override func layoutSubviews() {
+    override public func layoutSubviews() {
         collectionView?.collectionViewLayout.invalidateLayout()
     }
     
@@ -361,18 +374,18 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
     // MARK: -
     // MARK: Table View
     
-    func numberOfSections(in tableView: UITableView) -> Int {
+    public func numberOfSections(in tableView: UITableView) -> Int {
         return renderMultiDimensionalArray ? array.count : 1
     }
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if (renderMultiDimensionalArray) {
             return array[section].count
         }
         return array.count
     }
     
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+    public func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if let itemSizeHandler = itemSizeHandler {
             weak var render = self
             return itemSizeHandler(DataRenderItemLayoutProperties(indexPath: indexPath,renderBounds: tableView.bounds,insets: tableView.contentInset,spacing: 0.0,render: render)).height
@@ -380,19 +393,19 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
         return rowHeight
     }
     
-    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+    public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         if let beforeDisplay = beforeDisplay {
             weak var render = self
             beforeDisplay(DataRenderItemRenderProperties(indexPath: indexPath, cell: cell, object: objectForIndexPath(indexPath), render: render))
         }
         
-        if (configuration.reverseScollingDirection!)
+        if (configuration.reverseScrollingDirection!)
         {
             cell.contentView.transform = tableView.transform
         }
     }
     
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(configuration.cellClass), for: indexPath)
         let object = objectForIndexPath(indexPath)
         if let beforeBind = beforeBind {
@@ -403,7 +416,7 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
         return cell
     }
     
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if (!shouldPersistObjectSelections) {
             tableView.deselectRow(at: indexPath, animated: false)
         }
@@ -429,30 +442,30 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
         return layout
     }
     
-    func numberOfSections(in collectionView: UICollectionView) -> Int {
+    public func numberOfSections(in collectionView: UICollectionView) -> Int {
         return renderMultiDimensionalArray ? array.count : 1
     }
     
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if (renderMultiDimensionalArray) {
             return array[section].count
         }
         return array.count
     }
     
-    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+    public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
         if let beforeDisplay = beforeDisplay {
             weak var render = self
             beforeDisplay(DataRenderItemRenderProperties(indexPath: indexPath, cell: cell, object: objectForIndexPath(indexPath), render: render))
         }
         
-        if (configuration.reverseScollingDirection!)
+        if (configuration.reverseScrollingDirection!)
         {
             cell.contentView.transform = collectionView.transform
         }
     }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+    public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: NSStringFromClass(configuration.cellClass), for: indexPath)
         let object = objectForIndexPath(indexPath)
         if let beforeBind = beforeBind {
@@ -463,15 +476,15 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
         return cell
     }
     
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
+    public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         return itemSpacing
     }
     
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+    public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         return itemSpacing
     }
     
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+    public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         if let itemSizeHandler = itemSizeHandler {
             weak var render = self
             let flowLayout = collectionViewLayout as! UICollectionViewFlowLayout
@@ -480,7 +493,7 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
         return CGSize(width: 100, height: 100)
     }
     
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if (!shouldPersistObjectSelections) {
             collectionView.deselectItem(at: indexPath, animated: false)
         }
