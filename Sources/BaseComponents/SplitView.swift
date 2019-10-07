@@ -167,7 +167,7 @@ public class SplitView: UIView {
     public static let onePixelHeight: CGFloat = 1 / UIScreen.main.scale
 
     @discardableResult
-    convenience init(superview: UIView, configurationHandler: (_ splitView: SplitView) -> Void) {
+    public convenience init(superview: UIView, configurationHandler: (_ splitView: SplitView) -> Void) {
         self.init()
 
         configurationHandler(self)
