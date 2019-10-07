@@ -124,14 +124,14 @@ public class SplitViewLayoutInstruction {
     var layoutType: SplitViewLayoutType = .equal
     var edgeInsets: UIEdgeInsets = UIEdgeInsets.zero
 
-    convenience init(value: CGFloat, layoutType: SplitViewLayoutType) {
+    public convenience init(value: CGFloat, layoutType: SplitViewLayoutType) {
         self.init()
 
         self.value = value
         self.layoutType = layoutType
     }
 
-    convenience init(value: CGFloat, layoutType: SplitViewLayoutType, edgeInsets: UIEdgeInsets) {
+    public convenience init(value: CGFloat, layoutType: SplitViewLayoutType, edgeInsets: UIEdgeInsets) {
         self.init()
 
         self.value = value
