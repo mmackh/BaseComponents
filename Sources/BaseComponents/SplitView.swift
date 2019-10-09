@@ -310,7 +310,9 @@ extension SplitView {
         }
 
         if boundsCache.equalTo(bounds) && layoutParsed {
-            CATransaction.commit()
+            if (preventAnimations) {
+                CATransaction.commit()
+            }
             return
         }
 
