@@ -22,7 +22,7 @@ Documentation on the components is currently severly lacking. I'm working on imp
 
 ### DataRender
 
-DataRender abstracts all the tedious protocols one would need to implement when dealing with UICollectionView or UITableView. You decide whether to render a cell using a table or a grid, simply by choosing the apropriate superclass.
+DataRender abstracts all the tedious protocols one would need to implement when dealing with UICollectionView or UITableView. You decide whether to render a cell using a table or a grid, simply by choosing the appropriate superclass.
 
 ```
 import UIKit
