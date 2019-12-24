@@ -16,29 +16,29 @@
 import UIKit
 
 public enum DataRenderMode: Int {
-     case collection
-     case table
+    case collection
+    case table
 }
 
 public enum DataRenderScrollDirection: Int {
-     case vertical
-     case horizontal
+    case vertical
+    case horizontal
 }
 
 public enum DataRenderType: Int {
-     case cell
-     case header
-     case footer
+    case cell
+    case header
+    case footer
 }
 
 extension UITableViewCell {
-     @objc open func bindObject(_ obj: AnyObject) {
-     }
+    @objc open func bindObject(_ obj: AnyObject) {
+    }
 }
 
 extension UICollectionViewCell {
-     @objc open func bindObject(_ obj: AnyObject) {
-     }
+    @objc open func bindObject(_ obj: AnyObject) {
+    }
 }
 
 /// Configuration requires either a subclass of UITableViewCell or UICollectionViewCell to be passed in as cellClass
