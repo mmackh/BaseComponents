@@ -9,7 +9,7 @@ BaseComponents aims to provide easily reusable and understandable components to 
 ### Components Roadmap
 - [x] DataRender
 - [x] SplitView
-- [ ] KeyboardManager
+- [x] KeyboardManager
 - [ ] ActionSheet
 - [ ] ProgressIndicator
 - [ ] ControlClosures
@@ -167,4 +167,26 @@ class ViewController: UIViewController {
         label.text = String(format: "%i Subviews", splitView.subviews.count)
     }
 }
+```
+
+### KeyboardManager
+
+KeyboardManager takes care of handeling a splitView's size when a keyboard appears. It calculates the overlap, animation duration and curve to do a correct resize when needed. Furthermore, when implementing the manager in all views containing a textField or a textView, query the keyboardVisible API if needed.
+
+```
+let splitView = SplitView(superview: view) { (splitView) in
+
+    let textField = UITextField()
+    textField.placeholder = "Tap Me"
+    textField.textAlignment = .center
+    splitView.addSubview(textField, layoutType: .fixed, value: 44.0)
+
+    let subView = UIView()
+    subView.backgroundColor = UIColor.green
+    splitView.addSubview(subView, layoutType: .equal)
+
+}
+splitView.direction = .horizontal
+
+KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
 ```
