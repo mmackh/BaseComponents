@@ -66,7 +66,7 @@ public class KeyboardManager: UIView {
         
         let keyboardFrame = (notificationObject.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue ?? CGRect.zero
         let animationDuration = (notificationObject.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0.0
-        let animationCurve = (notificationObject.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.intValue ?? 0
+        let animationCurve = (notificationObject.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.uintValue ?? 0
         
         let masterFrame = rootView?.convert(rootView?.bounds ?? CGRect.zero, to: rootView?.window) ?? CGRect.zero
         
@@ -76,11 +76,9 @@ public class KeyboardManager: UIView {
         
         splitViewFrame?.size.height =  !show ? rootView!.bounds.size.height : rootView!.bounds.size.height - intersectionFrame.size.height
         
-        print(intersectionFrame)
-        
         resizableChildSplitView?.frame = splitViewFrame!
         
-        UIView.animate(withDuration: animationDuration, delay: 0, options: UIView.AnimationOptions(rawValue: UIView.AnimationOptions.RawValue(animationCurve)), animations: {
+        UIView.animate(withDuration: animationDuration, delay: 0, options: UIView.AnimationOptions(rawValue: animationCurve), animations: {
             self.resizableChildSplitView?.invalidateLayout()
         }, completion: nil)
     }
