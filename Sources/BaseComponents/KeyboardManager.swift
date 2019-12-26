@@ -27,6 +27,8 @@ public class KeyboardManager: UIView {
     weak public var rootView: UIView?
     weak public var resizableChildSplitView: SplitView?
     
+    static public var visibility: KeyboardVisibility = .hidden
+    
     @discardableResult
     public static func manage(rootView: UIView, resizableChildSplitView: SplitView) -> KeyboardManager {
         let manager = KeyboardManager(rootView: rootView, resizableChildSplitView: resizableChildSplitView)
@@ -45,13 +47,6 @@ public class KeyboardManager: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public static func visibility() -> KeyboardVisibility {
-        if (keyboardVisible) {
-            return .visible
-        }
-        return .hidden
-    }
-    
     private func observeAndResize() {
         let notificationCenter = NotificationCenter.default
         notificationCenter.addObserver(self, selector:#selector(showKeyboard), name: UIResponder.keyboardWillShowNotification, object: nil)
@@ -62,7 +57,7 @@ public class KeyboardManager: UIView {
     @objc private func showKeyboard(notificationObject: NSNotification) {
         let show = (notificationObject.name == UIResponder.keyboardDidShowNotification || notificationObject.name == UIResponder.keyboardWillShowNotification)
         
-        KeyboardManager.keyboardVisible = show
+        KeyboardManager.visibility = show ? .visible : .hidden
         
         let keyboardFrame = (notificationObject.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue ?? CGRect.zero
         let animationDuration = (notificationObject.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0.0

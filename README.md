@@ -10,9 +10,9 @@ BaseComponents aims to provide easily reusable and understandable components to 
 - [x] DataRender
 - [x] SplitView
 - [x] KeyboardManager
+- [x ] ControlClosures
 - [ ] ActionSheet
 - [ ] ProgressIndicator
-- [ ] ControlClosures
 
 ## Documentation
 
@@ -189,4 +189,47 @@ let splitView = SplitView(superview: view) { (splitView) in
 splitView.direction = .horizontal
 
 KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
+```
+
+### ControlClosures
+
+An easy way to transform UIKit's legacy target-action pattern into modern closures, keeping code organised and consise. In addition to supporting UIControl subclasses like Buttons, TextFields, SegmentedControls, etc., GestureRecognizers are also implemented. As are popular delegate methods.
+
+#### UISegmentedControl
+```
+let segmentedControl = UISegmentedControl(items: ["Hello","World","Swift"])
+segmentedControl.selectedSegmentIndex = 0
+segmentedControl.addAction(for: .valueChanged) { (control) in
+    let segmentedControl = control as! UISegmentedControl    
+    let item = segmentedControl.titleForSegment(at: segmentedControl.selectedSegmentIndex)!
+    print(item)
+}
+splitView.addSubview(segmentedControl, layoutType: .fixed, value: 44.0)
+```
+
+#### UIGestureRecognizer
+```
+let tap = UITapGestureRecognizer { (recognizer) in
+    if (recognizer.state == .recognized) {
+        print("tapped twice")
+    }
+}
+tap.numberOfTapsRequired = 2
+subView.addGestureRecognizer(tap)
+```
+
+#### UITextField
+```
+let textField = UITextField()
+textField.placeholder = "Tap Me"
+textField.textAlignment = .center
+textField.addAction(for: .editingChanged) { (control) in
+    let textField = control as! UITextField
+    print(textField.text!)
+}
+textField.shouldReturn { (textField) -> (Bool) in
+    textField.resignFirstResponder()
+    return true
+}
+splitView.addSubview(textField, layoutType: .fixed, value: 84.0)
 ```
