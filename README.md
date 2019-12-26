@@ -10,13 +10,9 @@ BaseComponents aims to provide easily reusable and understandable components to 
 - [x] DataRender
 - [x] SplitView
 - [x] KeyboardManager
-- [x ] ControlClosures
+- [x] ControlClosures
 - [ ] ActionSheet
 - [ ] ProgressIndicator
-
-## Documentation
-
-Documentation on the components is currently severly lacking. I'm working on improving it over time and pull requests are always welcome.
 
 ## Components
 
@@ -233,3 +229,7 @@ textField.shouldReturn { (textField) -> (Bool) in
 }
 splitView.addSubview(textField, layoutType: .fixed, value: 84.0)
 ```
+
+## Documentation
+
+Documentation on the components is currently severly lacking. I'm working on improving it over time and pull requests are always welcome.
