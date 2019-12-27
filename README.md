@@ -11,6 +11,7 @@ BaseComponents aims to provide easily reusable and understandable components to 
 - [x] SplitView
 - [x] KeyboardManager
 - [x] ControlClosures
+- [x] NetFetch
 - [ ] ActionSheet
 - [ ] ProgressIndicator
 
@@ -73,7 +74,9 @@ AutoLayout is slow and tedious. UIStackedView is IDK. I've never used it. I've b
 ```
 import UIKit
 
-class ViewController: UIViewController {
+import BaseComponents
+
+class SplitViewController: UIViewController {
     private var showHorizontal = true
 
     private lazy var label: UILabel = {
@@ -87,10 +90,10 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        view.backgroundColor = UIColor.white
 
-        weak var weakSelf = self
-
-        SplitView(superview: view) { splitView in
+        SplitView(superview: view) { [unowned self] splitView in
 
             splitView.direction = .vertical
 
@@ -99,7 +102,7 @@ class ViewController: UIViewController {
                 splitView.direction = .vertical
                 splitView.clipsToBounds = true
 
-                splitView.addSubview(weakSelf!.label, layoutType: .automatic)
+                splitView.addSubview(self.label, layoutType: .automatic)
             }
             splitView.addSubview(containerSplit) { (_) -> SplitViewLayoutInstruction in
 
@@ -108,54 +111,48 @@ class ViewController: UIViewController {
                 return SplitViewLayoutInstruction(value: 100, layoutType: .percentage, edgeInsets: suggestedEdgeInsets)
             }
 
-            let tapGesture = UITapGestureRecognizer(target: weakSelf, action: #selector(animateRootSplit))
+            let tapGesture = UITapGestureRecognizer { (tapGesture) in
+                let splitView = tapGesture.view as! SplitView
+
+                self.showHorizontal = !self.showHorizontal
+                splitView.direction = self.showHorizontal ? .horizontal : .vertical
+
+                let targetColor = self.showHorizontal ? UIColor.cyan : UIColor.magenta
+                let view = UIView()
+                view.backgroundColor = targetColor
+                let targetFrame = splitView.subviews.last?.frame ?? CGRect.zero
+                view.frame = targetFrame.offsetBy(dx: 0, dy: targetFrame.height)
+                splitView.addSubview(view, layoutType: .equal)
+                
+                self.updateLabel(splitView: splitView)
+
+                UIView.animate(withDuration: 0.3) {
+                    splitView.invalidateLayout()
+                }
+            }
             tapGesture.numberOfTapsRequired = 2
             containerSplit.addGestureRecognizer(tapGesture)
 
-            let longPress = UILongPressGestureRecognizer(target: weakSelf, action: #selector(removeFromSplit(longPress:)))
+            let longPress = UILongPressGestureRecognizer { (longPress) in
+                if longPress.state != .recognized {
+                    return
+                }
+
+                let splitView = longPress.view as! SplitView
+
+                if splitView.subviews.count == 1 {
+                    return
+                }
+
+                splitView.subviews.last?.removeFromSuperview()
+
+                self.updateLabel(splitView: splitView)
+
+                UIView.animate(withDuration: 0.3) {
+                    splitView.invalidateLayout()
+                }
+            }
             containerSplit.addGestureRecognizer(longPress)
-        }
-    }
-
-    @objc
-    func animateRootSplit(gesture: UITapGestureRecognizer) {
-        let splitView = gesture.view as! SplitView
-
-        showHorizontal = !showHorizontal
-        splitView.direction = showHorizontal ? .horizontal : .vertical
-
-        let targetColor = showHorizontal ? UIColor.cyan : UIColor.magenta
-        let view = UIView()
-        view.backgroundColor = targetColor
-        let targetFrame = splitView.subviews.last?.frame ?? CGRect.zero
-        view.frame = targetFrame.offsetBy(dx: 0, dy: targetFrame.height)
-        splitView.addSubview(view, layoutType: .equal)
-        
-        updateLabel(splitView: splitView)
-
-        UIView.animate(withDuration: 0.3) {
-            splitView.invalidateLayout()
-        }
-    }
-
-    @objc
-    func removeFromSplit(longPress: UILongPressGestureRecognizer) {
-        if longPress.state != .recognized {
-            return
-        }
-
-        let splitView = longPress.view as! SplitView
-
-        if splitView.subviews.count == 1 {
-            return
-        }
-
-        splitView.subviews.last?.removeFromSuperview()
-
-        updateLabel(splitView: splitView)
-
-        UIView.animate(withDuration: 0.3) {
-            splitView.invalidateLayout()
         }
     }
 
@@ -163,6 +160,7 @@ class ViewController: UIViewController {
         label.text = String(format: "%i Subviews", splitView.subviews.count)
     }
 }
+
 ```
 
 ### KeyboardManager
@@ -228,6 +226,59 @@ textField.shouldReturn { (textField) -> (Bool) in
     return true
 }
 splitView.addSubview(textField, layoutType: .fixed, value: 84.0)
+```
+
+### NetFetch
+Abstracts network calls and keeps boilerplate code to a minimum. Easily convert the response into a string or object (using Codable)
+
+```
+import BaseComponents
+
+struct Post: Codable {
+    var userId: Int?
+    var id: Int?
+    var title: String?
+    var body: String?
+}
+
+public class PostCell: UITableViewCell {
+    public override func bindObject(_ obj: AnyObject) {
+        let post = obj as! Post
+        textLabel?.text = post.title
+    }
+}
+
+public class NetFetchViewController: UIViewController {
+
+    lazy var dataRender: DataRender = {
+        let configuration = DataRenderConfiguration(cellClass: PostCell.self)
+        let dataRender = DataRender(configuration: configuration)
+        view.addSubview(dataRender)
+        return dataRender
+    }()
+    
+    override public func viewDidLoad() {
+        super.viewDidLoad()
+        
+        view.backgroundColor = .white
+        
+        dataRender.onRefresh { [unowned self] (render) in
+            let request = NetFetchRequest(urlString: "https://jsonplaceholder.typicode.com/posts") { (response) in
+                self.dataRender.refreshing = false
+                if let posts = response.bind([Post].self) {
+                    self.dataRender.renderArray(posts as Array<AnyObject>)
+                }
+            }
+            NetFetch.fetch(request)
+        }
+        dataRender.onSelect { (itemProperites) in
+            let post = itemProperites.object as! Post
+            print("Read:",post.body!)
+        }
+        dataRender.refreshing = true
+    }
+
+}
 ```
 
 ## Documentation
