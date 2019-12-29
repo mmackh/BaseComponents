@@ -27,8 +27,6 @@ public enum SplitViewLayoutType: Int {
     case percentage
 }
 
-
-
 private class SplitViewHandler {
     var layoutType: SplitViewLayoutType = .fixed
     var valueHandler: ((CGRect) -> SplitViewLayoutInstruction)??
@@ -434,5 +432,38 @@ extension SplitView {
         }
 
         didLayoutSubviews?()
+    }
+}
+
+/// Convenience functions to add margins around a specific root splitView
+
+public enum SplitViewPaddingDirection: Int {
+    case top
+    case left
+    case bottom
+    case right
+}
+
+public extension SplitView {
+    func insertSafeAreaInsetsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection) {
+        unowned let weakParentView = parentView
+        let paddingTop = UIView()
+        self.addSubview(paddingTop) { (parentRect) -> SplitViewLayoutInstruction in
+            var insetValue: CGFloat = 0.0;
+            if #available(iOS 11.0, *) {
+                let insets = weakParentView.safeAreaInsets
+                switch paddingDirection {
+                    case .top:
+                        insetValue = insets.top
+                    case .left:
+                        insetValue = insets.left
+                    case .bottom:
+                        insetValue = insets.bottom
+                    case .right:
+                        insetValue = insets.right
+                }
+            }
+            return SplitViewLayoutInstruction(value: insetValue, layoutType: .fixed)
+        }
     }
 }
