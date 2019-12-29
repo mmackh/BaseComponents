@@ -171,10 +171,21 @@ public class SplitView: UIView {
         self.init()
 
         configurationHandler(self)
-
+        
         superview.addSubview(self)
         snapToSuperview()
     }
+    
+
+    @discardableResult
+    public convenience init(superview: SplitView, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction, configurationHandler: (_ splitView: SplitView) -> Void) {
+        self.init()
+
+        configurationHandler(self)
+        
+        superview.addSubview(self, valueHandler: valueHandler)
+    }
+    
 
     public static func suggestedSuperviewInsets() -> UIEdgeInsets {
         let defaultInset: CGFloat = 15.0
@@ -447,8 +458,8 @@ public enum SplitViewPaddingDirection: Int {
 public extension SplitView {
     func insertSafeAreaInsetsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection) {
         unowned let weakParentView = parentView
-        let paddingTop = UIView()
-        self.addSubview(paddingTop) { (parentRect) -> SplitViewLayoutInstruction in
+        let padding = UIView()
+        self.addSubview(padding) { (parentRect) -> SplitViewLayoutInstruction in
             var insetValue: CGFloat = 0.0;
             if #available(iOS 11.0, *) {
                 let insets = weakParentView.safeAreaInsets
