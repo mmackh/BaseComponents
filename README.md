@@ -12,6 +12,7 @@ BaseComponents aims to provide easily reusable and understandable components to 
 - [x] KeyboardManager
 - [x] ControlClosures
 - [x] NetFetch
+- [x] Conveniences
 - [ ] ActionSheet
 - [ ] ProgressIndicator
 

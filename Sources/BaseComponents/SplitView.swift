@@ -34,7 +34,7 @@ private class SplitViewHandler {
     var staticEdgeInsets: UIEdgeInsets = UIEdgeInsets.zero
 
     func getLayoutInstruction(_ superviewBounds: CGRect) -> SplitViewLayoutInstruction {
-        return (valueHandler == nil) ? SplitViewLayoutInstruction(value: staticValue, layoutType: layoutType, edgeInsets: staticEdgeInsets) : valueHandler!!(superviewBounds)
+        return (valueHandler == nil) ? SplitViewLayoutInstruction(layoutType: layoutType, value: staticValue, edgeInsets: staticEdgeInsets) : valueHandler!!(superviewBounds)
     }
 }
 
@@ -124,14 +124,14 @@ public class SplitViewLayoutInstruction {
     var layoutType: SplitViewLayoutType = .equal
     var edgeInsets: UIEdgeInsets = UIEdgeInsets.zero
 
-    public convenience init(value: CGFloat, layoutType: SplitViewLayoutType) {
+    public convenience init(layoutType: SplitViewLayoutType, value: CGFloat) {
         self.init()
 
         self.value = value
         self.layoutType = layoutType
     }
 
-    public convenience init(value: CGFloat, layoutType: SplitViewLayoutType, edgeInsets: UIEdgeInsets) {
+    public convenience init(layoutType: SplitViewLayoutType, value: CGFloat, edgeInsets: UIEdgeInsets) {
         self.init()
 
         self.value = value
@@ -144,7 +144,7 @@ public class SplitView: UIView {
     public static let ClipSubivewTag = 101
     public static let ExcludeLayoutTag = 102
 
-    public var direction: SplitViewDirection = .horizontal
+    public var direction: SplitViewDirection = .vertical
 
     public var subviewPadding: CGFloat = 0.0
     public var preventAnimations: Bool = false
@@ -169,6 +169,11 @@ public class SplitView: UIView {
     @discardableResult
     public convenience init(superview: UIView, configurationHandler: (_ splitView: SplitView) -> Void) {
         self.init()
+        
+        if (superview.isKind(of: SplitView.self))
+        {
+            print("use 'superSplitView' and valueHandler to add childSplitViews, this will most likely crash your app otherwise - no way to deterministically lay out this SplitView instance")
+        }
 
         configurationHandler(self)
         
@@ -178,12 +183,12 @@ public class SplitView: UIView {
     
 
     @discardableResult
-    public convenience init(superview: SplitView, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction, configurationHandler: (_ splitView: SplitView) -> Void) {
+    public convenience init(superSplitView: SplitView, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction, configurationHandler: (_ splitView: SplitView) -> Void) {
         self.init()
 
         configurationHandler(self)
         
-        superview.addSubview(self, valueHandler: valueHandler)
+        superSplitView.addSubview(self, valueHandler: valueHandler)
     }
     
 
@@ -383,10 +388,13 @@ extension SplitView {
                     let button = subview as! UIButton
                     additionalPadding += horizontalLayout ? (button.titleEdgeInsets.left + button.titleEdgeInsets.right) : (button.titleEdgeInsets.bottom + button.titleEdgeInsets.top)
                 }
+                
+                let edgeInsets = subviewEdgeInsets[idx]
+                additionalPadding += horizontalLayout ? (edgeInsets.left + edgeInsets.right) : (edgeInsets.top + edgeInsets.bottom)
 
                 let label = subview as! UIView
                 let max = CGFloat.greatestFiniteMagnitude
-                let labelDimensions = label.sizeThatFits(CGSize(width: horizontalLayout ? max : bounds.size.width, height: horizontalLayout ? bounds.size.height : max))
+                let labelDimensions = label.sizeThatFits(CGSize(width: horizontalLayout ? max : bounds.size.width - (edgeInsets.left + edgeInsets.right), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom) : max))
                 fixedValueFloat = horizontalLayout ? labelDimensions.width : labelDimensions.height
                 fixedValueFloat += additionalPadding
                 fixedValuesMutable[idx] = fixedValueFloat
@@ -474,7 +482,7 @@ public extension SplitView {
                         insetValue = insets.right
                 }
             }
-            return SplitViewLayoutInstruction(value: insetValue, layoutType: .fixed)
+            return SplitViewLayoutInstruction(layoutType: .fixed, value: insetValue)
         }
     }
 }
