@@ -109,7 +109,7 @@ class SplitViewController: UIViewController {
 
                 let suggestedEdgeInsets = SplitView.suggestedSuperviewInsets()
 
-                return SplitViewLayoutInstruction(value: 100, layoutType: .percentage, edgeInsets: suggestedEdgeInsets)
+                return SplitViewLayoutInstruction(layoutType: .percentage, value: 100, edgeInsets: suggestedEdgeInsets)
             }
 
             let tapGesture = UITapGestureRecognizer { (tapGesture) in
