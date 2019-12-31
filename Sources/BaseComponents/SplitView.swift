@@ -216,6 +216,10 @@ public class SplitView: UIView {
         addSubview(view, layoutType: layoutType, value: 0, edgeInsets: UIEdgeInsets.zero)
     }
 
+    public func addSubview(_ view: UIView, layoutType: SplitViewLayoutType, edgeInsets: UIEdgeInsets) {
+        addSubview(view, layoutType: layoutType, value: 0, edgeInsets: edgeInsets)
+    }
+
     public func addSubview(_ view: UIView, layoutType: SplitViewLayoutType, value: CGFloat) {
         addSubview(view, layoutType: layoutType, value: value, edgeInsets: UIEdgeInsets.zero)
     }
@@ -378,7 +382,7 @@ extension SplitView {
             }
             ratioTargetCount -= 1
 
-            // Automatic label loss calculation
+            // Automatic label loss calculation, storing the fixed value in the fixedValuesMutable array
             if fixedValueFloat < -1.0 {
                 let idx = ratioLossIndex - 1
                 let subview: Any = subviewsMutable[idx]
@@ -390,11 +394,11 @@ extension SplitView {
                 }
                 
                 let edgeInsets = subviewEdgeInsets[idx]
-                additionalPadding += horizontalLayout ? (edgeInsets.left + edgeInsets.right) : (edgeInsets.top + edgeInsets.bottom)
+                additionalPadding += horizontalLayout ? (edgeInsets.left + edgeInsets.right + subviewPadding * 2) : (edgeInsets.top + edgeInsets.bottom + subviewPadding * 2)
 
                 let label = subview as! UIView
                 let max = CGFloat.greatestFiniteMagnitude
-                let labelDimensions = label.sizeThatFits(CGSize(width: horizontalLayout ? max : bounds.size.width - (edgeInsets.left + edgeInsets.right), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom) : max))
+                let labelDimensions = label.sizeThatFits(CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : max))
                 fixedValueFloat = horizontalLayout ? labelDimensions.width : labelDimensions.height
                 fixedValueFloat += additionalPadding
                 fixedValuesMutable[idx] = fixedValueFloat

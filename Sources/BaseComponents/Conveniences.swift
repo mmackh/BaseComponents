@@ -15,8 +15,10 @@
 
 import UIKit
 
+@objc
 public enum UIColorTarget: Int {
     case background
+    case layerBackground
     case text
 }
 
@@ -34,12 +36,11 @@ public extension UILabel {
     }
     
     @discardableResult
-    func color(_ target: UIColorTarget, _ color: UIColor) -> Self {
-        switch target {
-            case .background:
-                backgroundColor = color
-            case .text:
-                textColor = color
+    override func color(_ target: UIColorTarget, _ color: UIColor) -> Self {
+        if (target == .text) {
+            textColor = color
+        } else {
+            super.color(target, color)
         }
         return self
     }
@@ -53,6 +54,20 @@ public extension UILabel {
     @discardableResult
     func size(_ textStyle: UIFont.TextStyle) -> Self {
         self.font = UIFont.preferredFont(forTextStyle: textStyle)
+        return self
+    }
+}
+
+public extension UIView {
+    @discardableResult @objc
+    func color(_ target: UIColorTarget, _ color: UIColor) -> Self {
+        switch target {
+            case .background:
+                backgroundColor = color
+            case .layerBackground:
+                layer.backgroundColor = color.cgColor
+            default: break
+        }
         return self
     }
 }
