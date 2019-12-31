@@ -20,6 +20,7 @@ var closureCounter: Int = 0
 @objc class ClosureContainer: NSObject {
     var closureControl: ((UIControl)->())?
     var closureGesture: ((UIGestureRecognizer)->())?
+    var closureBarButtonItem: ((UIBarButtonItem)->())?
     weak var owner: AnyObject?
     var ID: String = ""
 
@@ -35,6 +36,9 @@ var closureCounter: Int = 0
             }
             if let gesture = closureGesture {
                 gesture(owner as! UIGestureRecognizer)
+            }
+            if let barButtonItem = closureBarButtonItem {
+                barButtonItem(owner as! UIBarButtonItem)
             }
         }
     }
@@ -53,12 +57,14 @@ fileprivate extension NSObject {
 */
 
 public extension UIControl {
-    func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ control: UIControl)->()) {
+    @discardableResult
+    func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ control: UIControl)->()) -> Self {
         let closureContainer = ClosureContainer()
         closureContainer.closureControl = closure
         closureContainer.owner = self
         addTarget(closureContainer, action: #selector(ClosureContainer.invoke), for: controlEvents)
         self.addClosureContainer(closureContainer)
+        return self
     }
 }
 
@@ -69,6 +75,24 @@ public extension UIGestureRecognizer {
         closureContainer.closureGesture = closure
         closureContainer.owner = self
         addTarget(closureContainer, action: #selector(ClosureContainer.invoke))
+        addClosureContainer(closureContainer)
+    }
+}
+
+public extension UIBarButtonItem {
+    convenience init(barButtonSystemItem: UIBarButtonItem.SystemItem, _ closure: @escaping (_ barButtonItem: UIBarButtonItem)->()) {
+        let closureContainer = ClosureContainer()
+        closureContainer.closureBarButtonItem = closure
+        self.init(barButtonSystemItem: barButtonSystemItem, target: closureContainer, action: #selector(ClosureContainer.invoke))
+        closureContainer.owner = self
+        addClosureContainer(closureContainer)
+    }
+    
+    convenience init(title: String, style: UIBarButtonItem.Style, _ closure: @escaping (_ barButtonItem: UIBarButtonItem)->()) {
+        let closureContainer = ClosureContainer()
+        closureContainer.closureBarButtonItem = closure
+        self.init(title: title, style: style, target: closureContainer, action: #selector(ClosureContainer.invoke))
+        closureContainer.owner = self
         addClosureContainer(closureContainer)
     }
 }
@@ -99,19 +123,23 @@ class TextFieldClosureContainer: ClosureContainer, UITextFieldDelegate {
 }
 
 public extension UITextField {
-    func shouldReturn(_ closure: @escaping(_ control: UITextField)->(Bool)) {
+    @discardableResult
+    func shouldReturn(_ closure: @escaping(_ control: UITextField)->(Bool)) -> Self {
         let closureContainer = TextFieldClosureContainer()
         closureContainer.shouldReturn = closure
         closureContainer.owner = self
         self.delegate = closureContainer
         self.addClosureContainer(closureContainer)
+        return self
     }
     
-    func shouldClear(_ closure: @escaping(_ control: UITextField)->(Bool)) {
+    @discardableResult
+    func shouldClear(_ closure: @escaping(_ control: UITextField)->(Bool)) -> Self {
         let closureContainer = TextFieldClosureContainer()
         closureContainer.shouldClear = closure
         closureContainer.owner = self
         self.delegate = closureContainer
         self.addClosureContainer(closureContainer)
+        return self
     }
 }

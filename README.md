@@ -81,11 +81,10 @@ class SplitViewController: UIViewController {
     private var showHorizontal = true
 
     private lazy var label: UILabel = {
-        var label = UILabel()
-        label.textColor = UIColor.white
-        label.backgroundColor = UIColor.black
-        label.textAlignment = .center
-        label.text = "Subview Counter"
+        var label = UILabel("Subview Counter, double tap anywhere to add views")
+            .color(.text, .white)
+            .color(.background, .black)
+            .align(.center)
         return label
     }()
 
@@ -97,22 +96,23 @@ class SplitViewController: UIViewController {
         SplitView(superview: view) { [unowned self] splitView in
 
             splitView.direction = .vertical
+            
+            splitView.insertSafeAreaInsetsPadding(form: self.view, paddingDirection: .top)
 
-            let containerSplit = SplitView(superview: splitView) { splitView in
-
-                splitView.direction = .vertical
+            let containerSplit = SplitView(superSplitView: splitView, valueHandler: { (parentRect) -> SplitViewLayoutInstruction in
+                return SplitViewLayoutInstruction(layoutType: .percentage, value: 100)
+            }) { (splitView) in
                 splitView.clipsToBounds = true
-
                 splitView.addSubview(self.label, layoutType: .automatic)
             }
-            splitView.addSubview(containerSplit) { (_) -> SplitViewLayoutInstruction in
-
-                let suggestedEdgeInsets = SplitView.suggestedSuperviewInsets()
-
-                return SplitViewLayoutInstruction(layoutType: .percentage, value: 100, edgeInsets: suggestedEdgeInsets)
-            }
+            
+            splitView.insertSafeAreaInsetsPadding(form: self.view, paddingDirection: .bottom)
 
             let tapGesture = UITapGestureRecognizer { (tapGesture) in
+                if (tapGesture.state != .recognized) {
+                    return
+                }
+                
                 let splitView = tapGesture.view as! SplitView
 
                 self.showHorizontal = !self.showHorizontal
