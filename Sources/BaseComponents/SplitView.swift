@@ -489,4 +489,15 @@ public extension SplitView {
             return SplitViewLayoutInstruction(layoutType: .fixed, value: insetValue)
         }
     }
+    
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        if #available(iOS 10.0, *) {
+            if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
+                DispatchQueue.main.async {
+                    
+                    self.invalidateLayout()
+                }
+            }
+        }
+    }
 }

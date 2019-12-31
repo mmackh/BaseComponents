@@ -22,6 +22,23 @@ public enum UIColorTarget: Int {
     case text
 }
 
+public enum UIFontStyle: Int {
+    case normal
+    case bold
+    case italic
+}
+
+public extension UIFont {
+    static func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UIFontStyle = .normal) -> UIFont {
+        var font = UIFont.preferredFont(forTextStyle: textStyle)
+        if (fontStyle == .bold || fontStyle == .italic) {
+            let descriptor = font.fontDescriptor.withSymbolicTraits(fontStyle == .bold ? .traitBold : .traitItalic)
+            font = UIFont(descriptor: descriptor!, size: 0)
+        }
+        return font
+    }
+}
+
 public extension UILabel {
     convenience init(_ text: String) {
         self.init()
@@ -52,8 +69,43 @@ public extension UILabel {
     }
     
     @discardableResult
-    func size(_ textStyle: UIFont.TextStyle) -> Self {
-        self.font = UIFont.preferredFont(forTextStyle: textStyle)
+    func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UIFontStyle = .normal) -> Self {
+        self.font = UIFont.size(textStyle, fontStyle)
+        if #available(iOS 10.0, *) {
+            adjustsFontForContentSizeCategory = true
+        }
+        return self
+    }
+}
+
+public extension UITextField {
+    convenience init(placeholder: String) {
+        self.init()
+        self.placeholder = placeholder
+    }
+    
+    @discardableResult
+    override func color(_ target: UIColorTarget, _ color: UIColor) -> Self {
+        if (target == .text) {
+            textColor = color
+        } else {
+            super.color(target, color)
+        }
+        return self
+    }
+    
+    @discardableResult
+    func align(_ textAlignment: NSTextAlignment) -> Self {
+        self.textAlignment = textAlignment
+        return self
+    }
+    
+    @discardableResult
+    func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UIFontStyle = .normal) -> Self {
+        self.font = UIFont.size(textStyle, fontStyle)
+        if #available(iOS 10.0, *) {
+            adjustsFontForContentSizeCategory = true
+        }
         return self
     }
 }
