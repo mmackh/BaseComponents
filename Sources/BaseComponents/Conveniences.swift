@@ -26,21 +26,10 @@ public struct UICustomFontStyle: OptionSet {
     public let rawValue: Int
     public static let bold = UICustomFontStyle(rawValue: 1 << 0)
     public static let italic = UICustomFontStyle(rawValue: 1 << 1)
+    public static let monoSpace = UICustomFontStyle(rawValue: 1 << 2)
     
     public init(rawValue: Int) {
         self.rawValue = rawValue
-    }
-}
-
-fileprivate extension NSObject {
-    func asButton() -> UIButton {
-        return (self as! UIButton)
-    }
-    func asView() -> UIView {
-        return (self as! UIView)
-    }
-    func asLabel() -> UILabel {
-        return (self as! UILabel)
     }
 }
 
@@ -54,6 +43,9 @@ public extension UIFont {
             }
             if fontStyle.contains(.italic) {
                 traits.insert(.traitItalic)
+            }
+            if fontStyle.contains(.monoSpace) {
+                traits.insert(.traitMonoSpace)
             }
             let descriptor = font.fontDescriptor.withSymbolicTraits(traits)
             font = UIFont(descriptor: descriptor!, size: 0)
@@ -105,6 +97,12 @@ public extension UILabel {
         }
         return self
     }
+    
+    @discardableResult
+    func size(using font: UIFont) -> Self {
+        self.font = font
+        return self
+    }
 }
 
 public extension UITextField {
@@ -135,6 +133,12 @@ public extension UITextField {
         if #available(iOS 10.0, *) {
             adjustsFontForContentSizeCategory = true
         }
+        return self
+    }
+    
+    @discardableResult
+    func size(using font: UIFont) -> Self {
+        self.font = font
         return self
     }
 }
@@ -181,6 +185,12 @@ public extension UIButton {
         if #available(iOS 10.0, *) {
             self.titleLabel?.adjustsFontForContentSizeCategory = true
         }
+        return self
+    }
+    
+    @discardableResult
+    func size(using font: UIFont) -> Self {
+        self.titleLabel?.font = font
         return self
     }
     
