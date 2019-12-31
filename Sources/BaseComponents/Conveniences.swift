@@ -22,17 +22,40 @@ public enum UIColorTarget: Int {
     case text
 }
 
-public enum UIFontStyle: Int {
-    case normal
-    case bold
-    case italic
+public struct UICustomFontStyle: OptionSet {
+    public let rawValue: Int
+    public static let bold = UICustomFontStyle(rawValue: 1 << 0)
+    public static let italic = UICustomFontStyle(rawValue: 1 << 1)
+    
+    public init(rawValue: Int) {
+        self.rawValue = rawValue
+    }
+}
+
+fileprivate extension NSObject {
+    func asButton() -> UIButton {
+        return (self as! UIButton)
+    }
+    func asView() -> UIView {
+        return (self as! UIView)
+    }
+    func asLabel() -> UILabel {
+        return (self as! UILabel)
+    }
 }
 
 public extension UIFont {
-    static func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UIFontStyle = .normal) -> UIFont {
+    static func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UICustomFontStyle = []) -> UIFont {
         var font = UIFont.preferredFont(forTextStyle: textStyle)
-        if (fontStyle == .bold || fontStyle == .italic) {
-            let descriptor = font.fontDescriptor.withSymbolicTraits(fontStyle == .bold ? .traitBold : .traitItalic)
+        if (fontStyle != []) {
+            var traits: UIFontDescriptor.SymbolicTraits = []
+            if fontStyle.contains(.bold) {
+                traits.insert(.traitBold)
+            }
+            if fontStyle.contains(.italic) {
+                traits.insert(.traitItalic)
+            }
+            let descriptor = font.fontDescriptor.withSymbolicTraits(traits)
             font = UIFont(descriptor: descriptor!, size: 0)
         }
         return font
@@ -69,7 +92,13 @@ public extension UILabel {
     }
     
     @discardableResult
-    func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UIFontStyle = .normal) -> Self {
+    func text(_ text: String?) -> Self {
+        self.text = text
+        return self
+    }
+    
+    @discardableResult
+    func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UICustomFontStyle = []) -> Self {
         self.font = UIFont.size(textStyle, fontStyle)
         if #available(iOS 10.0, *) {
             adjustsFontForContentSizeCategory = true
@@ -101,7 +130,7 @@ public extension UITextField {
     }
     
     @discardableResult
-    func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UIFontStyle = .normal) -> Self {
+    func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UICustomFontStyle = []) -> Self {
         self.font = UIFont.size(textStyle, fontStyle)
         if #available(iOS 10.0, *) {
             adjustsFontForContentSizeCategory = true
@@ -114,13 +143,29 @@ public extension UIView {
     @discardableResult @objc
     func color(_ target: UIColorTarget, _ color: UIColor) -> Self {
         switch target {
-            case .background:
-                backgroundColor = color
-            case .layerBackground:
-                layer.backgroundColor = color.cgColor
-            default: break
+        case .background:
+            backgroundColor = color
+        case .layerBackground:
+            layer.backgroundColor = color.cgColor
+        default: break
         }
         return self
+    }
+    
+}
+
+public extension UIImage {
+    static func imageFormColor(_ color: UIColor?) -> UIImage? {
+        guard color != nil else {
+            return nil
+        }
+        UIGraphicsBeginImageContext(CGSize(width: 1, height: 1))
+        let ctx = UIGraphicsGetCurrentContext()!
+        ctx.setFillColor(color!.cgColor)
+        ctx.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return image
     }
 }
 
@@ -128,5 +173,42 @@ public extension UIButton {
     convenience init(title: String, type: UIButton.ButtonType) {
         self.init(type: type)
         setTitle(title, for: .normal)
+    }
+    
+    @discardableResult
+    func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UICustomFontStyle = []) -> Self {
+        self.titleLabel?.font = UIFont.size(textStyle, fontStyle)
+        if #available(iOS 10.0, *) {
+            self.titleLabel?.adjustsFontForContentSizeCategory = true
+        }
+        return self
+    }
+    
+    @discardableResult
+    override func color(_ target: UIColorTarget, _ color: UIColor?) -> Self {
+        return self.color(target, color, .normal)
+    }
+    
+    @discardableResult
+    func color(_ target: UIColorTarget, _ color: UIColor?, _ state: UIButton.State) -> Self {
+        switch target {
+        case .text:
+            setTitleColor(color, for: state)
+        case .background:
+            if (state != .normal) {
+                setBackgroundImage(UIImage.imageFormColor(color), for: state)
+            } else {
+                backgroundColor = color
+            }
+        default: break
+        }
+        
+        return self
+    }
+    
+    @discardableResult
+    func text(_ text: String?, _ state: UIButton.State = .normal) -> Self {
+        setTitle(text, for: state)
+        return self
     }
 }

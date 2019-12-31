@@ -29,12 +29,12 @@ public enum SplitViewLayoutType: Int {
 
 private class SplitViewHandler {
     var layoutType: SplitViewLayoutType = .fixed
-    var valueHandler: ((CGRect) -> SplitViewLayoutInstruction)??
+    var valueHandler: ((CGRect) -> SplitViewLayoutInstruction)?
     var staticValue: CGFloat = 0.0
     var staticEdgeInsets: UIEdgeInsets = UIEdgeInsets.zero
 
     func getLayoutInstruction(_ superviewBounds: CGRect) -> SplitViewLayoutInstruction {
-        return (valueHandler == nil) ? SplitViewLayoutInstruction(layoutType: layoutType, value: staticValue, edgeInsets: staticEdgeInsets) : valueHandler!!(superviewBounds)
+        return (valueHandler == nil) ? SplitViewLayoutInstruction(layoutType: layoutType, value: staticValue, edgeInsets: staticEdgeInsets) : valueHandler!(superviewBounds)
     }
 }
 
@@ -494,7 +494,6 @@ public extension SplitView {
         if #available(iOS 10.0, *) {
             if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
                 DispatchQueue.main.async {
-                    
                     self.invalidateLayout()
                 }
             }
