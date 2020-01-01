@@ -16,21 +16,27 @@ BaseComponents aims to provide easily reusable and understandable components to 
 - [ ] ActionSheet
 - [ ] ProgressIndicator
 
-## Reasoning & Sample Code
-
-When looking at the sample code blow, we have a View Controller that supports:
-- Dynamic Type
-- Self-sizing cells
-- Layout fully in code
-- Minimal state
-- Easily understandable components
-- Fetching JSON data and binding it to a model
+## Reasoning
 
 1) BaseComponents allows you to write efficient & understandable code in a short amount of time by abstracting the tedious stuff. Implementing data sources or delegates takes a lot of boilerplate and often there's no need. Closures provide us with the ability to mentally connect the component with an action and is therefore the preferred way of passing values async in this library.
 
 2) BaseComponents is flexible, meaning that you don't always have to use the components that come with it. Everything is built on top of UIKit, so mix and match if the project requires it. Don't be afraid of using UITableView instead of DataRender if you need the flexibility of tweaking every single value.
 
 3) BaseComponents is evolving. Like Swift, this library will evolve over time to account for new improvements in the language and to cover more features. Documentation will improve and so will the understanding of what is needed next. SwiftUI is on the horizon as the next big thing, but in the mean time, I'm sure that UIKit will stick around. Particularly due to stability and predictability across iOS versions.
+
+## Sample Code
+
+![Screenshot](https://user-images.githubusercontent.com/948693/71639808-d556ef80-2c7d-11ea-91b5-04648ac77996.png)
+
+When looking at the sample code blow, we have a View Controller that supports:
+- Dynamic Type
+- Self-sizing cells
+- Refresh control, reloading the data
+- Layout fully in code
+- Minimal state
+- Easily understandable components
+- Fetching JSON data and binding it to a model
+- Responding to size of Keyboard
 
 ```
 import UIKit
@@ -207,4 +213,4 @@ Allows the chaining of properties and standardises the naming convention across 
 
 ## Documentation
 
-Documentation on the components is currently severly lacking. I'm working on improving it over time and pull requests are always welcome.
+Documentation on the components, particularly in code, is currently severly lacking. I'm working on improving it over time and pull requests are always welcome.
