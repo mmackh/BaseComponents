@@ -26,7 +26,7 @@ BaseComponents aims to provide easily reusable and understandable components to 
 
 ## Sample Code
 
-![Screenshot](https://user-images.githubusercontent.com/948693/71639808-d556ef80-2c7d-11ea-91b5-04648ac77996.png)
+![Screenshot](https://user-images.githubusercontent.com/948693/71639820-2a930100-2c7e-11ea-8700-24bb3c0b6318.png)
 
 When looking at the sample code blow, we have a View Controller that supports:
 - Dynamic Type
