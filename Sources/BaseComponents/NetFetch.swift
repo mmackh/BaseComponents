@@ -18,6 +18,7 @@ import Foundation
 
 public class NetFetchResponse {
     public var data: Data?
+    public var urlRequest: URLRequest?
     public var urlResponse: URLResponse?
     public var error: Error?
     public var url: URL?
@@ -56,35 +57,16 @@ public class NetFetchRequest {
     public var cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
     public var retryOnFailure = false
     public var ignoreQueue = false
+    public weak var dataTask: URLSessionDataTask?
     
     public init(urlString: String, completionHandler: @escaping((NetFetchResponse)->())) {
         self.urlString = urlString
         self.completionHandler = completionHandler
     }
-}
-
-public class NetFetch {
-    static private let session = URLSession(configuration: .default)
-    static private var queue: Array<NetFetchRequest> = []
     
-    static public func fetch(_ request: NetFetchRequest) {
-        if (request.ignoreQueue) {
-            submitRequest(request)
-            return
-        }
-        queue.append(request)
-        processQueue()
-    }
-    
-    static private func processQueue() {
-        if let request = queue.first {
-            submitRequest(request)
-        }
-    }
-    
-    static private func submitRequest(_ request: NetFetchRequest) {
-        var urlComponents = URLComponents(string: request.urlString)
-        if let parameters = request.parameters {
+    public func urlRequest() -> URLRequest? {
+        var urlComponents = URLComponents(string: urlString)
+        if let parameters = parameters {
             var queryItems: Array<URLQueryItem> = Array()
             parameters.forEach {
                 queryItems.append(URLQueryItem(name: $0, value: $1))
@@ -92,20 +74,62 @@ public class NetFetch {
             urlComponents?.queryItems = queryItems
         }
         guard let url = urlComponents?.url else {
-            return
+            return nil
         }
-        var urlRequest = URLRequest(url: url, cachePolicy: request.cachePolicy, timeoutInterval: request.timeoutInterval)
-        if let headers = request.headers {
+        var urlRequest = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: timeoutInterval)
+        if let headers = headers {
             headers.forEach {
                 urlRequest.setValue($1, forHTTPHeaderField: $0)
             }
         }
-        urlRequest.httpMethod = request.httpMethod
-        if let body = request.body {
+        urlRequest.httpMethod = httpMethod
+        if let body = body {
             urlRequest.httpBody = body
         }
+        return urlRequest
+    }
+    
+    public func cancel() {
+        if let task = dataTask {
+            task.cancel()
+            return
+        }
         
-        let task = session.dataTask(with: urlRequest) { (data, urlResponse, error) in
+        NetFetch.removeRequest(self)
+    }
+}
+
+public class NetFetch {
+    static private let session = URLSession(configuration: .default)
+    static private var queue: NSMutableArray = NSMutableArray()
+    static private var currentTask: URLSessionDataTask?
+    
+    static public func fetch(_ request: NetFetchRequest) {
+        if (request.ignoreQueue) {
+            submitRequest(request)
+            return
+        }
+        queue.add(request)
+        processQueue()
+    }
+    
+    static private func processQueue() {
+        if let request = queue.firstObject {
+            submitRequest(request as! NetFetchRequest)
+        }
+    }
+    
+    static fileprivate func removeRequest(_ request: NetFetchRequest) {
+        queue.remove(request)
+    }
+    
+    static private func submitRequest(_ request: NetFetchRequest) {
+        guard let urlRequest = request.urlRequest() else {
+            return
+        }
+
+        request.dataTask = session.dataTask(with: urlRequest) { (data, urlResponse, error) in
+            
             if (error != nil && request.retryOnFailure){
                 DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                     processQueue()
@@ -116,16 +140,18 @@ public class NetFetch {
             DispatchQueue.main.async {
                 let response = NetFetchResponse()
                 response.data = data
+                response.urlRequest = urlRequest
                 response.urlResponse = urlResponse
                 response.error = error
-                response.url = url
+                response.url = urlRequest.url
                 request.completionHandler(response)
                
-                queue.removeFirst()
+                if (queue.count > 0) {
+                    queue.removeObject(at: 0)
+                }
                 processQueue()
             }
         }
-        task.resume()
+        request.dataTask!.resume()
     }
-    
 }

@@ -31,6 +31,15 @@ public enum DataRenderType: Int {
     case footer
 }
 
+public enum DataRenderScrollType: Int {
+    case didScroll
+    case willBeginDragging
+    case willEndDragging
+    case didEndDragging
+    case willBeginDecelerating
+    case didEndDecelerating
+}
+
 extension UITableViewCell {
     @objc open func bindObject(_ obj: AnyObject) {
     }
@@ -126,6 +135,11 @@ public class DataRender: UIView {
         self.onSelect = onSelect
     }
     
+    private var onScroll: ((_ scrollView: UIScrollView, _ type: DataRenderScrollType, _ velocity: CGPoint) -> Void)?
+    public func onScroll(_ onScroll: @escaping (_ scrollView: UIScrollView, _ type: DataRenderScrollType, _ velocity: CGPoint) -> Void) {
+        self.onScroll = onScroll
+    }
+    
     public lazy var refreshControl: UIRefreshControl = {
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
@@ -181,13 +195,38 @@ public class DataRender: UIView {
     
     public var insets: UIEdgeInsets = UIEdgeInsets.zero {
         didSet {
-            tableView?.contentInset = insets
-            tableView?.scrollIndicatorInsets = insets
+            if let tableView = tableView {
+                tableView.contentInset = insets
+                tableView.scrollIndicatorInsets = insets
+            }
             
             if let collectionView = collectionView {
                 let flowLayout = collectionView.collectionViewLayout as! UICollectionViewFlowLayout
                 flowLayout.sectionInset = insets
             }
+        }
+    }
+    
+    public var contentOffset: CGPoint {
+        set {
+            if let tableView = tableView {
+                tableView.contentOffset = newValue
+            }
+            
+            if let collectionView = collectionView {
+                collectionView.contentOffset = newValue
+            }
+        }
+        
+        get {
+            if let tableView = tableView {
+                return tableView.contentOffset
+            }
+            
+            if let collectionView = collectionView {
+                return collectionView.contentOffset
+            }
+            return CGPoint.zero
         }
     }
     
@@ -293,9 +332,50 @@ public class DataRender: UIView {
     
     // MARK: -
     
-    // MARK: Public common methods
+    // MARK: Scroll View
     
-    public func renderArray(_ array: Array<AnyObject>) {
+    public func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if let onScroll = onScroll {
+            onScroll(scrollView, .didScroll, scrollView.panGestureRecognizer.velocity(in: scrollView))
+        }
+    }
+    
+    public func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        if let onScroll = onScroll {
+            onScroll(scrollView, .willBeginDragging, scrollView.panGestureRecognizer.velocity(in: scrollView))
+        }
+    }
+    
+    public func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+        if let onScroll = onScroll {
+            onScroll(scrollView, .willEndDragging, scrollView.panGestureRecognizer.velocity(in: scrollView))
+        }
+    }
+    
+    public func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if let onScroll = onScroll {
+            onScroll(scrollView, .didEndDragging, scrollView.panGestureRecognizer.velocity(in: scrollView))
+        }
+    }
+    
+    public func scrollViewWillBeginDecelerating(_ scrollView: UIScrollView) {
+        if let onScroll = onScroll {
+            onScroll(scrollView, .willBeginDecelerating, scrollView.panGestureRecognizer.velocity(in: scrollView))
+        }
+    }
+    
+    public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        if let onScroll = onScroll {
+            onScroll(scrollView, .didEndDecelerating, scrollView.panGestureRecognizer.velocity(in: scrollView))
+        }
+    }
+     
+     // MARK: -
+     
+     // MARK: Public common methods
+    
+    public func renderArray<T>(_ genericArray: [T]) {
+        let array = genericArray as Array<AnyObject>
         renderMultiDimensionalArray = false
         if let item: AnyObject = array.first {
             if item is Array < Any> || item is NSArray {

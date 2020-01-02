@@ -222,3 +222,81 @@ public extension UIButton {
         return self
     }
 }
+
+public extension UIImageView {
+    private struct Static {
+        static var ImageViewRequestKey = "fetchRequestImageViewKey"
+        static let Cache: URLCache = {
+            URLCache.shared = URLCache(memoryCapacity: 20 * (1024 * 1024), diskCapacity: 200 * (1024 * 1024), diskPath: nil)
+            return URLCache.shared
+        }()
+    }
+    
+    static func emptyRemoteImageCache() {
+        Static.Cache.removeAllCachedResponses()
+    }
+    
+    fileprivate func currentFetchRequest() -> NetFetchRequest? {
+        return objc_getAssociatedObject(self, Static.ImageViewRequestKey) as? NetFetchRequest
+    }
+    
+    fileprivate func setCurrentFetchRequest(_ fetchRequest: NetFetchRequest?) {
+        objc_setAssociatedObject(self, Static.ImageViewRequestKey, fetchRequest, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
+    }
+    
+    @discardableResult
+    func image(urlString: String, placeholderImage: UIImage? = nil) -> Self {
+        
+        let currentRequest = currentFetchRequest()
+        if (currentRequest?.urlString == urlString) {
+            return self
+        }
+        
+        currentRequest?.cancel()
+        
+        let request = NetFetchRequest(urlString: urlString) { [unowned self] (response) in
+            if let data = response.data {
+                DispatchQueue.global(qos: .default).async {
+                    if let image = UIImage(data: data) {
+                        Static.Cache.storeCachedResponse(CachedURLResponse(response: response.urlResponse!, data: data), for: response.urlRequest!)
+                        DispatchQueue.main.async {
+                            self.image = image
+                        }
+                    }
+                }
+            }
+        }
+        if let urlRequest = request.urlRequest() {
+            if let response = Static.Cache.cachedResponse(for: urlRequest) {
+                image = UIImage(data: response.data)
+                return self
+            }
+        }
+        
+        image = placeholderImage
+        
+        request.ignoreQueue = true
+        request.cachePolicy = .returnCacheDataElseLoad
+        setCurrentFetchRequest(request)
+        NetFetch.fetch(request)
+        
+        return self
+    }
+    
+    @discardableResult
+    func image(named: String) -> Self {
+        image = UIImage(named: named)
+        return self
+    }
+    
+    @discardableResult
+    func mode(_ mode: UIView.ContentMode) -> Self {
+        contentMode = mode
+        return self
+    }
+}
+
+public extension UIAlertController {
+    func show(type: UIAlertController.Type, options: Array<String>, viewController: UIViewController? = nil, closure: ()->()) {
+    }
+}

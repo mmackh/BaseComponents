@@ -191,6 +191,10 @@ public class SplitView: UIView {
         superSplitView.addSubview(self, valueHandler: valueHandler)
     }
     
+    @available(*, unavailable)
+    public override func addSubview(_ view: UIView) {
+        super.addSubview(view)
+    }
 
     public static func suggestedSuperviewInsets() -> UIEdgeInsets {
         let defaultInset: CGFloat = 15.0
@@ -209,7 +213,7 @@ public class SplitView: UIView {
 
         handlerContainer.addValueHandler(handler, view)
 
-        addSubview(view)
+        (self as UIView).addSubview(view)
     }
 
     public func addSubview(_ view: UIView, layoutType: SplitViewLayoutType) {
@@ -231,8 +235,8 @@ public class SplitView: UIView {
         handler.layoutType = layoutType
 
         handlerContainer.addValueHandler(handler, view)
-
-        addSubview(view)
+        
+        (self as UIView).addSubview(view)
     }
 
     private func snapToSuperview() {
