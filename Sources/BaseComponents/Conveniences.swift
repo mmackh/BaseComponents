@@ -297,6 +297,33 @@ public extension UIImageView {
 }
 
 public extension UIAlertController {
-    func show(type: UIAlertController.Type, options: Array<String>, viewController: UIViewController? = nil, closure: ()->()) {
+    private struct Static {
+        static var AlertWindowKey = "bc_alertWindow"
+    }
+    
+    static func show(style: UIAlertController.Style, title: String?, message: String?, options: Array<String>, dismiss: String, viewController: UIViewController? = nil, closure: ((_ buttonIdx: Int)->())?) {
+        let controller = UIAlertController(title: title, message: message, preferredStyle: style)
+        var idx = 0
+        for option in options {
+            controller.addAction(UIAlertAction(title: option, style: .default , handler: { (action) in
+                if let closure = closure {
+                    closure(idx)
+                }
+            }))
+            idx += 1
+        }
+        controller.addAction(UIAlertAction(title: dismiss, style: .cancel, handler: nil))
+        
+        let targetViewController = viewController ?? {
+            let window = UIWindow(frame: UIScreen.main.bounds)
+            window.rootViewController = UIViewController()
+            window.rootViewController?.view.frame = window.bounds
+            window.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            window.isHidden = false
+            window.tintColor = UIApplication.shared.windows.first?.tintColor
+            objc_setAssociatedObject(controller, Static.AlertWindowKey, window, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
+            return window.rootViewController!
+        }()
+        targetViewController.present(controller, animated: true, completion: nil)
     }
 }
