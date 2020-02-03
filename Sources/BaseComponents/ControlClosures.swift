@@ -46,7 +46,7 @@ var closureCounter: Int = 0
 
 fileprivate extension NSObject {
     func addClosureContainer(_ closureContainer: ClosureContainer) {
-        objc_setAssociatedObject(self, closureContainer.ID, closureContainer, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
+        objc_setAssociatedObject(self, &closureContainer.ID, closureContainer, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
     }
 }
 

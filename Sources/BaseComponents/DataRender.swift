@@ -234,6 +234,9 @@ public class DataRender: UIView {
     public var rowHeight: CGFloat = 44.0 {
         didSet {
             tableView?.rowHeight = rowHeight
+            if (rowHeight == UITableView.automaticDimension) {
+                tableView?.estimatedRowHeight = 200
+            }
         }
     }
     

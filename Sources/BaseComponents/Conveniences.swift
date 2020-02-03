@@ -54,6 +54,41 @@ public extension UIFont {
     }
 }
 
+public extension UIColor {
+    @available(iOS 13.0, *)
+    static func dynamic(light: UIColor, dark: UIColor) -> UIColor {
+        return UIColor { (traitCollection) -> UIColor in
+            if (traitCollection.userInterfaceStyle == .dark) {
+                return dark
+            }
+            return light
+        }
+    }
+    
+    convenience init(hex: UInt64) {
+        let components = (r: CGFloat((hex >> 16) & 0xff) / 255, g: CGFloat((hex >> 08) & 0xff) / 255, b: CGFloat((hex >> 00) & 0xff) / 255)
+        self.init(red: components.r, green: components.g, blue: components.b, alpha: 1.0)
+    }
+    
+    convenience init(hex: String) {
+        var hexCleaned = hex.replacingOccurrences(of: "#", with: "")
+        if (hexCleaned.count != 6) {
+            hexCleaned = "FF0000"
+        }
+        var hexInt: UInt64 = 0
+        Scanner(string: hexCleaned.uppercased()).scanHexInt64(&hexInt)
+        self.init(hex: hexInt)
+    }
+    
+    static func hex(_ hex: UInt64) -> UIColor {
+        return UIColor(hex: hex)
+    }
+    
+    static func hex(_ hex: String) -> UIColor {
+        return UIColor(hex: hex)
+    }
+}
+
 public extension UILabel {
     convenience init(_ text: String) {
         self.init()
@@ -237,20 +272,17 @@ public extension UIImageView {
     }
     
     fileprivate func currentFetchRequest() -> NetFetchRequest? {
-        return objc_getAssociatedObject(self, Static.ImageViewRequestKey) as? NetFetchRequest
+        return objc_getAssociatedObject(self, &Static.ImageViewRequestKey) as? NetFetchRequest
     }
     
     fileprivate func setCurrentFetchRequest(_ fetchRequest: NetFetchRequest?) {
-        objc_setAssociatedObject(self, Static.ImageViewRequestKey, fetchRequest, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
+        objc_setAssociatedObject(self, &Static.ImageViewRequestKey, fetchRequest, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
     
     @discardableResult
     func image(urlString: String, placeholderImage: UIImage? = nil) -> Self {
         
         let currentRequest = currentFetchRequest()
-        if (currentRequest?.urlString == urlString) {
-            return self
-        }
         
         currentRequest?.cancel()
         
@@ -260,25 +292,32 @@ public extension UIImageView {
                     if let image = UIImage(data: data) {
                         Static.Cache.storeCachedResponse(CachedURLResponse(response: response.urlResponse!, data: data), for: response.urlRequest!)
                         DispatchQueue.main.async {
-                            self.image = image
+                            if (response.urlString == self.currentFetchRequest()?.urlString) {
+                                self.image = image
+                            }
                         }
                     }
                 }
             }
         }
+        
         if let urlRequest = request.urlRequest() {
             if let response = Static.Cache.cachedResponse(for: urlRequest) {
-                image = UIImage(data: response.data)
+                DispatchQueue.global(qos: .default).async { [unowned self] in
+                    if let image = UIImage(data: response.data) {
+                        DispatchQueue.main.async {
+                            self.image = image
+                        }
+                    }
+                }
                 return self
             }
         }
         
         image = placeholderImage
-        
-        request.ignoreQueue = true
         request.cachePolicy = .returnCacheDataElseLoad
-        setCurrentFetchRequest(request)
         NetFetch.fetch(request)
+        setCurrentFetchRequest(request)
         
         return self
     }
@@ -321,9 +360,16 @@ public extension UIAlertController {
             window.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             window.isHidden = false
             window.tintColor = UIApplication.shared.windows.first?.tintColor
-            objc_setAssociatedObject(controller, Static.AlertWindowKey, window, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
+            objc_setAssociatedObject(controller, &Static.AlertWindowKey, window, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
             return window.rootViewController!
         }()
         targetViewController.present(controller, animated: true, completion: nil)
     }
+}
+
+public extension UIEdgeInsets {
+    init(padding: CGFloat) {
+        self.init(top: padding, left: padding, bottom: padding, right: padding)
+    }
+
 }

@@ -22,6 +22,7 @@ public class NetFetchResponse {
     public var urlResponse: URLResponse?
     public var error: Error?
     public var url: URL?
+    public var urlString: String?
     
     public func string(encoding: String.Encoding = .utf8) -> String {
         if let data = data {
@@ -144,6 +145,7 @@ public class NetFetch {
                 response.urlResponse = urlResponse
                 response.error = error
                 response.url = urlRequest.url
+                response.urlString = request.urlString
                 request.completionHandler(response)
                
                 if (queue.count > 0) {

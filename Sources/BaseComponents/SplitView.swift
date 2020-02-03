@@ -148,9 +148,16 @@ public class SplitView: UIView {
 
     public var subviewPadding: CGFloat = 0.0
     public var preventAnimations: Bool = false
-
-    public var willLayoutSubviews: (() -> Void)?
-    public var didLayoutSubviews: (() -> Void)?
+    
+    private var willLayoutSubviews: (() -> Void)?
+    public func willLayoutSubviews(_ willLayoutSubviews: @escaping () -> Void) {
+        self.willLayoutSubviews = willLayoutSubviews
+    }
+    
+    private var didLayoutSubviews: (() -> Void)?
+    public func didLayoutSubviews(_ didLayoutSubviews: @escaping () -> Void) {
+        self.didLayoutSubviews = didLayoutSubviews
+    }
 
     private var handlerContainer: SplitViewHandlerContainer = SplitViewHandlerContainer()
 
@@ -296,6 +303,13 @@ public class SplitView: UIView {
         subviewFixedValues = subviewFixedValuesMutable
         subviewEdgeInsets = subviewEdgeInsetsMutable
     }
+    
+    public func edgeInsetsForSubview(_ subview: UIView) -> UIEdgeInsets {
+        if let idx = self.subviews.firstIndex(of: subview) {
+            return subviewEdgeInsets[idx]
+        }
+        return UIEdgeInsets.zero
+    }
 }
 
 /// UIView functions that have to be overwritten
@@ -324,8 +338,6 @@ extension SplitView {
             CATransaction.begin()
             CATransaction.setDisableActions(true)
         }
-
-        super.layoutSubviews()
 
         if handlerContainer.hasHandlers() {
             evaluateLayoutValueHandlers()

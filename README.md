@@ -7,12 +7,23 @@ BaseComponents aims to provide easily reusable and understandable components to 
 **Important Note: API for Components is currently unstable.**
 
 ### Components Roadmap
+
+#### Render Data (UITableView / UICollectionView)
 - [x] DataRender
+
+#### Layout
 - [x] SplitView
+- [x] ScrollingView
 - [x] KeyboardManager
-- [x] ControlClosures
+
+#### Networking
 - [x] NetFetch
+
+#### UIKit Helpers
+- [x] ControlClosures
 - [x] Conveniences
+
+#### UI Components
 - [ ] ActionSheet
 - [ ] ProgressIndicator
 
