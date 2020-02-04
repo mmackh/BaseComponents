@@ -99,6 +99,92 @@ public extension UIBarButtonItem {
 
 /*
 
+ UISearchBar Extensions
+ 
+*/
+
+class SearchBarClosureContainer: ClosureContainer, UISearchBarDelegate {
+    var textDidChange: ((UISearchBar)->())?
+    var didBeginEditing: ((UISearchBar)->())?
+    var didEndEditing: ((UISearchBar)->())?
+    var searchButtonClicked: ((UISearchBar)->())?
+    var cancelButtonClicked: ((UISearchBar)->())?
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if let closure = textDidChange {
+            closure(searchBar)
+        }
+    }
+    
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        if let closure = didBeginEditing {
+            closure(searchBar)
+        }
+    }
+    
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        if let closure = didEndEditing {
+            closure(searchBar)
+        }
+    }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        if let closure = searchButtonClicked {
+            closure(searchBar)
+        }
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        if let closure = cancelButtonClicked {
+            closure(searchBar)
+        }
+    }
+}
+
+public extension UISearchBar {
+    fileprivate func closureContainer() -> SearchBarClosureContainer {
+        if (self.delegate == nil) {
+            let closureContainer = SearchBarClosureContainer()
+            closureContainer.owner = self
+            self.delegate = closureContainer
+            self.addClosureContainer(closureContainer)
+        }
+        return self.delegate as! SearchBarClosureContainer
+    }
+    
+    @discardableResult
+    func textDidChange(_ closure: @escaping(_ control: UISearchBar)->()) -> Self {
+        closureContainer().textDidChange = closure
+        return self
+    }
+    
+    @discardableResult
+    func didBeginEditing(_ closure: @escaping(_ control: UISearchBar)->()) -> Self {
+        closureContainer().didBeginEditing = closure
+        return self
+    }
+    
+    @discardableResult
+    func didEndEditing(_ closure: @escaping(_ control: UISearchBar)->()) -> Self {
+        closureContainer().didEndEditing = closure
+        return self
+    }
+    
+    @discardableResult
+    func searchButtonClicked(_ closure: @escaping(_ control: UISearchBar)->()) -> Self {
+        closureContainer().searchButtonClicked = closure
+        return self
+    }
+    
+    @discardableResult
+    func cancelButtonClicked(_ closure: @escaping(_ control: UISearchBar)->()) -> Self {
+        closureContainer().cancelButtonClicked = closure
+        return self
+    }
+}
+
+/*
+
  UITextField Extensions
  
 */
@@ -123,23 +209,25 @@ class TextFieldClosureContainer: ClosureContainer, UITextFieldDelegate {
 }
 
 public extension UITextField {
+    fileprivate func closureContainer() -> TextFieldClosureContainer {
+        if (self.delegate == nil) {
+            let closureContainer = TextFieldClosureContainer()
+            closureContainer.owner = self
+            self.delegate = closureContainer
+            self.addClosureContainer(closureContainer)
+        }
+        return self.delegate as! TextFieldClosureContainer
+    }
+    
     @discardableResult
     func shouldReturn(_ closure: @escaping(_ control: UITextField)->(Bool)) -> Self {
-        let closureContainer = TextFieldClosureContainer()
-        closureContainer.shouldReturn = closure
-        closureContainer.owner = self
-        self.delegate = closureContainer
-        self.addClosureContainer(closureContainer)
+        closureContainer().shouldReturn = closure
         return self
     }
     
     @discardableResult
     func shouldClear(_ closure: @escaping(_ control: UITextField)->(Bool)) -> Self {
-        let closureContainer = TextFieldClosureContainer()
-        closureContainer.shouldClear = closure
-        closureContainer.owner = self
-        self.delegate = closureContainer
-        self.addClosureContainer(closureContainer)
+        closureContainer().shouldClear = closure
         return self
     }
 }

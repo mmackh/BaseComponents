@@ -74,11 +74,13 @@ public class ScrollingSplitView: SplitView {
     }
 }
 
-public class ScrollingView: UIScrollView {
+public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     public var direction: ScrollingViewDirection = .vertical
     
     private var frameCache = CGRect.zero
     private var layoutHandlers: Dictionary<UIView,ScrollingViewHandler> = Dictionary()
+    
+    public var enclosedInRender = false
     
     @discardableResult
     public convenience init(superview: UIView, configurationHandler: (_ scrollingView: ScrollingView) -> Void) {
@@ -99,6 +101,17 @@ public class ScrollingView: UIScrollView {
     @available(*, unavailable)
     public override func addSubview(_ view: UIView) {
         super.addSubview(view)
+    }
+    
+    public func addSubview(_ view: UIView, layoutType: ScrollingViewLayoutType = .automatic, value: CGFloat = 0, edgeInsets: UIEdgeInsets = .zero) {
+        let handler = ScrollingViewHandler()
+        handler.layoutType = layoutType
+        handler.staticValue = value
+        handler.staticEdgeInsets = edgeInsets
+
+        layoutHandlers[view] = handler
+
+        (self as UIView).addSubview(view)
     }
     
     public func addSubview(_ view: UIView, valueHandler: @escaping (_ superviewBounds: CGRect) -> ScrollingViewLayoutInstruction) {
@@ -206,6 +219,18 @@ public class ScrollingView: UIScrollView {
         if (!contentSize.equalTo(suggestedContentSize)) {
             contentSize = suggestedContentSize
         }
+    }
+    
+    public override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let target = super.hitTest(point, with: event)
+        if (enclosedInRender) {
+            if let target = target {
+                if (target == self || target.isKind(of: SplitView.self)) {
+                    return superview
+                }
+            }
+        }
+        return target
     }
 }
 

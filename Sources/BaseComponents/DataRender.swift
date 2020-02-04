@@ -95,8 +95,8 @@ public struct DataRenderItemRenderProperties {
     public weak var render: DataRender?
 }
 
-public class DataRender: UIView {
-    fileprivate var array: Array<AnyObject> = []
+open class DataRender: UIView {
+    public var array: Array<AnyObject> = []
     fileprivate var arrayBackup: Array<AnyObject> = []
     
     fileprivate var renderMultiDimensionalArray = false
@@ -230,6 +230,20 @@ public class DataRender: UIView {
         }
     }
     
+    public var adjustInsets: Bool = false {
+        didSet {
+            if #available(iOS 11, *) {
+                tableView?.contentInsetAdjustmentBehavior = adjustInsets ? .automatic : .never
+                collectionView?.contentInsetAdjustmentBehavior = adjustInsets ? .automatic : .never
+            }
+
+            if #available(iOS 13, *) {
+                tableView?.automaticallyAdjustsScrollIndicatorInsets = adjustInsets
+                collectionView?.automaticallyAdjustsScrollIndicatorInsets = adjustInsets
+            }
+        }
+    }
+    
     // UITableView specific customisations
     public var rowHeight: CGFloat = 44.0 {
         didSet {
@@ -282,7 +296,6 @@ public class DataRender: UIView {
                 tableView.scrollsToTop = true
                 tableView.contentInset = insets
                 tableView.scrollIndicatorInsets = insets
-                tableView.delaysContentTouches = false
                 if #available(iOS 11, *) {
                     tableView.contentInsetAdjustmentBehavior = .never
                 }
@@ -305,7 +318,6 @@ public class DataRender: UIView {
                 collectionView.dataSource = self
                 collectionView.delegate = self
                 collectionView.register(configuration.cellClass, forCellWithReuseIdentifier: NSStringFromClass(configuration.cellClass))
-                collectionView.delaysContentTouches = false
                 collectionView.scrollsToTop = true
                 collectionView.isOpaque = true
                 collectionView.alwaysBounceVertical = configuration.scrollDirection == .vertical
@@ -325,7 +337,7 @@ public class DataRender: UIView {
         }
     }
     
-    required init?(coder: NSCoder) {
+    required public init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     

@@ -141,13 +141,14 @@ public class SplitViewLayoutInstruction {
 }
 
 public class SplitView: UIView {
-    public static let ClipSubivewTag = 101
+    public static let ClipSubviewTag = 101
     public static let ExcludeLayoutTag = 102
 
     public var direction: SplitViewDirection = .vertical
 
     public var subviewPadding: CGFloat = 0.0
     public var preventAnimations: Bool = false
+    public var clipsAllSubviews: Bool = false
     
     private var willLayoutSubviews: (() -> Void)?
     public func willLayoutSubviews(_ willLayoutSubviews: @escaping () -> Void) {
@@ -461,7 +462,7 @@ extension SplitView {
             targetFrame = targetFrame.inset(by: edgeInsets)
             childView.frame = targetFrame
 
-            childView.clipsToBounds = (childView.tag == SplitView.ClipSubivewTag)
+            childView.clipsToBounds = (childView.tag == SplitView.ClipSubviewTag || clipsAllSubviews)
 
             counter += 1
         }

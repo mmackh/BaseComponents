@@ -157,7 +157,7 @@ public extension UITextField {
     }
     
     @discardableResult
-    func align(_ textAlignment: NSTextAlignment) -> Self {
+    override func align(_ textAlignment: NSTextAlignment) -> Self {
         self.textAlignment = textAlignment
         return self
     }
@@ -179,7 +179,7 @@ public extension UITextField {
 }
 
 public extension UIView {
-    @discardableResult @objc
+    @objc @discardableResult
     func color(_ target: UIColorTarget, _ color: UIColor) -> Self {
         switch target {
         case .background:
@@ -191,6 +191,11 @@ public extension UIView {
         return self
     }
     
+    @discardableResult
+    func tint(_ color: UIColor) -> Self {
+        tintColor = color
+        return self
+    }
 }
 
 public extension UIImage {
@@ -206,6 +211,20 @@ public extension UIImage {
         UIGraphicsEndImageContext()
         return image
     }
+}
+
+public extension UISearchBar {
+    convenience init(placeholder: String) {
+        self.init()
+        self.placeholder = placeholder
+    }
+    
+    @discardableResult
+    override func color(_ target: UIColorTarget, _ color: UIColor?) -> Self {
+        return self.color(target, color)
+    }
+    
+    
 }
 
 public extension UIButton {
@@ -258,6 +277,21 @@ public extension UIButton {
     }
 }
 
+public extension UIControl {
+    @objc @discardableResult
+    func align(_ textAlignment: NSTextAlignment) -> Self {
+        switch textAlignment {
+        case .left:
+            self.contentHorizontalAlignment = .left
+        case .right:
+            self.contentHorizontalAlignment = .right
+        default:
+            self.contentHorizontalAlignment = .center
+        }
+        return self
+    }
+}
+
 public extension UIImageView {
     private struct Static {
         static var ImageViewRequestKey = "fetchRequestImageViewKey"
@@ -286,14 +320,14 @@ public extension UIImageView {
         
         currentRequest?.cancel()
         
-        let request = NetFetchRequest(urlString: urlString) { [unowned self] (response) in
+        let request = NetFetchRequest(urlString: urlString) { [weak self] (response) in
             if let data = response.data {
                 DispatchQueue.global(qos: .default).async {
                     if let image = UIImage(data: data) {
                         Static.Cache.storeCachedResponse(CachedURLResponse(response: response.urlResponse!, data: data), for: response.urlRequest!)
                         DispatchQueue.main.async {
-                            if (response.urlString == self.currentFetchRequest()?.urlString) {
-                                self.image = image
+                            if (response.urlString == self?.currentFetchRequest()?.urlString) {
+                                self?.image = image
                             }
                         }
                     }
@@ -303,10 +337,10 @@ public extension UIImageView {
         
         if let urlRequest = request.urlRequest() {
             if let response = Static.Cache.cachedResponse(for: urlRequest) {
-                DispatchQueue.global(qos: .default).async { [unowned self] in
+                DispatchQueue.global(qos: .default).async { [weak self] in
                     if let image = UIImage(data: response.data) {
                         DispatchQueue.main.async {
-                            self.image = image
+                            self?.image = image
                         }
                     }
                 }
