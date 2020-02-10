@@ -327,7 +327,6 @@ open class DataRender: UIView {
                     if case let scrollingView as ScrollingView = cell.contentView.subviews.first {
                         self.itemSizeHandler { (itemLayoutProperties) -> CGSize in
                             var cachedSize = self.dimensionCache[itemLayoutProperties.indexPath]
-                            print(cachedSize)
                             if cachedSize != nil {
                                 return cachedSize!
                             }
