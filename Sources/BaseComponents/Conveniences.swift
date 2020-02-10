@@ -47,8 +47,9 @@ public extension UIFont {
             if fontStyle.contains(.monoSpace) {
                 traits.insert(.traitMonoSpace)
             }
-            let descriptor = font.fontDescriptor.withSymbolicTraits(traits)
-            font = UIFont(descriptor: descriptor!, size: 0)
+            if let descriptor = font.fontDescriptor.withSymbolicTraits(traits) {
+                font = UIFont(descriptor: descriptor, size: 0)
+            }
         }
         return font
     }

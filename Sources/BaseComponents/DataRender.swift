@@ -43,6 +43,10 @@ public enum DataRenderScrollType: Int {
 extension UITableViewCell {
     @objc open func bindObject(_ obj: AnyObject) {
     }
+    
+    /// To ensure the calculation of the ScrollingView for automaticRowHeight is correct and performant, only bind necessary data, such as text, to the views. Data or network calls should only be made in bindObject:
+    @objc open func bindObjectForLayoutPass(_ obj: AnyObject) {
+    }
 }
 
 extension UICollectionViewCell {
@@ -110,7 +114,7 @@ open class DataRender: UIView {
     
     fileprivate var configuration: DataRenderConfiguration!
     
-    fileprivate var dimensionCache: Dictionary<IndexPath, CGSize> = Dictionary()
+    fileprivate var dimensionCache: Dictionary<Int, Dictionary<IndexPath, CGSize>> = Dictionary()
     
     public private(set) var mode: DataRenderMode = .table
     
@@ -323,19 +327,33 @@ open class DataRender: UIView {
                 addSubview(tableView)
             
                 if (configuration.automaticRowHeight) {
+                    tableView.insetsContentViewsToSafeArea = false
+                    
                     let cell = (configuration.cellClass as! UITableViewCell.Type).init(style: .default, reuseIdentifier: "Cell")
                     if case let scrollingView as ScrollingView = cell.contentView.subviews.first {
                         self.itemSizeHandler { (itemLayoutProperties) -> CGSize in
-                            var cachedSize = self.dimensionCache[itemLayoutProperties.indexPath]
+                            let width = Int(itemLayoutProperties.renderBounds.width);
+                            
+                            if width == 0 {
+                                return .zero
+                            }
+                            
+                            var cachedSize = self.dimensionCache[width]?[itemLayoutProperties.indexPath]
                             if cachedSize != nil {
                                 return cachedSize!
                             }
-                            
-                            cell.contentView.frame = .init(x: 0, y: 0, width:  itemLayoutProperties.renderBounds.width, height: 0)
-                            cell.bindObject(itemLayoutProperties.object)
-                            scrollingView.invalidateLayout()
-                            cachedSize = scrollingView.estimatedContentSize()
-                            self.dimensionCache[itemLayoutProperties.indexPath] = cachedSize
+                            UIView.performWithoutAnimation {
+                                if (self.dimensionCache[width] == nil) {
+                                    self.dimensionCache[width] = Dictionary()
+                                    
+                                    cell.frame = .init(x: 0, y: 0, width: itemLayoutProperties.renderBounds.width, height: 0)
+                                    cell.layoutSubviews()
+                                }
+                                cell.bindObjectForLayoutPass(itemLayoutProperties.object)
+                                scrollingView.invalidateLayout()
+                                cachedSize = scrollingView.estimatedContentSize()
+                            }
+                            self.dimensionCache[width]?[itemLayoutProperties.indexPath] = cachedSize
                             return cachedSize!
                         }
                     } else {
@@ -489,12 +507,6 @@ open class DataRender: UIView {
 }
 
 extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
-    
-    open override func setNeedsLayout() {
-        dimensionCache.removeAll(keepingCapacity: true)
-        super.setNeedsLayout()
-    }
-    
     public override func layoutSubviews() {
         collectionView?.collectionViewLayout.invalidateLayout()
         super.layoutSubviews()
@@ -541,6 +553,8 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
         
         if configuration.automaticRowHeight {
             let scrollingView = cell.contentView.subviews.first as! ScrollingView
+            scrollingView.enclosedInRender = true
+            scrollingView.isScrollEnabled = false
             scrollingView.invalidateLayout()
         }
         
