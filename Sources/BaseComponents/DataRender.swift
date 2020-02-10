@@ -64,6 +64,9 @@ public class DataRenderConfiguration {
     /// Only applies to UICollectionView
     public var scrollDirection: DataRenderScrollDirection? = .vertical
     
+    /// Only applies to UITableViewCell. Automatic sizing available for Cells with a ScrollingView as first subview of contentView
+    public var automaticRowHeight: Bool = false
+    
     public init(cellClass: AnyClass) {
         self.cellClass = cellClass
     }
@@ -81,11 +84,12 @@ public class DataRenderConfiguration {
 }
 
 public struct DataRenderItemLayoutProperties {
-    public var indexPath: IndexPath?
+    public var indexPath: IndexPath!
     public var renderBounds: CGRect = CGRect.zero
     public var insets: UIEdgeInsets = UIEdgeInsets.zero
     public var spacing: CGFloat = 0
     public weak var render: DataRender?
+    public weak var object: AnyObject!
 }
 
 public struct DataRenderItemRenderProperties {
@@ -105,6 +109,8 @@ open class DataRender: UIView {
     fileprivate var collectionView: UICollectionView?
     
     fileprivate var configuration: DataRenderConfiguration!
+    
+    fileprivate var dimensionCache: Dictionary<IndexPath, CGSize> = Dictionary()
     
     public private(set) var mode: DataRenderMode = .table
     
@@ -250,7 +256,15 @@ open class DataRender: UIView {
             tableView?.rowHeight = rowHeight
             if (rowHeight == UITableView.automaticDimension) {
                 tableView?.estimatedRowHeight = 200
+            } else {
+                tableView?.estimatedRowHeight = rowHeight;
             }
+        }
+    }
+    
+    public var estimatedRowHeight: CGFloat = 200 {
+        didSet {
+            tableView?.estimatedRowHeight = estimatedRowHeight
         }
     }
     
@@ -288,6 +302,7 @@ open class DataRender: UIView {
             let targetClass = renderClass as! UITableView.Type
             tableView = {
                 let tableView = targetClass.init(frame: bounds, style: .plain)
+                tableView.estimatedRowHeight = 0
                 tableView.autoresizingMask = autoresizingMask
                 tableView.dataSource = self
                 tableView.delegate = self
@@ -306,6 +321,29 @@ open class DataRender: UIView {
                     tableView.transform = CGAffineTransform(scaleX: 1, y: -1)
                 }
                 addSubview(tableView)
+            
+                if (configuration.automaticRowHeight) {
+                    let cell = (configuration.cellClass as! UITableViewCell.Type).init(style: .default, reuseIdentifier: "Cell")
+                    if case let scrollingView as ScrollingView = cell.contentView.subviews.first {
+                        self.itemSizeHandler { (itemLayoutProperties) -> CGSize in
+                            var cachedSize = self.dimensionCache[itemLayoutProperties.indexPath]
+                            print(cachedSize)
+                            if cachedSize != nil {
+                                return cachedSize!
+                            }
+                            
+                            cell.contentView.frame = .init(x: 0, y: 0, width:  itemLayoutProperties.renderBounds.width, height: 0)
+                            cell.bindObject(itemLayoutProperties.object)
+                            scrollingView.invalidateLayout()
+                            cachedSize = scrollingView.estimatedContentSize()
+                            self.dimensionCache[itemLayoutProperties.indexPath] = cachedSize
+                            return cachedSize!
+                        }
+                    } else {
+                        print("DataRender Error: No ScrollingView found as first subview of contentView")
+                    }
+                }
+                
                 return tableView
             }()
         }
@@ -388,35 +426,43 @@ open class DataRender: UIView {
      // MARK: -
      
      // MARK: Public common methods
-    
-    public func renderArray<T>(_ genericArray: [T]) {
-        let array = genericArray as Array<AnyObject>
-        renderMultiDimensionalArray = false
-        if let item: AnyObject = array.first {
-            if item is Array < Any> || item is NSArray {
-                renderMultiDimensionalArray = true
-            }
+    public func renderArray<T>(_ genericArray: [T], emptyDimensionCache: Bool = true) {
+        
+        if (emptyDimensionCache) {
+            dimensionCache.removeAll(keepingCapacity: true)
         }
         
-        if configuration.reverseScrollingDirection! {
-            if renderMultiDimensionalArray {
-                var tempArray: Array<Array> = [] as! Array<Array<Any>>
-                for subArray in array.reversed() {
-                    let subArrayCast = subArray as! Array<AnyObject>
-                    tempArray.append(subArrayCast.reversed() as Array)
+        DispatchQueue.global(qos: .userInitiated).async { [unowned self] in
+            let array = genericArray as Array<AnyObject>
+            self.renderMultiDimensionalArray = false
+            if let item: AnyObject = array.first {
+                if item is Array < Any> || item is NSArray {
+                    self.renderMultiDimensionalArray = true
                 }
-                self.array = tempArray as Array<AnyObject>
-                arrayBackup = tempArray as Array<AnyObject>
-            } else {
-                self.array = array.reversed()
-                arrayBackup = array.reversed()
             }
-        } else {
-            self.array = array
-            arrayBackup = array
+            
+            if self.configuration.reverseScrollingDirection! {
+                if self.renderMultiDimensionalArray {
+                    var tempArray: Array<Array> = [] as! Array<Array<Any>>
+                    for subArray in array.reversed() {
+                        let subArrayCast = subArray as! Array<AnyObject>
+                        tempArray.append(subArrayCast.reversed() as Array)
+                    }
+                    self.array = tempArray as Array<AnyObject>
+                    self.arrayBackup = tempArray as Array<AnyObject>
+                } else {
+                    self.array = array.reversed()
+                    self.arrayBackup = array.reversed()
+                }
+            } else {
+                self.array = array
+                self.arrayBackup = array
+            }
+            
+            DispatchQueue.main.async {
+                self.reloadData()
+            }
         }
-        
-        reloadData()
     }
     
     public func reloadData() {
@@ -448,8 +494,15 @@ open class DataRender: UIView {
 }
 
 extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+    
+    open override func setNeedsLayout() {
+        dimensionCache.removeAll(keepingCapacity: true)
+        super.setNeedsLayout()
+    }
+    
     public override func layoutSubviews() {
         collectionView?.collectionViewLayout.invalidateLayout()
+        super.layoutSubviews()
     }
     
     func objectForIndexPath(_ indexPath: IndexPath) -> AnyObject {
@@ -480,7 +533,7 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
     public func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if let itemSizeHandler = itemSizeHandler {
             weak var render = self
-            return itemSizeHandler(DataRenderItemLayoutProperties(indexPath: indexPath, renderBounds: tableView.bounds, insets: tableView.contentInset, spacing: 0.0, render: render)).height
+            return itemSizeHandler(DataRenderItemLayoutProperties(indexPath: indexPath, renderBounds: tableView.bounds, insets: tableView.contentInset, spacing: 0.0, render: render, object: objectForIndexPath(indexPath))).height
         }
         return rowHeight
     }
@@ -489,6 +542,11 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
         if let beforeDisplay = beforeDisplay {
             weak var render = self
             beforeDisplay(DataRenderItemRenderProperties(indexPath: indexPath, cell: cell, object: objectForIndexPath(indexPath), render: render))
+        }
+        
+        if configuration.automaticRowHeight {
+            let scrollingView = cell.contentView.subviews.first as! ScrollingView
+            scrollingView.invalidateLayout()
         }
         
         if configuration.reverseScrollingDirection! {
@@ -500,7 +558,7 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
         var cellClass: AnyClass = configuration.cellClass
         if let itemCellClassHandler = itemCellClassHandler {
             weak var render = self
-            cellClass = itemCellClassHandler(DataRenderItemLayoutProperties(indexPath: indexPath, renderBounds: tableView.bounds, insets: insets, spacing: 0, render: render))
+            cellClass = itemCellClassHandler(DataRenderItemLayoutProperties(indexPath: indexPath, renderBounds: tableView.bounds, insets: insets, spacing: 0, render: render, object: objectForIndexPath(indexPath)))
         }
         
         let cell = tableView.dequeueReusableCell(withIdentifier: NSStringFromClass(cellClass), for: indexPath)
@@ -565,7 +623,7 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
         var cellClass: AnyClass = configuration.cellClass
         if let itemCellClassHandler = itemCellClassHandler {
             weak var render = self
-            cellClass = itemCellClassHandler(DataRenderItemLayoutProperties(indexPath: indexPath, renderBounds: collectionView.bounds, insets: insets, spacing: itemSpacing, render: render))
+            cellClass = itemCellClassHandler(DataRenderItemLayoutProperties(indexPath: indexPath, renderBounds: collectionView.bounds, insets: insets, spacing: itemSpacing, render: render, object: objectForIndexPath(indexPath)))
         }
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: NSStringFromClass(cellClass), for: indexPath)
         let object = objectForIndexPath(indexPath)
@@ -589,7 +647,7 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
         if let itemSizeHandler = itemSizeHandler {
             weak var render = self
             let flowLayout = collectionViewLayout as! UICollectionViewFlowLayout
-            return itemSizeHandler(DataRenderItemLayoutProperties(indexPath: indexPath, renderBounds: collectionView.bounds, insets: flowLayout.sectionInset, spacing: flowLayout.minimumLineSpacing, render: render))
+            return itemSizeHandler(DataRenderItemLayoutProperties(indexPath: indexPath, renderBounds: collectionView.bounds, insets: flowLayout.sectionInset, spacing: flowLayout.minimumLineSpacing, render: render, object: objectForIndexPath(indexPath)))
         }
         return CGSize(width: 100, height: 100)
     }

@@ -141,7 +141,6 @@ public class SplitViewLayoutInstruction {
 }
 
 public class SplitView: UIView {
-    public static let ClipSubviewTag = 101
     public static let ExcludeLayoutTag = 102
 
     public var direction: SplitViewDirection = .vertical
@@ -462,7 +461,9 @@ extension SplitView {
             targetFrame = targetFrame.inset(by: edgeInsets)
             childView.frame = targetFrame
 
-            childView.clipsToBounds = (childView.tag == SplitView.ClipSubviewTag || clipsAllSubviews)
+            if (clipsAllSubviews) {
+                childView.clipsToBounds = true
+            }
 
             counter += 1
         }
