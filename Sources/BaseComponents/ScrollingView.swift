@@ -82,6 +82,8 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     
     public var enclosedInRender = false
     
+    public var layoutPass = false
+    
     @discardableResult
     public convenience init(superview: UIView, configurationHandler: (_ scrollingView: ScrollingView) -> Void) {
         self.init()
@@ -165,43 +167,21 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
             if let layout = layoutHandlers[view]?.getLayoutInstruction(bounds) {
                 var layoutValue = layout.value
                 if (layout.layoutType == .automatic) {
-                    view.frame = CGRect(x: offsetTrackerX, y: offsetTrackerY, width: (vertical ? clampValue : 10), height: (vertical ? clampValue : 10))
+                    let mockFrame = CGRect(x: offsetTrackerX, y: offsetTrackerY, width: (vertical ? clampValue : 10), height: (vertical ? clampValue : 10))
                     
-                    if (view.isKind(of: ScrollingSplitView.self) == true) {
-                        let splitView = view as! ScrollingSplitView
-                        splitView.layoutIfNeeded()
-                        
-                        var largestValue: CGFloat = 0
-                        var largestSubview: UIView?
-                        
-                        for subview in splitView.subviews {
-                            if (!subview.isKind(of: UILabel.self)) {
-                                continue
-                            }
-                            let size = subview.sizeThatFits(.init(width: vertical ? subview.frame.size.width : .infinity, height: vertical ? .infinity : subview.bounds.size.height))
-                            let relevantValue = vertical ? size.height : size.width
-                            if (largestValue < relevantValue) {
-                                largestValue = relevantValue
-                                largestSubview = subview
-                            }
+                    if view.isKind(of: SplitView.self) {
+                        let splitView = view as! SplitView
+                        if !splitView.layoutPass {
+                            view.frame = mockFrame
+                            splitView.layoutPass = true
                         }
-                        
-                        if let largestSubview = largestSubview {
-                            let edgeInstets = splitView.edgeInsetsForSubview(largestSubview)
-                            if vertical {
-                                largestValue += (edgeInstets.top + edgeInstets.bottom)
-                            } else {
-                                largestValue += (edgeInstets.left + edgeInstets.right)
-                            }
-                        }
-                        
-                        layoutValue = largestValue
-                        
                     } else {
-                        let size = view.sizeThatFits(.init(width: vertical ? clampValue - (layout.edgeInsets.left + layout.edgeInsets.right) : .infinity, height: vertical ? .infinity : clampValue - (layout.edgeInsets.top + layout.edgeInsets.bottom)))
-                        layoutValue = vertical ? (size.height + layout.edgeInsets.top + layout.edgeInsets.bottom) : (size.width + layout.edgeInsets.left + layout.edgeInsets.right)
+                        view.frame = mockFrame
                     }
+                    let size = view.sizeThatFits(.init(width: vertical ? clampValue - (layout.edgeInsets.left + layout.edgeInsets.right) : .infinity, height: vertical ? .infinity : clampValue - (layout.edgeInsets.top + layout.edgeInsets.bottom)))
+                    layoutValue = vertical ? (size.height + layout.edgeInsets.top + layout.edgeInsets.bottom) : (size.width + layout.edgeInsets.left + layout.edgeInsets.right)
                 }
+                
                 var targetRect = CGRect(x: offsetTrackerX, y: offsetTrackerY, width: (vertical ? clampValue : layoutValue) , height: (vertical ? layoutValue : clampValue))
                 targetRect = targetRect.inset(by: layout.edgeInsets)
                 if vertical {
@@ -209,14 +189,15 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
                 } else {
                     offsetTrackerX += layoutValue
                 }
-                if (!view.frame.equalTo(targetRect)) {
+                
+                if (!view.frame.equalTo(targetRect) && !layoutPass) {
                     view.frame = targetRect
                 }
             }
         }
         
         let suggestedContentSize = CGSize(width: vertical ? clampValue : offsetTrackerX, height: vertical ? offsetTrackerY : clampValue)
-        if (!contentSize.equalTo(suggestedContentSize)) {
+        if (!contentSize.equalTo(suggestedContentSize) || layoutPass) {
             contentSize = suggestedContentSize
         }
     }

@@ -7,9 +7,9 @@
 
 /*
  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
+ 
  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
+ 
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
@@ -32,108 +32,35 @@ private class SplitViewHandler {
     var valueHandler: ((CGRect) -> SplitViewLayoutInstruction)?
     var staticValue: CGFloat = 0.0
     var staticEdgeInsets: UIEdgeInsets = UIEdgeInsets.zero
-
+    
     func getLayoutInstruction(_ superviewBounds: CGRect) -> SplitViewLayoutInstruction {
         return (valueHandler == nil) ? SplitViewLayoutInstruction(layoutType: layoutType, value: staticValue, edgeInsets: staticEdgeInsets) : valueHandler!(superviewBounds)
     }
 }
 
-private class SplitViewHandlerContainer {
-    private var valueHandlers: Array<SplitViewHandler> = []
-
-    var equalSubviewsCount: CGFloat = 0
-    var percentageLeftForEqualSubviews: CGFloat = 1.0
-
-    var estimatedFixedHeight: CGFloat = 0.0
-
-    var viewForHandlerDictionary: Dictionary<UIView, SplitViewHandler> = [:]
-
-    func hasHandlers() -> Bool {
-        return valueHandlers.count > 0
-    }
-
-    func addValueHandler(_ valueHandler: SplitViewHandler, _ view: UIView) {
-        valueHandlers.append(valueHandler)
-        viewForHandlerDictionary[view] = valueHandler
-    }
-
-    func removeValueHandlerForView(_ view: UIView) {
-        let valueHandler = viewForHandlerDictionary[view]
-
-        if let idx = valueHandlers.firstIndex(where: { $0 === valueHandler }) {
-            valueHandlers.remove(at: idx)
-        }
-
-        viewForHandlerDictionary.removeValue(forKey: view)
-    }
-
-    func layoutInstruction(view: UIView) -> String {
-        var layoutInstructions: Array<String> = []
-
-        var layoutInstructionObjects: Array<SplitViewLayoutInstruction> = []
-
-        let bounds = view.bounds
-
-        estimatedFixedHeight = 0.0
-        equalSubviewsCount = 0
-        percentageLeftForEqualSubviews = 1.0
-
-        for handler in valueHandlers {
-            let layoutInstruction = handler.getLayoutInstruction(bounds)
-            layoutInstructionObjects.append(layoutInstruction)
-
-            if layoutInstruction.layoutType == .equal {
-                equalSubviewsCount += 1
-            }
-
-            if layoutInstruction.layoutType == .percentage {
-                percentageLeftForEqualSubviews -= layoutInstruction.value / 100
-            }
-        }
-
-        for layoutInstruction in layoutInstructionObjects {
-            var value = layoutInstruction.value
-
-            var layoutInstructionString = ""
-
-            if layoutInstruction.layoutType == .automatic {
-                layoutInstructionString = "0*-2"
-            }
-            if layoutInstruction.layoutType == .percentage {
-                value /= 100
-                layoutInstructionString = String(format: "%f*-1", value)
-            }
-            if layoutInstruction.layoutType == .fixed {
-                estimatedFixedHeight += value
-                layoutInstructionString = String(format: "0*%f", value)
-            }
-            if layoutInstruction.layoutType == .equal {
-                value = percentageLeftForEqualSubviews / equalSubviewsCount
-                layoutInstructionString = String(format: "%f*-1", value)
-            }
-
-            layoutInstructionString = NSCoder.string(for: layoutInstruction.edgeInsets).replacingOccurrences(of: ",", with: ";") + "|" + layoutInstructionString
-            layoutInstructions.append(layoutInstructionString)
-        }
-        return layoutInstructions.joined(separator: ",")
-    }
+private struct SizeThatFitsCache {
+    let largestSubview: UIView?
+    var limitingSize: CGSize
+    var forSize: CGSize
+    var largestValue: CGFloat
+    var additionalPadding: CGFloat
 }
 
 public class SplitViewLayoutInstruction {
     var value: CGFloat = 0
     var layoutType: SplitViewLayoutType = .equal
     var edgeInsets: UIEdgeInsets = UIEdgeInsets.zero
-
+    
     public convenience init(layoutType: SplitViewLayoutType, value: CGFloat) {
         self.init()
-
+        
         self.value = value
         self.layoutType = layoutType
     }
-
+    
     public convenience init(layoutType: SplitViewLayoutType, value: CGFloat, edgeInsets: UIEdgeInsets) {
         self.init()
-
+        
         self.value = value
         self.edgeInsets = edgeInsets
         self.layoutType = layoutType
@@ -142,9 +69,10 @@ public class SplitViewLayoutInstruction {
 
 public class SplitView: UIView {
     public static let ExcludeLayoutTag = 102
-
+    public static let onePixelHeight: CGFloat = 1 / UIScreen.main.scale
+    
     public var direction: SplitViewDirection = .vertical
-
+    
     public var subviewPadding: CGFloat = 0.0
     public var preventAnimations: Bool = false
     public var clipsAllSubviews: Bool = false
@@ -158,21 +86,17 @@ public class SplitView: UIView {
     public func didLayoutSubviews(_ didLayoutSubviews: @escaping () -> Void) {
         self.didLayoutSubviews = didLayoutSubviews
     }
-
-    private var handlerContainer: SplitViewHandlerContainer = SplitViewHandlerContainer()
-
-    private var subviewRatios: Array<CGFloat> = []
-    private var subviewFixedValues: Array<CGFloat> = []
-    private var subviewEdgeInsets: Array<UIEdgeInsets> = []
-
-    private var originalSubviews: Array<UIView> = []
-    private var cachedSubviewLayout: String = ""
-
-    private var boundsCache: CGRect = CGRect()
-    private var layoutParsed: Bool = false
-
-    public static let onePixelHeight: CGFloat = 1 / UIScreen.main.scale
-
+    
+    private var handlerContainer: Dictionary<UIView, SplitViewHandler> = Dictionary()
+    
+    private var boundsCache: CGRect?
+    private var observingSuperviewSafeAreaInsets = false
+    
+    private var sizeThatFitsCache: SizeThatFitsCache?
+    
+    
+    public var layoutPass: Bool = false
+    
     @discardableResult
     public convenience init(superview: UIView, configurationHandler: (_ splitView: SplitView) -> Void) {
         self.init()
@@ -181,18 +105,18 @@ public class SplitView: UIView {
         {
             print("use 'superSplitView' and valueHandler to add childSplitViews, this will most likely crash your app otherwise - no way to deterministically lay out this SplitView instance")
         }
-
+        
         configurationHandler(self)
         
         superview.addSubview(self)
         snapToSuperview()
     }
     
-
+    
     @discardableResult
     public convenience init(superSplitView: SplitView, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction, configurationHandler: (_ splitView: SplitView) -> Void) {
         self.init()
-
+        
         configurationHandler(self)
         
         superSplitView.addSubview(self, valueHandler: valueHandler)
@@ -202,7 +126,7 @@ public class SplitView: UIView {
     public override func addSubview(_ view: UIView) {
         super.addSubview(view)
     }
-
+    
     public static func suggestedSuperviewInsets() -> UIEdgeInsets {
         let defaultInset: CGFloat = 15.0
         var suggestedInsets = UIEdgeInsets(top: defaultInset, left: defaultInset, bottom: defaultInset, right: defaultInset)
@@ -213,266 +137,235 @@ public class SplitView: UIView {
         }
         return suggestedInsets
     }
-
+    
     public func addSubview(_ view: UIView, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction) {
         let handler = SplitViewHandler()
         handler.valueHandler = valueHandler
-
-        handlerContainer.addValueHandler(handler, view)
-
+        
+        handlerContainer[view] = handler
+        
         (self as UIView).addSubview(view)
     }
-
+    
     public func addSubview(_ view: UIView, layoutType: SplitViewLayoutType) {
         addSubview(view, layoutType: layoutType, value: 0, edgeInsets: UIEdgeInsets.zero)
     }
-
+    
     public func addSubview(_ view: UIView, layoutType: SplitViewLayoutType, edgeInsets: UIEdgeInsets) {
         addSubview(view, layoutType: layoutType, value: 0, edgeInsets: edgeInsets)
     }
-
+    
     public func addSubview(_ view: UIView, layoutType: SplitViewLayoutType, value: CGFloat) {
         addSubview(view, layoutType: layoutType, value: value, edgeInsets: UIEdgeInsets.zero)
     }
-
+    
     public func addSubview(_ view: UIView, layoutType: SplitViewLayoutType, value: CGFloat, edgeInsets: UIEdgeInsets) {
         let handler = SplitViewHandler()
         handler.staticValue = value
         handler.staticEdgeInsets = edgeInsets
         handler.layoutType = layoutType
-
-        handlerContainer.addValueHandler(handler, view)
+        
+        handlerContainer[view] = handler
         
         (self as UIView).addSubview(view)
     }
-
+    
     private func snapToSuperview() {
         if superview != nil {
             frame = superview!.frame
         }
         autoresizingMask = [.flexibleWidth, .flexibleHeight]
     }
-
+    
     /// Force layout of subviews, can be animated inside an animation block
     public func invalidateLayout() {
-        layoutParsed = false
-        originalSubviews = []
-
+        boundsCache = nil
+        
         setNeedsLayout()
         layoutIfNeeded()
-    }
-
-    private func evaluateLayoutValueHandlers() {
-        let instruction = handlerContainer.layoutInstruction(view: self)
-
-        if cachedSubviewLayout != instruction {
-            layoutParsed = false
-        } else {
-            return
-        }
-
-        cachedSubviewLayout = instruction
-
-        var subviewRatiosMutable: Array<CGFloat> = Array()
-        var subviewFixedValuesMutable: Array<CGFloat> = Array()
-        var subviewEdgeInsetsMutable: Array<UIEdgeInsets> = Array()
-
-        for subInstruction in cachedSubviewLayout.components(separatedBy: ",") {
-            let subInstructionSplit: Array<String> = subInstruction.components(separatedBy: "*")
-
-            let subSubValueString = subInstructionSplit.first ?? ""
-            let subSubInstructionSplit = subSubValueString.components(separatedBy: "|")
-
-            var edgeInsetsValue = UIEdgeInsets.zero
-            if subSubInstructionSplit.count > 1 {
-                edgeInsetsValue = NSCoder.uiEdgeInsets(for: subSubInstructionSplit.first?.replacingOccurrences(of: ";", with: ",") ?? "")
-            }
-            subviewEdgeInsetsMutable.append(edgeInsetsValue)
-
-            let ratioValueString = subSubInstructionSplit.last ?? ""
-            let ratioValue: CGFloat = CGFloat((ratioValueString as NSString).floatValue)
-            subviewRatiosMutable.append(ratioValue)
-
-            let fixedValueString: String = subInstructionSplit.count > 1 ? subInstructionSplit.last! : "-1"
-            let fixedValue = CGFloat((fixedValueString as NSString).floatValue)
-
-            subviewFixedValuesMutable.append(fixedValue)
-        }
-
-        subviewRatios = subviewRatiosMutable
-        subviewFixedValues = subviewFixedValuesMutable
-        subviewEdgeInsets = subviewEdgeInsetsMutable
-    }
-    
-    public func edgeInsetsForSubview(_ subview: UIView) -> UIEdgeInsets {
-        if let idx = self.subviews.firstIndex(of: subview) {
-            return subviewEdgeInsets[idx]
-        }
-        return UIEdgeInsets.zero
     }
 }
 
 /// UIView functions that have to be overwritten
 extension SplitView {
     public override func willRemoveSubview(_ subview: UIView) {
-        handlerContainer.removeValueHandlerForView(subview)
+        handlerContainer.removeValue(forKey: subview)
     }
-
+    
     public override func layoutIfNeeded() {
         if preventAnimations {
             CATransaction.begin()
             CATransaction.setDisableActions(true)
             super.layoutIfNeeded()
             CATransaction.commit()
-
+            
             return
         }
-
+        
         super.layoutIfNeeded()
     }
-
+    
     public override func layoutSubviews() {
         willLayoutSubviews?()
-
+        
         if preventAnimations {
             CATransaction.begin()
             CATransaction.setDisableActions(true)
         }
-
-        if handlerContainer.hasHandlers() {
-            evaluateLayoutValueHandlers()
-        }
-
-        if boundsCache.equalTo(bounds) && layoutParsed {
-            if (preventAnimations) {
+        
+        if boundsCache?.equalTo(bounds) ?? false || bounds.equalTo(.zero) {
+            if preventAnimations {
                 CATransaction.commit()
             }
             return
         }
-
         boundsCache = bounds
-        layoutParsed = true
-
-        if originalSubviews.count == 0 || originalSubviews.count != subviews.count {
-            originalSubviews = subviews
-        }
-
-        var subviewsMutable: Array<UIView> = []
-
-        for subview in originalSubviews {
-            if subview.tag == SplitView.ExcludeLayoutTag {
-                continue
-            }
-
-            subviewsMutable.append(subview)
-        }
-
-        if subviewRatios.count == 0 {
+        
+        if subviews.count == 0 {
             return
         }
-
+        
         let horizontalLayout = (direction == .horizontal)
-
-        var fixedValuesMutable = subviewFixedValues
-        let ratios = subviewRatios
+        
         let padding = subviewPadding
-
-        var counter = 0
+        
         var offsetTracker: CGFloat = 0.0
-
-        var ratioTargetCount = 0
-        var ratioLossIndex = 0
-        var ratioLossValue: CGFloat = 0.0
-
         var fixedValuesSum: CGFloat = 0.0
-
-        for fixedValue in fixedValuesMutable {
-            var fixedValueFloat = fixedValue
-
-            let ratio = ratios[ratioLossIndex]
-            ratioLossIndex += 1
-
-            ratioTargetCount += 1
-            if fixedValueFloat == -1 {
+        var percentageLossSum: CGFloat = 0.0
+        var numberOfLayoutTypeEqualSubviews: CGFloat = 0.0
+        
+        for subview in subviews {
+            let layoutHandler = handlerContainer[subview]!
+            let instruction = layoutHandler.getLayoutInstruction(bounds)
+            
+            if instruction.layoutType == .percentage {
+                percentageLossSum += (instruction.value / 100)
                 continue
             }
-            ratioTargetCount -= 1
-
-            // Automatic label loss calculation, storing the fixed value in the fixedValuesMutable array
-            if fixedValueFloat < -1.0 {
-                let idx = ratioLossIndex - 1
-                let subview: Any = subviewsMutable[idx]
-
+            
+            if instruction.layoutType == .equal {
+                numberOfLayoutTypeEqualSubviews += 1
+                continue
+            }
+            
+            var fixedValueFloat = instruction.value
+            
+            if layoutHandler.layoutType == .automatic {
+                
                 var additionalPadding: CGFloat = 0.0
                 if subview is UIButton {
                     let button = subview as! UIButton
                     additionalPadding += horizontalLayout ? (button.titleEdgeInsets.left + button.titleEdgeInsets.right) : (button.titleEdgeInsets.bottom + button.titleEdgeInsets.top)
                 }
                 
-                let edgeInsets = subviewEdgeInsets[idx]
+                let edgeInsets = instruction.edgeInsets
                 additionalPadding += horizontalLayout ? (edgeInsets.left + edgeInsets.right + subviewPadding * 2) : (edgeInsets.top + edgeInsets.bottom + subviewPadding * 2)
-
-                let label = subview as! UIView
+                
                 let max = CGFloat.greatestFiniteMagnitude
-                let labelDimensions = label.sizeThatFits(CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : max))
-                fixedValueFloat = horizontalLayout ? labelDimensions.width : labelDimensions.height
+                let subviewDimensions = subview.sizeThatFits(CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : max))
+                fixedValueFloat = horizontalLayout ? subviewDimensions.width : subviewDimensions.height
                 fixedValueFloat += additionalPadding
-                fixedValuesMutable[idx] = fixedValueFloat
+                layoutHandler.staticValue = fixedValueFloat
             }
-
+            
             if fixedValueFloat < 1.0 && fixedValueFloat > 0.0 {
                 fixedValueFloat = SplitView.onePixelHeight
+                instruction.value = fixedValueFloat
             }
-
+            
             fixedValuesSum += fixedValueFloat
-            ratioLossValue += ratio
         }
-
+        
         let width = bounds.size.width - (horizontalLayout ? fixedValuesSum : 0.0)
         let height = bounds.size.height - (horizontalLayout ? 0.0 : fixedValuesSum)
-
-        for childView in subviewsMutable {
-            let edgeInsets = subviewEdgeInsets[counter]
-
-            let ratio: CGFloat = ratios[counter] + (ratioLossValue > 0 ? (ratioLossValue / CGFloat(ratioTargetCount)) : 0.0)
-            var fixedValue: CGFloat = -1
-
-            if fixedValuesMutable.count > 0 {
-                fixedValue = fixedValuesMutable[counter]
+        
+        for childView in subviews {
+            let layoutHandler = handlerContainer[childView]!
+            let instruction = layoutHandler.getLayoutInstruction(bounds)
+            
+            let edgeInsets = instruction.edgeInsets
+            
+            var ratio: CGFloat = 1
+            var layoutValue: CGFloat = horizontalLayout ? width : height
+            
+            if instruction.layoutType == .percentage {
+                ratio = instruction.value / 100
             }
-
-            if fixedValue < 1.0 && fixedValue > 0.0 {
-                fixedValue = SplitView.onePixelHeight
+            
+            if instruction.layoutType == .equal {
+                ratio = (1.0 - percentageLossSum) / numberOfLayoutTypeEqualSubviews
             }
-
-            var childFrame = CGRect(x: horizontalLayout ? offsetTracker : 0.0, y: horizontalLayout ? 0.0 : offsetTracker, width: horizontalLayout ? width * ratio : width, height: horizontalLayout ? height : height * ratio)
-
-            if fixedValue > -1 && horizontalLayout {
-                childFrame.size.width = fixedValue
+            
+            if instruction.layoutType == .fixed {
+                layoutValue = instruction.value
             }
-
-            if fixedValue > -1 && !horizontalLayout {
-                childFrame.size.height = fixedValue
+            
+            if instruction.layoutType == .automatic {
+                layoutValue = layoutHandler.staticValue
             }
-
+            
+            let childFrame = CGRect(x: horizontalLayout ? offsetTracker : 0.0, y: horizontalLayout ? 0.0 : offsetTracker, width: horizontalLayout ? layoutValue * ratio : width, height: horizontalLayout ? height : layoutValue * ratio)
+            
             offsetTracker += horizontalLayout ? childFrame.size.width : childFrame.size.height
-
+            
             var targetFrame = childFrame.insetBy(dx: padding, dy: padding)
             targetFrame = targetFrame.inset(by: edgeInsets)
             childView.frame = targetFrame
-
+            
             if (clipsAllSubviews) {
                 childView.clipsToBounds = true
             }
-
-            counter += 1
         }
-
+        
         if preventAnimations {
             CATransaction.commit()
         }
-
+        
         didLayoutSubviews?()
+    }
+    
+    public override func sizeThatFits(_ size: CGSize) -> CGSize {
+        if !layoutPass {
+            return super.sizeThatFits(size)
+        }
+        
+        if sizeThatFitsCache == nil {
+            layoutSubviews()
+            
+            var largestValue: CGFloat = 0
+            var largestSubview: UIView?
+            var largestLimitingSize: CGSize = .zero
+            
+            for subview in subviews {
+                if (!subview.isKind(of: UILabel.self) && !subview.isKind(of: PerformLabel.self) ) {
+                    continue
+                }
+                let limitingSize: CGSize = .init(width: direction == .horizontal ? subview.frame.size.width : .infinity, height: direction == .horizontal ? .infinity : subview.bounds.size.height)
+                let size = subview.sizeThatFits(limitingSize)
+                let relevantValue = direction == .vertical ? size.height : size.width
+                if (largestValue < relevantValue) {
+                    largestValue = relevantValue
+                    largestSubview = subview
+                    largestLimitingSize = limitingSize
+                }
+            }
+            
+            let edgeInstets = handlerContainer[largestSubview!]!.getLayoutInstruction(bounds).edgeInsets
+            var additionalPadding: CGFloat = 0
+            if direction == .vertical {
+                additionalPadding += (edgeInstets.top + edgeInstets.bottom)
+            } else {
+                additionalPadding += (edgeInstets.left + edgeInstets.right)
+            }
+            sizeThatFitsCache = SizeThatFitsCache(largestSubview: largestSubview, limitingSize: largestLimitingSize, forSize: size, largestValue: largestValue, additionalPadding: additionalPadding)
+        }
+        
+        if sizeThatFitsCache?.largestValue ?? 0 > (0 as CGFloat) {
+            let largestValue = sizeThatFitsCache!.largestSubview!.sizeThatFits(sizeThatFitsCache!.limitingSize).height + sizeThatFitsCache!.additionalPadding
+            return .init(width: 0, height: largestValue)
+        }
+        
+        return .init(width: 300, height: 300)
     }
 }
 
@@ -487,6 +380,9 @@ public enum SplitViewPaddingDirection: Int {
 
 public extension SplitView {
     func insertSafeAreaInsetsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection) {
+        
+        observingSuperviewSafeAreaInsets = true
+        
         unowned let weakParentView = parentView
         let padding = UIView()
         self.addSubview(padding) { (parentRect) -> SplitViewLayoutInstruction in
@@ -494,17 +390,23 @@ public extension SplitView {
             if #available(iOS 11.0, *) {
                 let insets = weakParentView.safeAreaInsets
                 switch paddingDirection {
-                    case .top:
-                        insetValue = insets.top
-                    case .left:
-                        insetValue = insets.left
-                    case .bottom:
-                        insetValue = insets.bottom
-                    case .right:
-                        insetValue = insets.right
+                case .top:
+                    insetValue = insets.top
+                case .left:
+                    insetValue = insets.left
+                case .bottom:
+                    insetValue = insets.bottom
+                case .right:
+                    insetValue = insets.right
                 }
             }
             return SplitViewLayoutInstruction(layoutType: .fixed, value: insetValue)
+        }
+    }
+    
+    override func safeAreaInsetsDidChange() {
+        if observingSuperviewSafeAreaInsets {
+            invalidateLayout()
         }
     }
     
