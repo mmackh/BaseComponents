@@ -8,7 +8,7 @@ BaseComponents aims to provide easily reusable and understandable components to 
 
 ### Components Roadmap
 
-#### Render Data (UITableView / UICollectionView)
+#### Display multiple Models on Cells
 - [x] DataRender
 
 #### Layout
@@ -23,7 +23,10 @@ BaseComponents aims to provide easily reusable and understandable components to 
 - [x] ControlClosures
 - [x] Conveniences
 
-#### UI Components
+#### UI Reimplementations
+- [x] PerformLabel
+
+#### UI Conveniences
 - [ ] ActionSheet
 - [ ] ProgressIndicator
 

@@ -35,6 +35,8 @@ public class PerformLabel: UIView {
         
         isOpaque = false
         isUserInteractionEnabled = false
+        
+        isAccessibilityElement = true
     }
     
     required init?(coder: NSCoder) {
@@ -50,6 +52,14 @@ public class PerformLabel: UIView {
     open var text: String = "" {
         didSet {
             setNeedsDisplay()
+        }
+    }
+    
+    public override var accessibilityLabel: String? {
+        get {
+            return text
+        }
+        set {
         }
     }
     
