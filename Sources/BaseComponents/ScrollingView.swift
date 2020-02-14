@@ -40,6 +40,7 @@ public class ScrollingViewLayoutInstruction {
     var value: CGFloat = 0
     var layoutType: ScrollingViewLayoutType = .fixed
     var edgeInsets: UIEdgeInsets = UIEdgeInsets.zero
+    weak var determineSizeBasedOnView: UIView?
 
     public convenience init(layoutType: ScrollingViewLayoutType) {
         self.init()
@@ -64,13 +65,44 @@ public class ScrollingViewLayoutInstruction {
 }
 
 public class ScrollingSplitView: SplitView {
-    
     public override func addSubview(_ view: UIView, layoutType: SplitViewLayoutType, value: CGFloat, edgeInsets: UIEdgeInsets) {
         super.addSubview(view, layoutType: layoutType, value: value, edgeInsets: edgeInsets)
     }
     
     public override func addSubview(_ view: UIView, valueHandler: @escaping (CGRect) -> SplitViewLayoutInstruction) {
         super.addSubview(view, valueHandler: valueHandler)
+    }
+}
+
+public class ScrollingSplitViewLayoutInstruction: ScrollingViewLayoutInstruction {
+    @available(*, unavailable)
+    public convenience init(layoutType: ScrollingViewLayoutType) {
+        self.init()
+    }
+    
+    @available(*, unavailable)
+    public convenience init(layoutType: ScrollingViewLayoutType, value: CGFloat) {
+        self.init()
+    }
+    
+    @available(*, unavailable)
+    public convenience init(layoutType: ScrollingViewLayoutType, value: CGFloat, edgeInsets: UIEdgeInsets) {
+        self.init()
+    }
+    
+    public convenience init(fixedLayoutTypeValue: CGFloat, edgeInsets: UIEdgeInsets = .zero) {
+        self.init()
+        
+        self.layoutType = .fixed
+        self.value = fixedLayoutTypeValue
+        self.edgeInsets = edgeInsets
+    }
+    
+    public convenience init(automaticLayoutTypeDetermineSizeBasedOn view: UIView?) {
+        self.init()
+        
+        self.layoutType = .automatic
+        self.determineSizeBasedOnView = view
     }
 }
 
@@ -125,7 +157,7 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         (self as UIView).addSubview(view)
     }
     
-    public func addScrollingSplitView(configurationHandler: (_ splitView: ScrollingSplitView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> ScrollingViewLayoutInstruction) {
+    public func addScrollingSplitView(configurationHandler: (_ splitView: ScrollingSplitView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> ScrollingSplitViewLayoutInstruction) {
         
         let splitView = ScrollingSplitView()
         configurationHandler(splitView)
@@ -169,16 +201,27 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
                 if (layout.layoutType == .automatic) {
                     let mockFrame = CGRect(x: offsetTrackerX, y: offsetTrackerY, width: (vertical ? clampValue : 10), height: (vertical ? clampValue : 10))
                     
-                    if view.isKind(of: SplitView.self) {
-                        let splitView = view as! SplitView
-                        if !splitView.layoutPass {
+                    var size: CGSize = .zero
+                    if view.isKind(of: ScrollingSplitView.self) {
+                        let scrollingSplitView = view as! ScrollingSplitView
+                        if !layoutPass {
                             view.frame = mockFrame
-                            splitView.layoutPass = true
+                            scrollingSplitView.invalidateLayout()
+                        }
+                        if let sizeView = layout.determineSizeBasedOnView {
+                            size = sizeView.sizeThatFits(.init(width: vertical ? sizeView.bounds.size.width : .infinity, height: vertical ? .infinity : sizeView.bounds.size.height))
+                            let instruction = scrollingSplitView.layoutInstruction(for: sizeView)
+                            if vertical {
+                                size.height += instruction.edgeInsets.top + instruction.edgeInsets.bottom;
+                            } else {
+                                size.width += instruction.edgeInsets.left + instruction.edgeInsets.right;
+                            }
                         }
                     } else {
                         view.frame = mockFrame
+                        size = view.sizeThatFits(.init(width: vertical ? clampValue - (layout.edgeInsets.left + layout.edgeInsets.right) : .infinity, height: vertical ? .infinity : clampValue - (layout.edgeInsets.top + layout.edgeInsets.bottom)))
                     }
-                    let size = view.sizeThatFits(.init(width: vertical ? clampValue - (layout.edgeInsets.left + layout.edgeInsets.right) : .infinity, height: vertical ? .infinity : clampValue - (layout.edgeInsets.top + layout.edgeInsets.bottom)))
+                    
                     layoutValue = vertical ? (size.height + layout.edgeInsets.top + layout.edgeInsets.bottom) : (size.width + layout.edgeInsets.left + layout.edgeInsets.right)
                 }
                 

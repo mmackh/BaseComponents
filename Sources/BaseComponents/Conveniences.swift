@@ -322,8 +322,8 @@ public extension UIImageView {
         currentRequest?.cancel()
         
         let request = NetFetchRequest(urlString: urlString) { [weak self] (response) in
-            if let data = response.data {
-                DispatchQueue.global(qos: .default).async {
+            DispatchQueue.global(qos: .default).async {
+                if let data = response.data {
                     if let image = UIImage(data: data) {
                         Static.Cache.storeCachedResponse(CachedURLResponse(response: response.urlResponse!, data: data), for: response.urlRequest!)
                         DispatchQueue.main.async {
@@ -336,12 +336,18 @@ public extension UIImageView {
             }
         }
         
+        image = placeholderImage
+        request.cachePolicy = .returnCacheDataElseLoad
+        setCurrentFetchRequest(request)
+        
         if let urlRequest = request.urlRequest() {
             if let response = Static.Cache.cachedResponse(for: urlRequest) {
                 DispatchQueue.global(qos: .default).async { [weak self] in
                     if let image = UIImage(data: response.data) {
                         DispatchQueue.main.async {
-                            self?.image = image
+                            if (urlRequest.url?.absoluteString == self?.currentFetchRequest()?.urlString) {
+                                self?.image = image
+                            }
                         }
                     }
                 }
@@ -349,10 +355,7 @@ public extension UIImageView {
             }
         }
         
-        image = placeholderImage
-        request.cachePolicy = .returnCacheDataElseLoad
         NetFetch.fetch(request)
-        setCurrentFetchRequest(request)
         
         return self
     }

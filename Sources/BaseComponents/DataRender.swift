@@ -112,6 +112,8 @@ open class DataRender: UIView {
     fileprivate var configuration: DataRenderConfiguration!
     
     fileprivate var dimensionCache: Dictionary<Int, Dictionary<AnyHashable, CGSize>> = Dictionary()
+    fileprivate var dimensionCell: UITableViewCell?
+    fileprivate var dimensionScrollingView: ScrollingView?
     
     public private(set) var mode: DataRenderMode = .table
     
@@ -128,37 +130,43 @@ open class DataRender: UIView {
         
         tableView?.insetsContentViewsToSafeArea = false
         
-        let cell = (configuration.cellClass as! UITableViewCell.Type).init(style: .default, reuseIdentifier: "Cell")
-        if case let scrollingView as ScrollingView = cell.contentView.subviews.first {
-            scrollingView.layoutPass = true
-            self.itemSizeHandler { (itemLayoutProperties) -> CGSize in
-                let width = Int(itemLayoutProperties.renderBounds.width);
-                let cacheKey: AnyHashable = cacheKeyHandler(itemLayoutProperties)
-                
-                if width == 0 {
-                    return .zero
+        self.itemSizeHandler { [unowned self] (itemLayoutProperties) -> CGSize in
+            
+            if self.dimensionCell == nil {
+                self.dimensionCell = (self.configuration.cellClass as! UITableViewCell.Type).init(style: .default, reuseIdentifier: "Cell")
+                if case let scrollingView as ScrollingView = self.dimensionCell?.contentView.subviews.first {
+                    self.dimensionScrollingView = scrollingView
+                } else {
+                    print("DataRender Error: No ScrollingView found as first subview of contentView")
                 }
-                
-                var cachedSize = self.dimensionCache[width]?[cacheKey]
-                if cachedSize != nil {
-                    return cachedSize!
-                }
-                UIView.performWithoutAnimation {
-                    if (self.dimensionCache[width] == nil) {
-                        self.dimensionCache[width] = Dictionary()
-                        
-                        cell.frame = .init(x: 0, y: 0, width: itemLayoutProperties.renderBounds.width, height: 0)
-                        cell.layoutSubviews()
-                    }
-                    cell.bindObjectForLayoutPass(itemLayoutProperties.object)
-                    scrollingView.invalidateLayout()
-                    cachedSize = scrollingView.estimatedContentSize()
-                }
-                self.dimensionCache[width]?[cacheKey] = cachedSize
+            }
+            
+            let width = Int(itemLayoutProperties.renderBounds.width);
+            let cacheKey: AnyHashable = cacheKeyHandler(itemLayoutProperties)
+            
+            if width == 0 {
+                return .zero
+            }
+            
+            var cachedSize = self.dimensionCache[width]?[cacheKey]
+            if cachedSize != nil {
                 return cachedSize!
             }
-        } else {
-            print("DataRender Error: No ScrollingView found as first subview of contentView")
+            
+            if (self.dimensionCache[width] == nil) {
+                self.dimensionCache[width] = Dictionary()
+                
+                self.dimensionScrollingView?.layoutPass = false
+                self.dimensionScrollingView?.bounds = .init(x: 0, y: 0, width: itemLayoutProperties.renderBounds.width, height: 0)
+                self.dimensionScrollingView?.invalidateLayout()
+                self.dimensionScrollingView?.layoutPass = true
+            }
+            self.dimensionCell?.bindObjectForLayoutPass(itemLayoutProperties.object)
+            self.dimensionScrollingView?.invalidateLayout()
+            cachedSize = self.dimensionScrollingView?.contentSize ?? .zero
+            
+            self.dimensionCache[width]?[cacheKey] = cachedSize
+            return cachedSize!
         }
     }
     
@@ -514,15 +522,15 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
         super.layoutSubviews()
     }
     
+    
     override open func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         if #available(iOS 10.0, *) {
             if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
-                DispatchQueue.main.async {
-                    if self.itemAutomaticRowHeightCacheKeyHandler != nil {
-                        self.dimensionCache.removeAll(keepingCapacity: true)
-                        self.tableView?.beginUpdates()
-                        self.tableView?.endUpdates()
-                    }
+                
+                if self.itemAutomaticRowHeightCacheKeyHandler != nil {
+                    self.dimensionCell = nil
+                    self.dimensionCache.removeAll(keepingCapacity: true)
+                    self.tableView?.reloadData()
                 }
             }
         }

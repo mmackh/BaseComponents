@@ -38,14 +38,6 @@ private class SplitViewHandler {
     }
 }
 
-private struct SizeThatFitsCache {
-    let largestSubview: UIView?
-    var limitingSize: CGSize
-    var forSize: CGSize
-    var largestValue: CGFloat
-    var additionalPadding: CGFloat
-}
-
 public class SplitViewLayoutInstruction {
     var value: CGFloat = 0
     var layoutType: SplitViewLayoutType = .equal
@@ -91,11 +83,6 @@ public class SplitView: UIView {
     
     private var boundsCache: CGRect?
     private var observingSuperviewSafeAreaInsets = false
-    
-    private var sizeThatFitsCache: SizeThatFitsCache?
-    
-    
-    public var layoutPass: Bool = false
     
     @discardableResult
     public convenience init(superview: UIView, configurationHandler: (_ splitView: SplitView) -> Void) {
@@ -183,6 +170,10 @@ public class SplitView: UIView {
         
         setNeedsLayout()
         layoutIfNeeded()
+    }
+    
+    public func layoutInstruction(for view: UIView) -> SplitViewLayoutInstruction {
+        return handlerContainer[view]!.getLayoutInstruction(bounds)
     }
 }
 
@@ -322,50 +313,6 @@ extension SplitView {
         }
         
         didLayoutSubviews?()
-    }
-    
-    public override func sizeThatFits(_ size: CGSize) -> CGSize {
-        if !layoutPass {
-            return super.sizeThatFits(size)
-        }
-        
-        if sizeThatFitsCache == nil {
-            layoutSubviews()
-            
-            var largestValue: CGFloat = 0
-            var largestSubview: UIView?
-            var largestLimitingSize: CGSize = .zero
-            
-            for subview in subviews {
-                if (!subview.isKind(of: UILabel.self) && !subview.isKind(of: PerformLabel.self) ) {
-                    continue
-                }
-                let limitingSize: CGSize = .init(width: direction == .horizontal ? subview.frame.size.width : .infinity, height: direction == .horizontal ? .infinity : subview.bounds.size.height)
-                let size = subview.sizeThatFits(limitingSize)
-                let relevantValue = direction == .vertical ? size.height : size.width
-                if (largestValue < relevantValue) {
-                    largestValue = relevantValue
-                    largestSubview = subview
-                    largestLimitingSize = limitingSize
-                }
-            }
-            
-            let edgeInstets = handlerContainer[largestSubview!]!.getLayoutInstruction(bounds).edgeInsets
-            var additionalPadding: CGFloat = 0
-            if direction == .vertical {
-                additionalPadding += (edgeInstets.top + edgeInstets.bottom)
-            } else {
-                additionalPadding += (edgeInstets.left + edgeInstets.right)
-            }
-            sizeThatFitsCache = SizeThatFitsCache(largestSubview: largestSubview, limitingSize: largestLimitingSize, forSize: size, largestValue: largestValue, additionalPadding: additionalPadding)
-        }
-        
-        if sizeThatFitsCache?.largestValue ?? 0 > (0 as CGFloat) {
-            let largestValue = sizeThatFitsCache!.largestSubview!.sizeThatFits(sizeThatFitsCache!.limitingSize).height + sizeThatFitsCache!.additionalPadding
-            return .init(width: 0, height: largestValue)
-        }
-        
-        return .init(width: 300, height: 300)
     }
 }
 
