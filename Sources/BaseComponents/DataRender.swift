@@ -44,8 +44,11 @@ extension UITableViewCell {
     @objc open func bindObject(_ obj: AnyObject) {
     }
     
-    /// To ensure the calculation of the ScrollingView for automaticRowHeight is correct and performant, only bind necessary data, such as text, to the views. Data or network calls should only be made in bindObject:
-    @objc open func bindObjectForLayoutPass(_ obj: AnyObject) {
+    open func isLayoutPass() -> Bool {
+        if self.contentView.tag == 2 {
+            return true
+        }
+        return false
     }
 }
 
@@ -106,8 +109,8 @@ open class DataRender: UIView {
     
     fileprivate var renderMultiDimensionalArray = false
     
-    fileprivate var tableView: UITableView?
-    fileprivate var collectionView: UICollectionView?
+    public var tableView: UITableView?
+    public var collectionView: UICollectionView?
     
     fileprivate var configuration: DataRenderConfiguration!
     
@@ -129,7 +132,7 @@ open class DataRender: UIView {
         self.itemAutomaticRowHeightCacheKeyHandler = cacheKeyHandler
         
         tableView?.insetsContentViewsToSafeArea = false
-        
+    
         self.itemSizeHandler { [unowned self] (itemLayoutProperties) -> CGSize in
             
             if self.dimensionCell == nil {
@@ -153,7 +156,7 @@ open class DataRender: UIView {
                 return cachedSize!
             }
             
-            if (self.dimensionCache[width] == nil) {
+            if self.dimensionCache[width] == nil {
                 self.dimensionCache[width] = Dictionary()
                 
                 self.dimensionScrollingView?.layoutPass = false
@@ -161,12 +164,37 @@ open class DataRender: UIView {
                 self.dimensionScrollingView?.invalidateLayout()
                 self.dimensionScrollingView?.layoutPass = true
             }
-            self.dimensionCell?.bindObjectForLayoutPass(itemLayoutProperties.object)
+            self.dimensionCell?.contentView.tag = 2
+            if self.beforeBind != nil {
+                unowned let cell = self.dimensionCell!
+                self.beforeBind!(DataRenderItemRenderProperties(indexPath: itemLayoutProperties.indexPath, cell: cell, object: itemLayoutProperties.object, render: itemLayoutProperties.render))
+            }
+            self.dimensionCell?.bindObject(itemLayoutProperties.object)
             self.dimensionScrollingView?.invalidateLayout()
             cachedSize = self.dimensionScrollingView?.contentSize ?? .zero
             
             self.dimensionCache[width]?[cacheKey] = cachedSize
             return cachedSize!
+        }
+    }
+    
+    public func recalculateAutomaticHeight(for objects: [AnyHashable] = [], animated: Bool = true) {
+        if objects.count == 0 {
+            dimensionCache.removeAll(keepingCapacity: true)
+        } else {
+            let dimensionCacheCopy = self.dimensionCache
+            for object in objects {
+                for (key, _) in dimensionCacheCopy {
+                    self.dimensionCache[key]?.removeValue(forKey: object)
+                }
+            }
+        }
+        
+        if animated {
+            tableView?.beginUpdates()
+            tableView?.endUpdates()
+        } else {
+            tableView?.reloadData()
         }
     }
     

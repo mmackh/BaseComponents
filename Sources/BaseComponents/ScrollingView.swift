@@ -98,11 +98,12 @@ public class ScrollingSplitViewLayoutInstruction: ScrollingViewLayoutInstruction
         self.edgeInsets = edgeInsets
     }
     
-    public convenience init(automaticLayoutTypeDetermineSizeBasedOn view: UIView?) {
+    public convenience init(automaticLayoutTypeDetermineSizeBasedOn view: UIView?, edgeInsets: UIEdgeInsets = .zero) {
         self.init()
         
         self.layoutType = .automatic
         self.determineSizeBasedOnView = view
+        self.edgeInsets = edgeInsets
     }
 }
 
@@ -157,7 +158,8 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         (self as UIView).addSubview(view)
     }
     
-    public func addScrollingSplitView(configurationHandler: (_ splitView: ScrollingSplitView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> ScrollingSplitViewLayoutInstruction) {
+    @discardableResult
+    public func addScrollingSplitView(configurationHandler: (_ splitView: ScrollingSplitView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> ScrollingSplitViewLayoutInstruction) -> ScrollingSplitView {
         
         let splitView = ScrollingSplitView()
         configurationHandler(splitView)
@@ -168,6 +170,8 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         layoutHandlers[splitView] = handler
 
         (self as UIView).addSubview(splitView)
+        
+        return splitView
     }
     
     public override func willRemoveSubview(_ subview: UIView) {
@@ -196,6 +200,10 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         var offsetTrackerY: CGFloat = 0.0
         
         for view in subviews {
+            if view.isHidden {
+                continue
+            }
+            
             if let layout = layoutHandlers[view]?.getLayoutInstruction(bounds) {
                 var layoutValue = layout.value
                 if (layout.layoutType == .automatic) {
@@ -256,14 +264,8 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         }
         return target
     }
-}
-
-/*
- Self-sizing cell support
- */
-public extension ScrollingView {
-    func estimatedContentSize() -> CGSize {
-        layoutSubviews()
+    
+    public override func sizeThatFits(_ size: CGSize) -> CGSize {
         return contentSize
     }
 }

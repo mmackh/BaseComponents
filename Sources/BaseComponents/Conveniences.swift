@@ -27,6 +27,7 @@ public struct UICustomFontStyle: OptionSet {
     public static let bold = UICustomFontStyle(rawValue: 1 << 0)
     public static let italic = UICustomFontStyle(rawValue: 1 << 1)
     public static let monoSpace = UICustomFontStyle(rawValue: 1 << 2)
+    public static let monoSpaceDigit = UICustomFontStyle(rawValue: 1 << 3)
     
     public init(rawValue: Int) {
         self.rawValue = rawValue
@@ -35,6 +36,10 @@ public struct UICustomFontStyle: OptionSet {
 
 public extension UIFont {
     static func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UICustomFontStyle = []) -> UIFont {
+        if fontStyle.contains(.monoSpaceDigit) {
+            let bodyMetrics = UIFontMetrics(forTextStyle: textStyle)
+            return bodyMetrics.scaledFont(for: UIFont.monospacedDigitSystemFont(ofSize: 17, weight: fontStyle.contains(.bold) ? .bold : .regular))
+        }
         var font = UIFont.preferredFont(forTextStyle: textStyle)
         if (fontStyle != []) {
             var traits: UIFontDescriptor.SymbolicTraits = []
@@ -131,6 +136,55 @@ public extension UILabel {
         if #available(iOS 10.0, *) {
             adjustsFontForContentSizeCategory = true
         }
+        return self
+    }
+    
+    @discardableResult
+    func size(using font: UIFont) -> Self {
+        self.font = font
+        return self
+    }
+}
+
+public extension PerformLabel {
+    convenience init(_ text: String) {
+        self.init()
+        self.text = text
+        lines(0)
+    }
+    
+    @discardableResult
+    func align(_ textAlignment: NSTextAlignment) -> Self {
+        self.textAlignment = textAlignment
+        return self
+    }
+
+    @discardableResult
+    override func color(_ target: UIColorTarget, _ color: UIColor) -> Self {
+        if (target == .text) {
+            textColor = color
+            return self
+        }
+        
+        super.color(target, color)
+        return self
+    }
+    
+    @discardableResult
+    func lines(_ numberOfLines: Int) -> Self {
+        self.numberOfLines = numberOfLines
+        return self
+    }
+    
+    @discardableResult
+    func text(_ text: String?) -> Self {
+        self.text = text ?? ""
+        return self
+    }
+    
+    @discardableResult
+    func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UICustomFontStyle = []) -> Self {
+        self.font = UIFont.size(textStyle, fontStyle)
         return self
     }
     
@@ -322,7 +376,7 @@ public extension UIImageView {
         currentRequest?.cancel()
         
         let request = NetFetchRequest(urlString: urlString) { [weak self] (response) in
-            DispatchQueue.global(qos: .default).async {
+            DispatchQueue.global(qos: .userInteractive).async {
                 if let data = response.data {
                     if let image = UIImage(data: data) {
                         Static.Cache.storeCachedResponse(CachedURLResponse(response: response.urlResponse!, data: data), for: response.urlRequest!)
@@ -341,8 +395,8 @@ public extension UIImageView {
         setCurrentFetchRequest(request)
         
         if let urlRequest = request.urlRequest() {
-            if let response = Static.Cache.cachedResponse(for: urlRequest) {
-                DispatchQueue.global(qos: .default).async { [weak self] in
+            DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+                if let response = Static.Cache.cachedResponse(for: urlRequest) {
                     if let image = UIImage(data: response.data) {
                         DispatchQueue.main.async {
                             if (urlRequest.url?.absoluteString == self?.currentFetchRequest()?.urlString) {
@@ -350,12 +404,12 @@ public extension UIImageView {
                             }
                         }
                     }
+                } else {
+                    NetFetch.fetch(request)
                 }
-                return self
             }
         }
         
-        NetFetch.fetch(request)
         
         return self
     }

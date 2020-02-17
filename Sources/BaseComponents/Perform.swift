@@ -130,7 +130,8 @@ public class PerformLabel: UIView {
         if targetRect.size.height > size.height {
             targetRect.origin.y = (targetRect.size.height - size.height) / 2
         }
-        attributedStringToDraw!.draw(in: targetRect)
+        
+        attributedStringToDraw!.draw(in: targetRect.integral)
     }
     
     public override func setNeedsDisplay() {
@@ -149,54 +150,5 @@ public class PerformLabel: UIView {
     
     fileprivate func range() -> NSRange {
         return .init(location: 0, length: text.count)
-    }
-}
-
-public extension PerformLabel {
-    convenience init(_ text: String) {
-        self.init()
-        self.text = text
-        lines(0)
-    }
-    
-    @discardableResult
-    func align(_ textAlignment: NSTextAlignment) -> Self {
-        self.textAlignment = textAlignment
-        return self
-    }
-
-    @discardableResult
-    override func color(_ target: UIColorTarget, _ color: UIColor) -> Self {
-        if (target == .text) {
-            textColor = color
-            return self
-        }
-        
-        super.color(target, color)
-        return self
-    }
-    
-    @discardableResult
-    func lines(_ numberOfLines: Int) -> Self {
-        self.numberOfLines = numberOfLines
-        return self
-    }
-    
-    @discardableResult
-    func text(_ text: String?) -> Self {
-        self.text = text ?? ""
-        return self
-    }
-    
-    @discardableResult
-    func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UICustomFontStyle = []) -> Self {
-        self.font = UIFont.size(textStyle, fontStyle)
-        return self
-    }
-    
-    @discardableResult
-    func size(using font: UIFont) -> Self {
-        self.font = font
-        return self
     }
 }
