@@ -58,7 +58,7 @@ public class NetFetchRequest {
     public var cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
     public var retryOnFailure = false
     public var ignoreQueue = false
-    public weak var dataTask: URLSessionDataTask?
+    public var dataTask: URLSessionDataTask?
     
     public init(urlString: String, completionHandler: @escaping((NetFetchResponse)->())) {
         self.urlString = urlString
@@ -92,8 +92,12 @@ public class NetFetchRequest {
     
     public func cancel() {
         if let task = dataTask {
-            task.cancel()
-            return
+            if task.state == .running {
+                task.cancel()
+            }
+            if ignoreQueue {
+                return
+            }
         }
         
         NetFetch.removeRequest(self)
@@ -105,12 +109,16 @@ public class NetFetch {
     static private var queue: NSMutableArray = NSMutableArray()
     static private var currentTask: URLSessionDataTask?
     
-    static public func fetch(_ request: NetFetchRequest) {
+    static public func fetch(_ request: NetFetchRequest, priority: Bool = false) {
         if (request.ignoreQueue) {
             submitRequest(request)
             return
         }
-        queue.add(request)
+        if priority {
+            queue.insert(request, at: 0)
+        } else {
+            queue.add(request)
+        }
         processQueue()
     }
     
@@ -129,16 +137,24 @@ public class NetFetch {
             return
         }
 
-        request.dataTask = session.dataTask(with: urlRequest) { (data, urlResponse, error) in
+        request.dataTask = session.dataTask(with: urlRequest) { [weak request] (data, urlResponse, error) in
             
-            if (error != nil && request.retryOnFailure){
+            if error != nil && request?.retryOnFailure ?? false {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                     processQueue()
                 }
                 return
             }
             
-            DispatchQueue.main.async {
+            if let error = error {
+                let bridgedError = error as NSError
+                if bridgedError.code == NSURLErrorCancelled {
+                    return
+                }
+            }
+            
+            
+            if let request = request {
                 let response = NetFetchResponse()
                 response.data = data
                 response.urlRequest = urlRequest
@@ -146,12 +162,16 @@ public class NetFetch {
                 response.error = error
                 response.url = urlRequest.url
                 response.urlString = request.urlString
-                request.completionHandler(response)
-               
-                if (queue.count > 0) {
-                    queue.removeObject(at: 0)
+
+                DispatchQueue.main.async {
+                    request.completionHandler(response)
+
+                    if (queue.count > 0) {
+                        queue.removeObject(at: 0)
+                    }
+                    processQueue()
+                     
                 }
-                processQueue()
             }
         }
         request.dataTask!.resume()

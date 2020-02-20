@@ -567,7 +567,7 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
     func objectForIndexPath(_ indexPath: IndexPath) -> AnyObject {
         var object: AnyObject!
         if renderMultiDimensionalArray {
-            object = array[indexPath.section][indexPath.row]
+            object = (array[indexPath.section] as! Array)[indexPath.row]
         } else {
             object = array[indexPath.row]
         }

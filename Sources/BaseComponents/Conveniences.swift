@@ -61,14 +61,16 @@ public extension UIFont {
 }
 
 public extension UIColor {
-    @available(iOS 13.0, *)
     static func dynamic(light: UIColor, dark: UIColor) -> UIColor {
-        return UIColor { (traitCollection) -> UIColor in
-            if (traitCollection.userInterfaceStyle == .dark) {
-                return dark
+        if #available(iOS 13.0, *) {
+            return UIColor { (traitCollection) -> UIColor in
+                if (traitCollection.userInterfaceStyle == .dark) {
+                    return dark
+                }
+                return light
             }
-            return light
         }
+        return light
     }
     
     convenience init(hex: UInt64) {
@@ -350,9 +352,13 @@ public extension UIControl {
 public extension UIImageView {
     private struct Static {
         static var ImageViewRequestKey = "fetchRequestImageViewKey"
+        static let ImageViewQueue = DispatchQueue.init(label: "com.BaseComponents.UIImageView.Async")
         static let Cache: URLCache = {
-            URLCache.shared = URLCache(memoryCapacity: 20 * (1024 * 1024), diskCapacity: 200 * (1024 * 1024), diskPath: nil)
-            return URLCache.shared
+            #if targetEnvironment(macCatalyst)
+                return URLCache.shared
+            #else
+                return URLCache(memoryCapacity: 20 * (1024 * 1024), diskCapacity: 200 * (1024 * 1024), diskPath: nil)
+            #endif
         }()
     }
     
@@ -376,7 +382,7 @@ public extension UIImageView {
         currentRequest?.cancel()
         
         let request = NetFetchRequest(urlString: urlString) { [weak self] (response) in
-            DispatchQueue.global(qos: .userInteractive).async {
+            Static.ImageViewQueue.async {
                 if let data = response.data {
                     if let image = UIImage(data: data) {
                         Static.Cache.storeCachedResponse(CachedURLResponse(response: response.urlResponse!, data: data), for: response.urlRequest!)
@@ -389,13 +395,13 @@ public extension UIImageView {
                 }
             }
         }
-        
         image = placeholderImage
         request.cachePolicy = .returnCacheDataElseLoad
+        request.ignoreQueue = true
         setCurrentFetchRequest(request)
         
         if let urlRequest = request.urlRequest() {
-            DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+            Static.ImageViewQueue.async { [weak self] in
                 if let response = Static.Cache.cachedResponse(for: urlRequest) {
                     if let image = UIImage(data: response.data) {
                         DispatchQueue.main.async {
@@ -405,7 +411,7 @@ public extension UIImageView {
                         }
                     }
                 } else {
-                    NetFetch.fetch(request)
+                    NetFetch.fetch(request, priority: true)
                 }
             }
         }
