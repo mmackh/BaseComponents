@@ -59,13 +59,6 @@ public class SplitViewLayoutInstruction {
     }
 }
 
-class Weak<T: AnyObject> {
-  weak var object : T?
-  init(_ object: T) {
-    self.object = object
-  }
-}
-
 public class SplitView: UIView {
     public static let ExcludeLayoutTag = 102
     public static let onePixelHeight: CGFloat = 1 / UIScreen.main.scale
@@ -138,7 +131,7 @@ public class SplitView: UIView {
         let handler = SplitViewHandler()
         handler.valueHandler = valueHandler
         
-        handlerContainer[Weak(view).object] = handler
+        handlerContainer[view] = handler
         
         (self as UIView).addSubview(view)
     }
@@ -161,7 +154,7 @@ public class SplitView: UIView {
         handler.staticEdgeInsets = edgeInsets
         handler.layoutType = layoutType
         
-        handlerContainer[Weak(view).object] = handler
+        handlerContainer[view] = handler
         
         (self as UIView).addSubview(view)
     }
@@ -182,7 +175,11 @@ public class SplitView: UIView {
     }
     
     public func layoutInstruction(for view: UIView) -> SplitViewLayoutInstruction {
-        return handlerContainer[Weak(view).object]!.getLayoutInstruction(bounds)
+        return handlerContainer[view]!.getLayoutInstruction(bounds)
+    }
+    
+    deinit {
+        handlerContainer.removeAll()
     }
 }
 
@@ -235,7 +232,7 @@ extension SplitView {
         var numberOfLayoutTypeEqualSubviews: CGFloat = 0.0
         
         for subview in subviews {
-            let layoutHandler = handlerContainer[Weak(subview).object]!
+            let layoutHandler = handlerContainer[subview]!
             let instruction = layoutHandler.getLayoutInstruction(bounds)
             
             if instruction.layoutType == .percentage {
@@ -280,7 +277,7 @@ extension SplitView {
         let height = bounds.size.height - (horizontalLayout ? 0.0 : fixedValuesSum)
         
         for childView in subviews {
-            let layoutHandler = handlerContainer[Weak(childView).object]!
+            let layoutHandler = handlerContainer[childView]!
             let instruction = layoutHandler.getLayoutInstruction(bounds)
             
             let edgeInsets = instruction.edgeInsets
