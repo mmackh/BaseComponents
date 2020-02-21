@@ -91,7 +91,7 @@ public class PerformLabel: UIView {
         if text.count > 0 {
             
             let totalRange = range()
-            let mutableAttributedString = NSMutableAttributedString(string: text)
+            let mutableAttributedString = NSMutableAttributedString(string: self.text)
             if let textColor = textColor {
                 mutableAttributedString.addAttribute(.foregroundColor, value: textColor, range: totalRange)
             } else {

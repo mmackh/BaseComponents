@@ -19,7 +19,7 @@ import Foundation
 public class NetFetchResponse {
     public var data: Data?
     public var urlRequest: URLRequest?
-    public var urlResponse: URLResponse?
+    public weak var urlResponse: URLResponse?
     public var error: Error?
     public var url: URL?
     public var urlString: String?
@@ -58,7 +58,7 @@ public class NetFetchRequest {
     public var cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
     public var retryOnFailure = false
     public var ignoreQueue = false
-    public var dataTask: URLSessionDataTask?
+    public weak var dataTask: URLSessionDataTask?
     
     public init(urlString: String, completionHandler: @escaping((NetFetchResponse)->())) {
         self.urlString = urlString
@@ -137,13 +137,21 @@ public class NetFetch {
             return
         }
 
-        request.dataTask = session.dataTask(with: urlRequest) { [weak request] (data, urlResponse, error) in
+        request.dataTask = session.dataTask(with: urlRequest) { (data, urlResponse, error) in
             
-            if error != nil && request?.retryOnFailure ?? false {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                    processQueue()
+            if error != nil {
+                if request.retryOnFailure {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                        processQueue()
+                    }
+                    return
+                } else {
+                    DispatchQueue.main.async {
+                        removeRequest(request)
+                        processQueue()
+                    }
+                    return
                 }
-                return
             }
             
             if let error = error {
@@ -153,25 +161,21 @@ public class NetFetch {
                 }
             }
             
-            
-            if let request = request {
-                let response = NetFetchResponse()
-                response.data = data
-                response.urlRequest = urlRequest
-                response.urlResponse = urlResponse
-                response.error = error
-                response.url = urlRequest.url
-                response.urlString = request.urlString
+            let response = NetFetchResponse()
+            response.data = data
+            response.urlRequest = urlRequest
+            response.urlResponse = urlResponse
+            response.error = error
+            response.url = urlRequest.url
+            response.urlString = request.urlString
 
-                DispatchQueue.main.async {
-                    request.completionHandler(response)
-
-                    if (queue.count > 0) {
-                        queue.removeObject(at: 0)
-                    }
-                    processQueue()
-                     
+            DispatchQueue.main.async {
+                request.completionHandler(response)
+                if (queue.count > 0) {
+                    queue.removeObject(at: 0)
                 }
+                processQueue()
+                 
             }
         }
         request.dataTask!.resume()

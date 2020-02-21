@@ -59,6 +59,13 @@ public class SplitViewLayoutInstruction {
     }
 }
 
+class Weak<T: AnyObject> {
+  weak var object : T?
+  init(_ object: T) {
+    self.object = object
+  }
+}
+
 public class SplitView: UIView {
     public static let ExcludeLayoutTag = 102
     public static let onePixelHeight: CGFloat = 1 / UIScreen.main.scale
@@ -79,7 +86,7 @@ public class SplitView: UIView {
         self.didLayoutSubviews = didLayoutSubviews
     }
     
-    private var handlerContainer: Dictionary<UIView, SplitViewHandler> = Dictionary()
+    private var handlerContainer: Dictionary<AnyHashable, SplitViewHandler> = Dictionary()
     
     private var boundsCache: CGRect?
     private var observingSuperviewSafeAreaInsets = false
@@ -93,7 +100,8 @@ public class SplitView: UIView {
             print("use 'superSplitView' and valueHandler to add childSplitViews, this will most likely crash your app otherwise - no way to deterministically lay out this SplitView instance")
         }
         
-        configurationHandler(self)
+        unowned let weakSelf = self
+        configurationHandler(weakSelf)
         
         superview.addSubview(self)
         snapToSuperview()
@@ -104,7 +112,8 @@ public class SplitView: UIView {
     public convenience init(superSplitView: SplitView, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction, configurationHandler: (_ splitView: SplitView) -> Void) {
         self.init()
         
-        configurationHandler(self)
+        unowned let weakSelf = self
+        configurationHandler(weakSelf)
         
         superSplitView.addSubview(self, valueHandler: valueHandler)
     }
@@ -129,7 +138,7 @@ public class SplitView: UIView {
         let handler = SplitViewHandler()
         handler.valueHandler = valueHandler
         
-        handlerContainer[view] = handler
+        handlerContainer[Weak(view).object] = handler
         
         (self as UIView).addSubview(view)
     }
@@ -152,7 +161,7 @@ public class SplitView: UIView {
         handler.staticEdgeInsets = edgeInsets
         handler.layoutType = layoutType
         
-        handlerContainer[view] = handler
+        handlerContainer[Weak(view).object] = handler
         
         (self as UIView).addSubview(view)
     }
@@ -173,7 +182,7 @@ public class SplitView: UIView {
     }
     
     public func layoutInstruction(for view: UIView) -> SplitViewLayoutInstruction {
-        return handlerContainer[view]!.getLayoutInstruction(bounds)
+        return handlerContainer[Weak(view).object]!.getLayoutInstruction(bounds)
     }
 }
 
@@ -226,7 +235,7 @@ extension SplitView {
         var numberOfLayoutTypeEqualSubviews: CGFloat = 0.0
         
         for subview in subviews {
-            let layoutHandler = handlerContainer[subview]!
+            let layoutHandler = handlerContainer[Weak(subview).object]!
             let instruction = layoutHandler.getLayoutInstruction(bounds)
             
             if instruction.layoutType == .percentage {
@@ -271,7 +280,7 @@ extension SplitView {
         let height = bounds.size.height - (horizontalLayout ? 0.0 : fixedValuesSum)
         
         for childView in subviews {
-            let layoutHandler = handlerContainer[childView]!
+            let layoutHandler = handlerContainer[Weak(childView).object]!
             let instruction = layoutHandler.getLayoutInstruction(bounds)
             
             let edgeInsets = instruction.edgeInsets

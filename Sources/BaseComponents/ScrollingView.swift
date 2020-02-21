@@ -121,7 +121,8 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     public convenience init(superview: UIView, configurationHandler: (_ scrollingView: ScrollingView) -> Void) {
         self.init()
         
-        configurationHandler(self)
+        unowned let weakSelf = self
+        configurationHandler(weakSelf)
         
         if (superview.isKind(of: SplitView.self)) {
             let superSplitView = superview as! SplitView
@@ -162,7 +163,8 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     public func addScrollingSplitView(configurationHandler: (_ splitView: ScrollingSplitView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> ScrollingSplitViewLayoutInstruction) -> ScrollingSplitView {
         
         let splitView = ScrollingSplitView()
-        configurationHandler(splitView)
+        unowned let weakSplitView = splitView
+        configurationHandler(weakSplitView)
         
         let handler = ScrollingViewHandler()
         handler.valueHandler = valueHandler
