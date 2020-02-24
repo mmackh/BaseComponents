@@ -144,6 +144,8 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         handler.layoutType = layoutType
         handler.staticValue = value
         handler.staticEdgeInsets = edgeInsets
+        
+        view.translatesAutoresizingMaskIntoConstraints = false
 
         layoutHandlers[view] = handler
 
@@ -153,6 +155,8 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     public func addSubview(_ view: UIView, valueHandler: @escaping (_ superviewBounds: CGRect) -> ScrollingViewLayoutInstruction) {
         let handler = ScrollingViewHandler()
         handler.valueHandler = valueHandler
+        
+        view.translatesAutoresizingMaskIntoConstraints = false
 
         layoutHandlers[view] = handler
 
@@ -215,7 +219,7 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
                     if view.isKind(of: ScrollingSplitView.self) {
                         let scrollingSplitView = view as! ScrollingSplitView
                         if !layoutPass {
-                            view.frame = mockFrame
+                            scrollingSplitView.frame = mockFrame.inset(by: layout.edgeInsets)
                             scrollingSplitView.invalidateLayout()
                         }
                         if let sizeView = layout.determineSizeBasedOnView {
@@ -227,12 +231,17 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
                                 size.width += instruction.edgeInsets.left + instruction.edgeInsets.right;
                             }
                         }
+                        
+                        layoutValue = vertical ? size.height : size.width
+                        
                     } else {
-                        view.frame = mockFrame
+                        if !layoutPass {
+                            view.frame = mockFrame
+                        }
                         size = view.sizeThatFits(.init(width: vertical ? clampValue - (layout.edgeInsets.left + layout.edgeInsets.right) : .infinity, height: vertical ? .infinity : clampValue - (layout.edgeInsets.top + layout.edgeInsets.bottom)))
+                        layoutValue = vertical ? (size.height + layout.edgeInsets.top + layout.edgeInsets.bottom) : (size.width + layout.edgeInsets.left + layout.edgeInsets.right)
                     }
                     
-                    layoutValue = vertical ? (size.height + layout.edgeInsets.top + layout.edgeInsets.bottom) : (size.width + layout.edgeInsets.left + layout.edgeInsets.right)
                 }
                 
                 var targetRect = CGRect(x: offsetTrackerX, y: offsetTrackerY, width: (vertical ? clampValue : layoutValue) , height: (vertical ? layoutValue : clampValue))

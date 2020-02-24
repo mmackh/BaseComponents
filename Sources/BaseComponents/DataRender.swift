@@ -160,8 +160,9 @@ open class DataRender: UIView {
                 self.dimensionCache[width] = Dictionary()
                 
                 self.dimensionScrollingView?.layoutPass = false
-                self.dimensionScrollingView?.bounds = .init(x: 0, y: 0, width: itemLayoutProperties.renderBounds.width, height: 0)
                 self.dimensionScrollingView?.invalidateLayout()
+                self.dimensionScrollingView?.frame = .init(x: 0, y: 0, width: itemLayoutProperties.renderBounds.width, height: 0)
+                self.dimensionScrollingView?.layoutSubviews()
                 self.dimensionScrollingView?.layoutPass = true
             }
             self.dimensionCell?.contentView.tag = 2

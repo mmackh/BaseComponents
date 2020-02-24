@@ -111,6 +111,7 @@ public class PerformLabel: UIView {
         guard attributedStringToDraw != nil else {
             return .zero
         }
+        
         if (sizeCache != nil && (sizeCache?.forSize.equalTo(size))!) {
             return sizeCache!.calculatedSize
         }

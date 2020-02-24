@@ -19,7 +19,7 @@ import Foundation
 public class NetFetchResponse {
     public var data: Data?
     public var urlRequest: URLRequest?
-    public weak var urlResponse: URLResponse?
+    public var urlResponse: URLResponse?
     public var error: Error?
     public var url: URL?
     public var urlString: String?
