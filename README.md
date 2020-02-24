@@ -65,8 +65,6 @@ struct Post: Codable {
 }
 
 public class PostCell: UITableViewCell {
-    var currentCount = 0
-    
     public override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: .subtitle, reuseIdentifier: reuseIdentifier)
         
