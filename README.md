@@ -65,6 +65,8 @@ struct Post: Codable {
 }
 
 public class PostCell: UITableViewCell {
+    var currentCount = 0
+    
     public override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: .subtitle, reuseIdentifier: reuseIdentifier)
         
@@ -92,6 +94,10 @@ public class PostCell: UITableViewCell {
         textLabel?.attributedText = attributedString
         detailTextLabel?.text = post.body?.replacingOccurrences(of: "\n", with: "")
     }
+    
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+    }
 }
 
 public class KeybardViewController: UIViewController {
@@ -116,18 +122,17 @@ public class KeybardViewController: UIViewController {
             
             let segmentedControl = UISegmentedControl(items: ["Hello","World","Swift"])
             segmentedControl.selectedSegmentIndex = 0
-            segmentedControl.addAction(for: .valueChanged) { (control) in
-                let segmentedControl = control as! UISegmentedControl
+            segmentedControl.addAction(for: .valueChanged) { (segmentedControl) in
                 let item = segmentedControl.titleForSegment(at: segmentedControl.selectedSegmentIndex)!
                 print(item)
             }
             splitView.addSubview(segmentedControl, layoutType: .fixed, value: 44.0, edgeInsets: UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10))
         
-            dataRender.onRefresh { (render) in
+            dataRender.onRefresh { [weak self] (render) in
                 let request = NetFetchRequest(urlString: "https://jsonplaceholder.typicode.com/posts") { (response) in
-                    self.dataRender.refreshing = false
+                    self?.dataRender.refreshing = false
                     if let posts = response.bind([Post].self) {
-                        self.dataRender.renderArray(posts as Array<AnyObject>)
+                        self?.dataRender.renderArray(posts)
                     }
                 }
                 NetFetch.fetch(request)
@@ -146,13 +151,12 @@ public class KeybardViewController: UIViewController {
             }) { (splitView) in
                 splitView.direction = .horizontal
                 
-                let valueLabel = UILabel("0.00")
-                    .size(.body, [.monoSpace])
+                let valueLabel = PerformLabel("0.00")
+                    .size(.body, [.monoSpaceDigit,.bold])
                     .lines(1)
                 
                 let slider = UISlider()
-                    .addAction(for: .valueChanged) { (control) in
-                        let slider = control as! UISlider
+                    .addAction(for: .valueChanged) { (slider) in
                         valueLabel.text = NSString(format: "%.02f", slider.value) as String
                 }
                 splitView.addSubview(slider, layoutType: .percentage, value: 100, edgeInsets: UIEdgeInsets(top: 0, left: 15, bottom: 0, right: 0))
@@ -165,13 +169,11 @@ public class KeybardViewController: UIViewController {
             let textField = UITextField(placeholder: "Enter a new Title")
                 .align(.center)
                 .size(.body)
-                .addAction(for: .editingChanged) { (control) in
-                    let tf = control as! UITextField
-                    print(tf.text!)
+                .addAction(for: .editingChanged) { (textField) in
+                    print(textField.text!)
                 }
-                .addAction(for: .editingDidEnd, { (control) in
-                    let tf = control as! UITextField
-                    self.title = tf.text
+                .addAction(for: .editingDidEnd, { (textField) in
+                    self.title = textField.text
                 })
                 .shouldReturn { (textField) -> (Bool) in
                     textField.resignFirstResponder()

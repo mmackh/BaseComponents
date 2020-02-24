@@ -42,6 +42,10 @@ var closureCounter: Int = 0
             }
         }
     }
+    
+    fileprivate static func associatedObjectID(for controlEvents: UIControl.Event) -> String {
+        return String(format: "controlClosure-%i", controlEvents.rawValue)
+    }
 }
 
 fileprivate extension NSObject {
@@ -58,13 +62,94 @@ fileprivate extension NSObject {
 
 public extension UIControl {
     @discardableResult
-    func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ control: UIControl)->()) -> Self {
+    func addGenericAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ control: UIControl)->()) -> Self {
         let closureContainer = ClosureContainer()
         closureContainer.closureControl = closure
         closureContainer.owner = self
         addTarget(closureContainer, action: #selector(ClosureContainer.invoke), for: controlEvents)
         self.addClosureContainer(closureContainer)
         return self
+    }
+}
+
+public extension UIButton {
+    @discardableResult
+    func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ button: UIButton) -> ()) -> Self {
+        return addGenericAction(for: controlEvents) { (control) in
+            closure(control as! UIButton)
+        }
+    }
+}
+
+public extension UITextField {
+    @discardableResult
+    func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ textField: UITextField) -> ()) -> Self {
+        return addGenericAction(for: controlEvents) { (control) in
+            closure(control as! UITextField)
+        }
+    }
+}
+
+public extension UIRefreshControl {
+    @discardableResult
+    func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ refreshControl: UIRefreshControl) -> ()) -> Self {
+        return addGenericAction(for: controlEvents) { (control) in
+            closure(control as! UIRefreshControl)
+        }
+    }
+}
+
+public extension UISegmentedControl {
+    @discardableResult
+    func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ segmentedControl: UISegmentedControl) -> ()) -> Self {
+        return addGenericAction(for: controlEvents) { (control) in
+            closure(control as! UISegmentedControl)
+        }
+    }
+}
+
+public extension UISlider {
+    @discardableResult
+    func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ slider: UISlider) -> ()) -> Self {
+        return addGenericAction(for: controlEvents) { (control) in
+            closure(control as! UISlider)
+        }
+    }
+}
+
+public extension UIStepper {
+    @discardableResult
+    func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ stepper: UIStepper) -> ()) -> Self {
+        return addGenericAction(for: controlEvents) { (control) in
+            closure(control as! UIStepper)
+        }
+    }
+}
+
+public extension UISwitch {
+    @discardableResult
+    func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ switch: UISwitch) -> ()) -> Self {
+        return addGenericAction(for: controlEvents) { (control) in
+            closure(control as! UISwitch)
+        }
+    }
+}
+
+public extension UIDatePicker {
+    @discardableResult
+    func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ datePicker: UIDatePicker) -> ()) -> Self {
+        return addGenericAction(for: controlEvents) { (control) in
+            closure(control as! UIDatePicker)
+        }
+    }
+}
+
+public extension UIPageControl {
+    @discardableResult
+    func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ pageControl: UIPageControl) -> ()) -> Self {
+        return addGenericAction(for: controlEvents) { (control) in
+            closure(control as! UIPageControl)
+        }
     }
 }
 
