@@ -305,6 +305,9 @@ public extension UIButton {
     convenience init(symbol: String) {
         self.init(type: .system)
         setImage(UIImage(systemName: symbol), for: .normal)
+        imageView?.contentMode = .scaleAspectFit
+        contentHorizontalAlignment = .fill
+        contentVerticalAlignment = .fill
     }
     
     @discardableResult
