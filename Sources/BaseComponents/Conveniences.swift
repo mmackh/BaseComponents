@@ -302,12 +302,16 @@ public extension UIButton {
     }
     
     @available(iOS 13.0, *)
-    convenience init(symbol: String) {
+    convenience init(symbol: String, weight: UIImage.SymbolWeight = .regular, alignment: UIView.ContentMode = .center) {
         self.init(type: .system)
-        setImage(UIImage(systemName: symbol), for: .normal)
+        setImage(UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(weight: weight)), for: .normal)
+        
         imageView?.contentMode = .scaleAspectFit
-        contentHorizontalAlignment = .fill
-        contentVerticalAlignment = .fill
+        
+        if alignment == .scaleAspectFill {
+            contentHorizontalAlignment = .fill
+            contentVerticalAlignment = .fill
+        }
     }
     
     @discardableResult
