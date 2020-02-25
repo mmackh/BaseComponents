@@ -159,6 +159,10 @@ public class SplitView: UIView {
         (self as UIView).addSubview(view)
     }
     
+    public func addPadding(_ value: CGFloat, layoutType: SplitViewLayoutType = .fixed) {
+        addSubview(UIView(), layoutType: layoutType, value: value)
+    }
+    
     private func snapToSuperview() {
         if superview != nil {
             frame = superview!.frame
