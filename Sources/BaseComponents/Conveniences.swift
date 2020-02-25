@@ -442,6 +442,14 @@ public extension UIImageView {
         contentMode = mode
         return self
     }
+    
+    @available(iOS 13.0, *)
+    convenience init(symbol: String) {
+        self.init()
+        
+        self.image = UIImage(systemName: symbol)
+        self.contentMode = .scaleAspectFit
+    }
 }
 
 public extension UIAlertController {
