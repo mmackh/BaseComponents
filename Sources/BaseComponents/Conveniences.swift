@@ -465,6 +465,17 @@ public extension UIImageView {
     }
 }
 
+public extension UIViewController {
+    func embedInNavigationController(configurationHandler: ((UINavigationController)->())? = nil) -> UINavigationController {
+        let navigationController = UINavigationController(rootViewController: self)
+        if let configurationHandler = configurationHandler {
+            unowned let weakNavigationController = navigationController
+            configurationHandler(weakNavigationController)
+        }
+        return navigationController
+    }
+}
+
 public extension UIAlertController {
     private struct Static {
         static var AlertWindowKey = "bc_alertWindow"
