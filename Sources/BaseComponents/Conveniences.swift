@@ -301,6 +301,12 @@ public extension UIButton {
         setTitle(title, for: .normal)
     }
     
+    @available(iOS 13.0, *)
+    convenience init(symbol: String) {
+        self.init(type: .system)
+        setImage(UIImage(systemName: symbol), for: .normal)
+    }
+    
     @discardableResult
     func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UICustomFontStyle = []) -> Self {
         self.titleLabel?.font = UIFont.size(textStyle, fontStyle)
