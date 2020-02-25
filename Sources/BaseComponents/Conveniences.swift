@@ -253,6 +253,17 @@ public extension UIView {
         tintColor = color
         return self
     }
+    
+    @discardableResult
+    func border(_ color: UIColor? = nil, width: CGFloat = 1.0, cornerRadius: CGFloat = 0.0) -> Self {
+        if let color = color {
+            layer.borderColor = color.cgColor
+            layer.borderWidth = width
+        }
+        layer.cornerRadius = cornerRadius
+        clipsToBounds = (cornerRadius > 0)
+        return self
+    }
 }
 
 public extension UIImage {
