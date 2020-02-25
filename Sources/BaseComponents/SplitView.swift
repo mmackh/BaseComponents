@@ -159,7 +159,11 @@ public class SplitView: UIView {
         (self as UIView).addSubview(view)
     }
     
-    public func addPadding(_ value: CGFloat = 0.0, layoutType: SplitViewLayoutType = .fixed) {
+    public func addPadding(_ value: CGFloat) {
+        addSubview(UIView(), layoutType: .fixed, value: value)
+    }
+    
+    public func addPadding(layoutType: SplitViewLayoutType, value: CGFloat = 0.0) {
         addSubview(UIView(), layoutType: layoutType, value: value)
     }
     
