@@ -90,8 +90,8 @@ public class PerformLabel: UIView {
         self.attributedStringToDraw = attributedString
         if text.count > 0 {
             
-            let totalRange = range()
             let mutableAttributedString = NSMutableAttributedString(string: self.text)
+            let totalRange: NSRange = .init(location: 0, length: mutableAttributedString.string.count)
             if let textColor = textColor {
                 mutableAttributedString.addAttribute(.foregroundColor, value: textColor, range: totalRange)
             } else {
@@ -116,7 +116,7 @@ public class PerformLabel: UIView {
             return sizeCache!.calculatedSize
         }
         
-        let calculatedSize = attributedStringToDraw!.boundingRect(with: size, options: .usesLineFragmentOrigin, context: .none).integral.size
+        let calculatedSize = attributedStringToDraw!.boundingRect(with: size, options: [.usesLineFragmentOrigin], context: .none).integral.size
         sizeCache = SizeCache(forSize: size, calculatedSize: calculatedSize)
         return calculatedSize
     }
@@ -126,12 +126,12 @@ public class PerformLabel: UIView {
         guard attributedStringToDraw != nil else {
             return
         }
+        
         let size = sizeThatFits(bounds.size)
         var targetRect = bounds
         if targetRect.size.height > size.height {
             targetRect.origin.y = (targetRect.size.height - size.height) / 2
         }
-        
         attributedStringToDraw!.draw(in: targetRect.integral)
     }
     
@@ -147,9 +147,5 @@ public class PerformLabel: UIView {
         }
         frameCache = frame
         setNeedsDisplay()
-    }
-    
-    fileprivate func range() -> NSRange {
-        return .init(location: 0, length: text.count)
     }
 }

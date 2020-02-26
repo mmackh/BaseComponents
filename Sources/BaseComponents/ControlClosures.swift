@@ -15,17 +15,13 @@
 
 import UIKit
 
-var closureCounter: Int = 0
-
 @objc class ClosureContainer: NSObject {
     var closureControl: ((UIControl)->())?
     var closureGesture: ((UIGestureRecognizer)->())?
     var closureBarButtonItem: ((UIBarButtonItem)->())?
     weak var owner: AnyObject?
-    var ID: String = ""
 
     override init () {
-        self.ID = String(format: "controlClosure-%i", closureCounter)
         closureCounter += 1
     }
 
@@ -42,15 +38,18 @@ var closureCounter: Int = 0
             }
         }
     }
-    
-    fileprivate static func associatedObjectID(for controlEvents: UIControl.Event) -> String {
-        return String(format: "controlClosure-%i", controlEvents.rawValue)
-    }
 }
 
+var closureCounter: Int = 0
+
 fileprivate extension NSObject {
+    func closureID() -> String {
+        closureCounter += 1
+        return String(format: "closure_%i",closureCounter)
+    }
+    
     func addClosureContainer(_ closureContainer: ClosureContainer) {
-        objc_setAssociatedObject(self, &closureContainer.ID, closureContainer, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
+        objc_setAssociatedObject(self, self.closureID(), closureContainer, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 }
 
@@ -66,8 +65,8 @@ fileprivate extension UIControl {
         let closureContainer = ClosureContainer()
         closureContainer.closureControl = closure
         closureContainer.owner = self
+        addClosureContainer(closureContainer)
         addTarget(closureContainer, action: #selector(ClosureContainer.invoke), for: controlEvents)
-        self.addClosureContainer(closureContainer)
         return self
     }
 }
