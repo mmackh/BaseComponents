@@ -142,6 +142,12 @@ public extension UILabel {
     }
     
     @discardableResult
+    func size(_ points: CGFloat, _ weight: UIFont.Weight = .regular) -> Self {
+        self.font = UIFont.systemFont(ofSize: points, weight: weight)
+        return self
+    }
+    
+    @discardableResult
     func size(using font: UIFont) -> Self {
         self.font = font
         return self
@@ -191,6 +197,12 @@ public extension PerformLabel {
     }
     
     @discardableResult
+    func size(_ points: CGFloat, _ weight: UIFont.Weight = .regular) -> Self {
+        self.font = UIFont.systemFont(ofSize: points, weight: weight)
+        return self
+    }
+    
+    @discardableResult
     func size(using font: UIFont) -> Self {
         self.font = font
         return self
@@ -225,6 +237,12 @@ public extension UITextField {
         if #available(iOS 10.0, *) {
             adjustsFontForContentSizeCategory = true
         }
+        return self
+    }
+
+    @discardableResult
+    func size(_ points: CGFloat, _ weight: UIFont.Weight = .regular) -> Self {
+        self.font = UIFont.systemFont(ofSize: points, weight: weight)
         return self
     }
     
@@ -320,6 +338,12 @@ public extension UIButton {
         if #available(iOS 10.0, *) {
             self.titleLabel?.adjustsFontForContentSizeCategory = true
         }
+        return self
+    }
+    
+    @discardableResult
+    func size(_ points: CGFloat, _ weight: UIFont.Weight = .regular) -> Self {
+        self.titleLabel?.font = UIFont.systemFont(ofSize: points, weight: weight)
         return self
     }
     
