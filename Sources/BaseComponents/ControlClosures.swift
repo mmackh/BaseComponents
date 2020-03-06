@@ -15,16 +15,23 @@
 
 import UIKit
 
-@objc class ClosureContainer: NSObject {
+var closureCounter: Int = 10
+
+@objc
+fileprivate class ClosureContainer: NSObject {
     var closureControl: ((UIControl)->())?
     var closureGesture: ((UIGestureRecognizer)->())?
     var closureBarButtonItem: ((UIBarButtonItem)->())?
     weak var owner: AnyObject?
-
+    
     override init () {
         closureCounter += 1
     }
-
+    
+    func closureID() -> String {
+        return String(format: "closure_%i",closureCounter)
+    }
+    
     @objc func invoke () {
         if let owner = owner {
             if let control = closureControl {
@@ -40,16 +47,9 @@ import UIKit
     }
 }
 
-var closureCounter: Int = 0
-
 fileprivate extension NSObject {
-    func closureID() -> String {
-        closureCounter += 1
-        return String(format: "closure_%i",closureCounter)
-    }
-    
     func addClosureContainer(_ closureContainer: ClosureContainer) {
-        objc_setAssociatedObject(self, self.closureID(), closureContainer, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(self, closureContainer.closureID(), closureContainer, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 }
 
@@ -63,6 +63,7 @@ fileprivate extension UIControl {
     @discardableResult
     func addGenericAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ control: UIControl)->()) -> Self {
         let closureContainer = ClosureContainer()
+        self.tag = closureCounter
         closureContainer.closureControl = closure
         closureContainer.owner = self
         addClosureContainer(closureContainer)
@@ -187,7 +188,7 @@ public extension UIBarButtonItem {
  
 */
 
-class SearchBarClosureContainer: ClosureContainer, UISearchBarDelegate {
+fileprivate class SearchBarClosureContainer: ClosureContainer, UISearchBarDelegate {
     var textDidChange: ((UISearchBar)->())?
     var didBeginEditing: ((UISearchBar)->())?
     var didEndEditing: ((UISearchBar)->())?
@@ -273,7 +274,7 @@ public extension UISearchBar {
  
 */
 
-class TextFieldClosureContainer: ClosureContainer, UITextFieldDelegate {
+fileprivate class TextFieldClosureContainer: ClosureContainer, UITextFieldDelegate {
     var shouldReturn: ((UITextField)->(Bool))?
     var shouldClear: ((UITextField)->(Bool))?
     
