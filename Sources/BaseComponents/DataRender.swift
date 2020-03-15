@@ -158,13 +158,16 @@ open class DataRender: UIView {
             
             if self.dimensionCache[width] == nil {
                 self.dimensionCache[width] = Dictionary()
-                
+            }
+            
+            if Int(self.dimensionScrollingView?.bounds.size.width ?? 0.0) != width {
                 self.dimensionScrollingView?.layoutPass = false
                 self.dimensionScrollingView?.invalidateLayout()
                 self.dimensionScrollingView?.frame = .init(x: 0, y: 0, width: itemLayoutProperties.renderBounds.width, height: 0)
                 self.dimensionScrollingView?.layoutSubviews()
                 self.dimensionScrollingView?.layoutPass = true
             }
+            
             self.dimensionCell?.contentView.tag = 2
             if self.beforeBind != nil {
                 unowned let cell = self.dimensionCell!
