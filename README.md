@@ -18,6 +18,9 @@ Current Version: 0.1 Windy
 - [x] ScrollingView
 - [x] KeyboardManager
 
+#### File Access
+- [x] Files
+
 #### Networking
 - [x] NetFetch
 
