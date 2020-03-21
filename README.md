@@ -19,7 +19,7 @@ Current Version: 0.1 Windy
 - [x] KeyboardManager
 
 #### File Access
-- [x] Files
+- [x] DiskData
 
 #### Networking
 - [x] NetFetch
