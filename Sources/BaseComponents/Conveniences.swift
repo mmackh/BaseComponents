@@ -80,7 +80,15 @@ public extension UIColor {
     
     convenience init(hex: String) {
         var hexCleaned = hex.replacingOccurrences(of: "#", with: "")
-        if (hexCleaned.count != 6) {
+        if hexCleaned.count == 3 {
+            var hexResult: String = ""
+            for hexStringElement in hexCleaned {
+                let hexString = String(hexStringElement)
+                hexResult += hexString + hexString
+            }
+            hexCleaned = hexResult
+        }
+        if hexCleaned.count != 6 {
             hexCleaned = "FF0000"
         }
         var hexInt: UInt64 = 0
@@ -94,6 +102,10 @@ public extension UIColor {
     
     static func hex(_ hex: String) -> UIColor {
         return UIColor(hex: hex)
+    }
+    
+    func alpha(_ alpha: CGFloat) -> UIColor {
+        return self.withAlphaComponent(alpha)
     }
 }
 
