@@ -519,14 +519,12 @@ public extension UIAlertController {
     
     static func show(style: UIAlertController.Style, title: String?, message: String?, options: Array<String>, dismiss: String, viewController: UIViewController? = nil, closure: ((_ buttonIdx: Int)->())?) {
         let controller = UIAlertController(title: title, message: message, preferredStyle: style)
-        var idx = 0
         for option in options {
             controller.addAction(UIAlertAction(title: option, style: .default , handler: { (action) in
                 if let closure = closure {
-                    closure(idx)
+                    closure(options.firstIndex(of: option)!)
                 }
             }))
-            idx += 1
         }
         controller.addAction(UIAlertAction(title: dismiss, style: .cancel, handler: nil))
         
