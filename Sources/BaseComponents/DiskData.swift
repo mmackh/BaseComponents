@@ -49,7 +49,7 @@ public class File: DiskData {
             if !FileManager.default.fileExists(atPath: directory.path) {
                 directory.create()
             }
-            FileManager.default.createFile(atPath: path, contents: nil, attributes: nil)
+            self.create()
         }
     }
     
@@ -141,6 +141,11 @@ public class File: DiskData {
     public func exists() -> Bool {
         return FileManager.default.fileExists(atPath: path)
     }
+    
+    @discardableResult
+    public func create() -> Bool {
+        return FileManager.default.createFile(atPath: path, contents: nil, attributes: nil)
+    }
 }
 
 public class Directory: DiskData {
@@ -194,6 +199,26 @@ public class Directory: DiskData {
             }
         }
         return []
+    }
+    
+    public func exists() -> Bool {
+        return FileManager.default.fileExists(atPath: path)
+    }
+    
+    public func newFile(name: String, createIfNeeded: Bool = true) -> File {
+        let file = File(pathURL: pathURL.appendingPathComponent(name))
+        if createIfNeeded && !file.exists() {
+            file.create()
+        }
+        return file
+    }
+    
+    public func newDirectory(name: String, createIfNeeded: Bool = true) -> Directory {
+        let directory = Directory(pathURL: pathURL.appendingPathComponent(name, isDirectory: createIfNeeded))
+        if createIfNeeded && !directory.exists() {
+            directory.create()
+        }
+        return directory
     }
     
     public func zip(completionHandler: (File)->()) {
