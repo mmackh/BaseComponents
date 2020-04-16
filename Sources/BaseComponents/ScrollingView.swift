@@ -117,6 +117,8 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     
     public var layoutPass = false
     
+    public var edgeInsets: UIEdgeInsets = .zero
+    
     @discardableResult
     public convenience init(superview: UIView, configurationHandler: (_ scrollingView: ScrollingView) -> Void) {
         self.init()
@@ -180,6 +182,10 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         return splitView
     }
     
+    public func addPadding(_ value: CGFloat) {
+        addSubview(UIView(), layoutType: .fixed, value: value)
+    }
+    
     public override func willRemoveSubview(_ subview: UIView) {
         super.willRemoveSubview(subview)
         
@@ -196,14 +202,19 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         if (frameCache.equalTo(frame)) {
             return
         }
+        
         frameCache = frame
         
         let vertical = direction == .vertical
         
-        let clampValue = vertical ? bounds.size.width : bounds.size.height
+        var clampValue = vertical ? bounds.size.width : bounds.size.height
         
         var offsetTrackerX: CGFloat = 0.0
         var offsetTrackerY: CGFloat = 0.0
+        
+        clampValue -= vertical ? edgeInsets.left + edgeInsets.right : edgeInsets.top + edgeInsets.bottom
+        offsetTrackerX += edgeInsets.left
+        offsetTrackerY += edgeInsets.top
         
         for view in subviews {
             if view.isHidden {
@@ -257,6 +268,9 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
                 }
             }
         }
+        
+        offsetTrackerX += edgeInsets.right
+        offsetTrackerY += edgeInsets.bottom
         
         let suggestedContentSize = CGSize(width: vertical ? clampValue : offsetTrackerX, height: vertical ? offsetTrackerY : clampValue)
         if (!contentSize.equalTo(suggestedContentSize) || layoutPass) {

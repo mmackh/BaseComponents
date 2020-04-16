@@ -276,10 +276,18 @@ public extension UISearchBar {
 
 fileprivate class TextFieldClosureContainer: ClosureContainer, UITextFieldDelegate {
     var shouldReturn: ((UITextField)->(Bool))?
+    var shouldBegin: ((UITextField)->(Bool))?
     var shouldClear: ((UITextField)->(Bool))?
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if let closure = shouldReturn {
+            return closure(textField)
+        }
+        return false
+    }
+    
+    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        if let closure = shouldBegin {
             return closure(textField)
         }
         return false
@@ -313,6 +321,12 @@ public extension UITextField {
     @discardableResult
     func shouldClear(_ closure: @escaping(_ control: UITextField)->(Bool)) -> Self {
         closureContainer().shouldClear = closure
+        return self
+    }
+    
+    @discardableResult
+    func shouldBeginEditing(_ closure: @escaping(_ control: UITextField)->(Bool)) -> Self {
+        closureContainer().shouldBegin = closure
         return self
     }
 }

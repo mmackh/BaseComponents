@@ -560,6 +560,7 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
             if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
                 
                 if self.itemAutomaticRowHeightCacheKeyHandler != nil {
+                    self.dimensionCell?.removeFromSuperview()
                     self.dimensionCell = nil
                     self.dimensionCache.removeAll(keepingCapacity: true)
                     self.tableView?.reloadData()
@@ -611,7 +612,6 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
             let scrollingView = cell.contentView.subviews.first as! ScrollingView
             scrollingView.enclosedInRender = true
             scrollingView.isScrollEnabled = false
-            scrollingView.invalidateLayout()
         }
         
         if configuration.reverseScrollingDirection! {

@@ -102,10 +102,14 @@ public class NetFetchRequest {
         
         NetFetch.removeRequest(self)
     }
+    
+    public func fetch() {
+        NetFetch.fetch(self)
+    }
 }
 
 public class NetFetch {
-    static private let session = URLSession(configuration: .default)
+    static public var session = URLSession(configuration: .default)
     static private var queue: NSMutableArray = NSMutableArray()
     static private var currentTask: URLSessionDataTask?
     
@@ -138,7 +142,6 @@ public class NetFetch {
         }
 
         request.dataTask = session.dataTask(with: urlRequest) { (data, urlResponse, error) in
-            
             if error != nil {
                 if request.retryOnFailure {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
@@ -170,12 +173,12 @@ public class NetFetch {
             response.urlString = request.urlString
 
             DispatchQueue.main.async {
-                request.completionHandler(response)
                 if (queue.count > 0) {
                     queue.removeObject(at: 0)
                 }
                 processQueue()
-                 
+                
+                request.completionHandler(response)
             }
         }
         request.dataTask!.resume()

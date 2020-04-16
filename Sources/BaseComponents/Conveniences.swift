@@ -24,6 +24,7 @@ public enum UIColorTarget: Int {
 
 public struct UICustomFontStyle: OptionSet {
     public let rawValue: Int
+    public static let regular = UICustomFontStyle(rawValue: 0 << 0)
     public static let bold = UICustomFontStyle(rawValue: 1 << 0)
     public static let italic = UICustomFontStyle(rawValue: 1 << 1)
     public static let monoSpace = UICustomFontStyle(rawValue: 1 << 2)

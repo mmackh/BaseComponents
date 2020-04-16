@@ -59,7 +59,7 @@ public class SplitViewLayoutInstruction {
     }
 }
 
-public class SplitView: UIView {
+open class SplitView: UIView {
     public static let ExcludeLayoutTag = 102
     public static let onePixelHeight: CGFloat = 1 / UIScreen.main.scale
     
@@ -315,7 +315,11 @@ extension SplitView {
             
             var targetFrame = childFrame.insetBy(dx: padding, dy: padding)
             targetFrame = targetFrame.inset(by: edgeInsets)
-            childView.frame = targetFrame
+            if childView.layer.borderWidth > 0 {
+                childView.frame = targetFrame.integral
+            } else {
+                childView.frame = targetFrame
+            }
             
             if (clipsAllSubviews) {
                 childView.clipsToBounds = true
