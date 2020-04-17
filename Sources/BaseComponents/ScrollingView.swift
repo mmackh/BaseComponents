@@ -25,6 +25,13 @@ public enum ScrollingViewLayoutType: Int {
     case fixed
 }
 
+public extension UIView {
+    @discardableResult
+    func addScrollingView(configurationHandler: (_ scrollingView: ScrollingView) -> Void) -> ScrollingView {
+        return ScrollingView(superview: self, configurationHandler: configurationHandler)
+    }
+}
+
 private class ScrollingViewHandler {
     var layoutType: ScrollingViewLayoutType = .fixed
     var valueHandler: ((CGRect) -> ScrollingViewLayoutInstruction)?
@@ -120,7 +127,7 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     public var edgeInsets: UIEdgeInsets = .zero
     
     @discardableResult
-    public convenience init(superview: UIView, configurationHandler: (_ scrollingView: ScrollingView) -> Void) {
+    fileprivate convenience init(superview: UIView, configurationHandler: (_ scrollingView: ScrollingView) -> Void) {
         self.init()
         
         unowned let weakSelf = self

@@ -27,6 +27,25 @@ public enum SplitViewLayoutType: Int {
     case percentage
 }
 
+public extension UIView {    
+    @discardableResult
+    @objc func addSplitView(configurationHandler: (_ splitView: SplitView) -> Void) -> SplitView {
+        return SplitView(superview: self, configurationHandler: configurationHandler)
+    }
+}
+
+public extension SplitView {
+    @available(*, unavailable)
+    override func addSplitView(configurationHandler: (_ splitView: SplitView) -> Void) -> SplitView {
+        return super.addSplitView(configurationHandler: configurationHandler)
+    }
+    
+    @discardableResult
+    func addSplitView(configurationHandler: (_ splitView: SplitView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction) -> SplitView {
+        return SplitView(superSplitView: self, configurationHandler: configurationHandler, valueHandler: valueHandler)
+    }
+}
+
 private class SplitViewHandler {
     var layoutType: SplitViewLayoutType = .fixed
     var valueHandler: ((CGRect) -> SplitViewLayoutInstruction)?
@@ -85,7 +104,7 @@ open class SplitView: UIView {
     private var observingSuperviewSafeAreaInsets = false
     
     @discardableResult
-    public convenience init(superview: UIView, configurationHandler: (_ splitView: SplitView) -> Void) {
+    fileprivate convenience init(superview: UIView, configurationHandler: (_ splitView: SplitView) -> Void) {
         self.init()
         
         if (superview.isKind(of: SplitView.self))
@@ -102,7 +121,7 @@ open class SplitView: UIView {
     
     
     @discardableResult
-    public convenience init(superSplitView: SplitView, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction, configurationHandler: (_ splitView: SplitView) -> Void) {
+    fileprivate convenience init(superSplitView: SplitView, configurationHandler: (_ splitView: SplitView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction) {
         self.init()
         
         unowned let weakSelf = self

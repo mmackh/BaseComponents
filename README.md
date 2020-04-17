@@ -4,7 +4,7 @@
 
 BaseComponents aims to provide easily reusable and understandable components to increase productivity with UIKit. Formerly written in Objective-C and used extensivly in production, the time has come to transition to Swift.
 
-Current Version: 0.2 Light Snowfall
+Current Version: 0.3 Sunny Sky
 
 **Important Note: API for Components is currently unstable.**
 
@@ -119,7 +119,7 @@ public class KeybardViewController: UIViewController {
         
         view.backgroundColor = UIColor.white
 
-        let splitView = SplitView(superview: view) { [unowned self] (splitView) in
+        let splitView = view.addSplitView { (splitView) in
             
             splitView.insertSafeAreaInsetsPadding(form: self.view, paddingDirection: .top)
             
@@ -149,14 +149,12 @@ public class KeybardViewController: UIViewController {
             
             splitView.addSubview(UIView().color(.background, .init(white: 0.89, alpha: 1)), layoutType: .fixed, value: 0.5)
             
-            SplitView(superSplitView: splitView, valueHandler: { (parentRect) -> SplitViewLayoutInstruction in
-                return SplitViewLayoutInstruction(layoutType: .fixed, value: 44)
-            }) { (splitView) in
+            splitView.addSplitView(configurationHandler: { (splitView) in
                 splitView.direction = .horizontal
                 
                 let valueLabel = PerformLabel("0.00")
                     .size(.body, [.monoSpaceDigit,.bold])
-                    .lines(1)
+                    .lines(0)
                 
                 let slider = UISlider()
                     .addAction(for: .valueChanged) { (slider) in
@@ -164,7 +162,8 @@ public class KeybardViewController: UIViewController {
                 }
                 splitView.addSubview(slider, layoutType: .percentage, value: 100, edgeInsets: UIEdgeInsets(top: 0, left: 15, bottom: 0, right: 0))
                 splitView.addSubview(valueLabel, layoutType: .automatic, edgeInsets: UIEdgeInsets(top: 0, left: 15, bottom: 0, right: 15))
-                
+            }) { (parentRect) -> SplitViewLayoutInstruction in
+                return .init(layoutType: .fixed, value: 44)
             }
             
             splitView.addSubview(UIView().color(.background, .init(white: 0.89, alpha: 1)), layoutType: .fixed, value: 0.5)
@@ -202,6 +201,7 @@ public class KeybardViewController: UIViewController {
         KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
     }
 }
+
 ```
 
 ## Components
