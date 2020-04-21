@@ -612,6 +612,7 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
             let scrollingView = cell.contentView.subviews.first as! ScrollingView
             scrollingView.enclosedInRender = true
             scrollingView.isScrollEnabled = false
+            scrollingView.invalidateLayout()
         }
         
         if configuration.reverseScrollingDirection! {

@@ -559,5 +559,54 @@ public extension UIEdgeInsets {
     init(horizontal: CGFloat, vertical: CGFloat) {
         self.init(top: vertical, left: horizontal, bottom: vertical, right: horizontal)
     }
+}
 
+public extension Array {
+    func fuzzySearch(_ searchText: String?, objectValueHandler: (Element) -> (String)) -> [Element] {
+        guard let searchText = searchText?.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil) else { return self }
+        var greatMatches: [Element] = []
+        var goodMatches: [Element] = []
+        var fuzzyMatches: [Element] = []
+        for obj in self {
+            let objectValue = objectValueHandler(obj).lowercased().folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+            
+            if searchText.count > objectValue.count {
+                continue
+            }
+            
+            if objectValue.hasPrefix(searchText) || searchText == objectValue {
+                greatMatches.append(obj)
+                continue
+            }
+            
+            if objectValue.contains(searchText) {
+                goodMatches.append(obj)
+                continue
+            }
+            
+            var searchTextIdx = searchText.startIndex, objectValueIdx = objectValue.startIndex
+            let searchTextEndIdx = searchText.endIndex, objectValueEndIdx = objectValue.endIndex
+               
+            var successfulMatch = true
+            while searchTextIdx != searchTextEndIdx {
+                if objectValueIdx == objectValueEndIdx {
+                    successfulMatch = false
+                    break
+                }
+                if searchText[searchTextIdx] == objectValue[objectValueIdx] {
+                    searchTextIdx = searchText.index(after: searchTextIdx)
+                }
+                objectValueIdx = objectValue.index(after: objectValueIdx)
+            }
+            if successfulMatch {
+                fuzzyMatches.append(obj)
+            }
+        }
+        
+        var matchesSorted: [Element] = []
+        matchesSorted.append(contentsOf: greatMatches)
+        matchesSorted.append(contentsOf: goodMatches)
+        matchesSorted.append(contentsOf: fuzzyMatches)
+        return matchesSorted
+    }
 }

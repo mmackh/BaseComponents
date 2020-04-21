@@ -180,6 +180,14 @@ public extension UIBarButtonItem {
         closureContainer.owner = self
         addClosureContainer(closureContainer)
     }
+    
+    convenience init(image: UIImage?, style: UIBarButtonItem.Style, _ closure: @escaping (_ barButtonItem: UIBarButtonItem)->()) {
+        let closureContainer = ClosureContainer()
+        closureContainer.closureBarButtonItem = closure
+        self.init(image: image, style: style, target: closureContainer, action: #selector(ClosureContainer.invoke))
+        closureContainer.owner = self
+        addClosureContainer(closureContainer)
+    }
 }
 
 /*

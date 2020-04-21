@@ -41,6 +41,13 @@ public extension SplitView {
     }
     
     @discardableResult
+    func addSplitView(configurationHandler: (_ splitView: SplitView) -> Void, layoutType: SplitViewLayoutType, value: CGFloat = 0, edgeInsets: UIEdgeInsets = .zero) -> SplitView {
+        return self.addSplitView(configurationHandler: configurationHandler) { (parentRect) -> SplitViewLayoutInstruction in
+            return .init(layoutType: layoutType, value: value, edgeInsets: edgeInsets)
+        }
+    }
+    
+    @discardableResult
     func addSplitView(configurationHandler: (_ splitView: SplitView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction) -> SplitView {
         return SplitView(superSplitView: self, configurationHandler: configurationHandler, valueHandler: valueHandler)
     }
