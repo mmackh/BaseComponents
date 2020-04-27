@@ -63,7 +63,6 @@ fileprivate extension UIControl {
     @discardableResult
     func addGenericAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ control: UIControl)->()) -> Self {
         let closureContainer = ClosureContainer()
-        self.tag = closureCounter
         closureContainer.closureControl = closure
         closureContainer.owner = self
         addClosureContainer(closureContainer)

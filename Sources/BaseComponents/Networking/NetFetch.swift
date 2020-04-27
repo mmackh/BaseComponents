@@ -16,7 +16,7 @@
 
 import Foundation
 
-public class NetFetchResponse {
+open class NetFetchResponse {
     public var data: Data?
     public var urlRequest: URLRequest?
     public var urlResponse: URLResponse?
@@ -46,7 +46,7 @@ public class NetFetchResponse {
     }
 }
 
-public class NetFetchRequest {
+open class NetFetchRequest {
     public let urlString: String
     public let completionHandler: ((NetFetchResponse)->())
     
@@ -108,7 +108,7 @@ public class NetFetchRequest {
     }
 }
 
-public class NetFetch {
+open class NetFetch {
     static public var session = URLSession(configuration: .default)
     static private var queue: NSMutableArray = NSMutableArray()
     static private var currentTask: URLSessionDataTask?

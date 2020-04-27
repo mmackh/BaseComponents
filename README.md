@@ -10,15 +10,11 @@ Current Version: 0.3 Sunny Sky
 
 ### Components Roadmap
 
-#### Display multiple Models on Cells
-- [x] DataRender
-
 #### Layout
 - [x] SplitView
 - [x] ScrollingView
-- [x] KeyboardManager
 
-#### File Access
+#### Storage
 - [x] DiskData
 
 #### Networking
@@ -27,13 +23,15 @@ Current Version: 0.3 Sunny Sky
 #### UIKit Helpers
 - [x] ControlClosures
 - [x] Conveniences
+- [x] DataRender
+- [x] KeyboardManager
 
-#### UI Reimplementations
+#### UIKit Reimplementations
 - [x] PerformLabel
 
-#### UI Conveniences
-- [ ] ActionSheet
-- [ ] ProgressIndicator
+#### UI Components
+- [x] NotificationView
+- [x] ProgressView
 
 ## Reasoning
 
@@ -109,6 +107,7 @@ public class KeybardViewController: UIViewController {
         let configuration = DataRenderConfiguration(cellClass: PostCell.self)
         let dataRender = DataRender(configuration: configuration)
         dataRender.rowHeight = UITableView.automaticDimension
+        dataRender.clipsToBounds = true
         return dataRender
     }()
     
@@ -134,8 +133,13 @@ public class KeybardViewController: UIViewController {
             dataRender.onRefresh { [weak self] (render) in
                 let request = NetFetchRequest(urlString: "https://jsonplaceholder.typicode.com/posts") { (response) in
                     self?.dataRender.refreshing = false
+                    self?.view.showProgressView(false)
                     if let posts = response.bind([Post].self) {
+                        NotificationView.show(.success, in: self?.dataRender, for: 2, message: "Updated to the latest News", position: .bottom)
                         self?.dataRender.renderArray(posts)
+                    }
+                    else {
+                        NotificationView.show(.error, in: self?.view, for: 2, message: "Check your Network Connection")
                     }
                 }
                 NetFetch.fetch(request)
@@ -199,36 +203,13 @@ public class KeybardViewController: UIViewController {
         splitView.direction = .vertical
         
         KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
+        
+        view.showProgressView(true, type: .appleStyle)
     }
+    
 }
 
 ```
-
-## Components
-
-### DataRender
-
-DataRender abstracts all the tedious protocols one would need to implement when dealing with UICollectionView or UITableView. You decide whether to render a cell using a table or a grid, simply by choosing the appropriate superclass. Implement -bindObject: in the subclass to bind the model to the UI.
-
-### SplitView
-
-AutoLayout is slow and tedious. UIStackedView is IDK. I've never used it. I've been writing all my layout in code since before it was released. SplitView is fast. You determine the direction and size of a view, either in % or px and SplitView will arrange everything else. Putting the sample code from below into a ViewController will allow you to observe SplitView's behaviour when switching between a vertical and horizontal layout, as well as when adding and removing views.
-
-### KeyboardManager
-
-KeyboardManager takes care of handeling a splitView's size when a keyboard appears. It calculates the overlap, animation duration and curve to do a correct resize when needed. Furthermore, when implementing the manager in all views containing a textField or a textView, query the keyboardVisible API if needed.
-
-### ControlClosures
-
-An easy way to transform UIKit's legacy target-action pattern into modern closures, keeping code organised and consise. In addition to supporting UIControl subclasses like Buttons, TextFields, SegmentedControls, etc., GestureRecognizers are also implemented. As are popular delegate methods.
-
-
-### NetFetch
-Abstracts network calls and keeps boilerplate code to a minimum. Easily convert the response into a string or object (using Codable)
-
-
-### Conveniences
-Allows the chaining of properties and standardises the naming convention across components. 
 
 ## Documentation
 

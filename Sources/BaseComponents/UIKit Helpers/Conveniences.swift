@@ -436,11 +436,23 @@ public extension UIImageView {
     }
     
     @discardableResult
-    func image(urlString: String, placeholderImage: UIImage? = nil) -> Self {
+    func image(urlString: String, placeholderImage: UIImage? = nil, completionHandler: ((Bool)->())? = nil) -> Self {
         
         let currentRequest = currentFetchRequest()
         
         currentRequest?.cancel()
+        
+        func loadingComplete(success: Bool) {
+            if let completionHandler = completionHandler {
+                if Thread.isMainThread {
+                    completionHandler(success)
+                } else {
+                    DispatchQueue.main.async {
+                        completionHandler(success)
+                    }
+                }
+            }
+        }
         
         let request = NetFetchRequest(urlString: urlString) { [weak self] (response) in
             Static.ImageViewQueue.async {
@@ -450,8 +462,13 @@ public extension UIImageView {
                         DispatchQueue.main.async {
                             if (response.urlString == self?.currentFetchRequest()?.urlString) {
                                 self?.image = image
+                                loadingComplete(success: true)
                             }
                         }
+                    }
+                    else
+                    {
+                        loadingComplete(success: false)
                     }
                 }
             }
@@ -468,8 +485,11 @@ public extension UIImageView {
                         DispatchQueue.main.async {
                             if (urlRequest.url?.absoluteString == self?.currentFetchRequest()?.urlString) {
                                 self?.image = image
+                                loadingComplete(success: true)
                             }
                         }
+                    } else {
+                        loadingComplete(success: false)
                     }
                 } else {
                     NetFetch.fetch(request, priority: true)
