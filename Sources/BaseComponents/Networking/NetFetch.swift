@@ -31,17 +31,17 @@ open class NetFetchResponse {
         return ""
     }
     
-    public func bind<T: Codable>(_ modelStruct: T.Type) -> T? {
+    public func bind<T: Codable>(_ modelStruct: T.Type, keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys) -> T? {
         guard let data = data else {
             return nil
         }
-        
         do {
-            return try JSONDecoder().decode(modelStruct, from: data)
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = keyDecodingStrategy
+            return try decoder.decode(modelStruct, from: data)
         } catch let parsingError {
             print("Binding error: ", parsingError)
         }
-        
         return nil;
     }
 }
