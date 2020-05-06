@@ -137,11 +137,23 @@ open class NetFetch {
     }
     
     static private func submitRequest(_ request: NetFetchRequest) {
+        
         guard let urlRequest = request.urlRequest() else {
             return
         }
 
         request.dataTask = session.dataTask(with: urlRequest) { (data, urlResponse, error) in
+            func packageResponse() -> NetFetchResponse {
+                let response = NetFetchResponse()
+                response.data = data
+                response.urlRequest = urlRequest
+                response.urlResponse = urlResponse
+                response.error = error
+                response.url = urlRequest.url
+                response.urlString = request.urlString
+                return response
+            }
+            
             if error != nil {
                 if request.retryOnFailure {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
@@ -149,9 +161,14 @@ open class NetFetch {
                     }
                     return
                 } else {
+
+                    let response = packageResponse()
+                    
                     DispatchQueue.main.async {
                         removeRequest(request)
                         processQueue()
+
+                        request.completionHandler(response)
                     }
                     return
                 }
@@ -164,13 +181,7 @@ open class NetFetch {
                 }
             }
             
-            let response = NetFetchResponse()
-            response.data = data
-            response.urlRequest = urlRequest
-            response.urlResponse = urlResponse
-            response.error = error
-            response.url = urlRequest.url
-            response.urlString = request.urlString
+            let response = packageResponse()
 
             DispatchQueue.main.async {
                 if (queue.count > 0) {
