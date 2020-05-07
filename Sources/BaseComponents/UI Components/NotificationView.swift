@@ -45,6 +45,8 @@ open class NotificationView: UIView {
     public var iconImageView: UIImageView?
     
     public var dismissed: Bool = false
+    
+    public var previousSuperviewWidth: CGFloat = 0
 
     @discardableResult
     public static func show(_ type: NotificationViewType = .info, in view: UIView?, for duration: TimeInterval, message: String, position: NotificationViewPosition = .top, onTap: (()->())? = nil ) -> NotificationView? {
@@ -55,6 +57,7 @@ open class NotificationView: UIView {
         notificationView.messageLabel.text = message
         notificationView.messageLabel.font = font
         notificationView.addSubview(notificationView.messageLabel)
+        notificationView.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin];
         view.addSubview(notificationView)
         
         if #available(iOS 13.0, *) {
@@ -213,15 +216,16 @@ open class NotificationView: UIView {
     open override func layoutSubviews() {
         super.layoutSubviews()
         
+        if previousSuperviewWidth != superview?.bounds.width {
+            self.frame = self.currentFrame()
+            previousSuperviewWidth = superview?.bounds.width ?? 0
+        }
+        
         var messageLabelFrame = bounds.insetBy(dx: NotificationView.messagePadding, dy: NotificationView.messagePadding)
         messageLabelFrame.size.width -= (NotificationView.iconWidth + NotificationView.iconMessageSpacing)
         messageLabelFrame.origin.x += (NotificationView.iconWidth + NotificationView.iconMessageSpacing)
         messageLabel.frame = messageLabelFrame
         
         iconImageView?.frame = .init(x: NotificationView.messagePadding, y: 0, width: NotificationView.iconWidth, height: bounds.height)
-    }
-    
-    open override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        self.frame = self.currentFrame()
     }
 }
