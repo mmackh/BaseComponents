@@ -46,9 +46,9 @@ open class NetFetchResponse {
     }
 }
 
-open class NetFetchRequest {
+open class NetFetchRequest: Codable {
     public let urlString: String
-    public let completionHandler: ((NetFetchResponse)->())
+    public var completionHandler: ((NetFetchResponse)->())? = nil
     
     public var httpMethod: String = "GET"
     public var parameters: Dictionary<String, String>? = nil
@@ -59,6 +59,42 @@ open class NetFetchRequest {
     public var retryOnFailure = false
     public var ignoreQueue = false
     public weak var dataTask: URLSessionDataTask?
+    
+    enum CodingKeys: String, CodingKey {
+        case urlString
+        case httpMethod
+        case parameters
+        case body
+        case headers
+        case timeoutInterval
+        case cachePolicy
+        case retryOnFailure
+        case ignoreQueue
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(httpMethod, forKey: .httpMethod)
+        try container.encode(parameters, forKey: .parameters)
+        try container.encode(body, forKey: .body)
+        try container.encode(headers, forKey: .headers)
+        try container.encode(timeoutInterval, forKey: .timeoutInterval)
+        try container.encode(cachePolicy.rawValue, forKey: .cachePolicy)
+        try container.encode(retryOnFailure, forKey: .retryOnFailure)
+        try container.encode(ignoreQueue, forKey: .ignoreQueue)
+    }
+    
+    public required init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        urlString = try values.decode(String.self, forKey: .urlString)
+        httpMethod = try values.decode(String.self, forKey: .httpMethod)
+        body = try values.decode(Data.self, forKey: .body)
+        headers = try values.decode(Dictionary.self, forKey: .headers)
+        timeoutInterval = try values.decode(TimeInterval.self, forKey: .timeoutInterval)
+        cachePolicy = URLRequest.CachePolicy.init(rawValue: try values.decode(UInt.self, forKey: .urlString)) ?? .useProtocolCachePolicy
+        retryOnFailure = try values.decode(Bool.self, forKey: .retryOnFailure)
+        ignoreQueue = try values.decode(Bool.self, forKey: .ignoreQueue)
+    }
     
     public init(urlString: String, completionHandler: @escaping((NetFetchResponse)->())) {
         self.urlString = urlString
@@ -109,6 +145,7 @@ open class NetFetchRequest {
 }
 
 open class NetFetch {
+    static public var observer: ((_ request: NetFetchRequest,_ response: NetFetchResponse)->())? = nil
     static public var session = URLSession(configuration: .default)
     static private var queue: NSMutableArray = NSMutableArray()
     static private var currentTask: URLSessionDataTask?
@@ -142,7 +179,7 @@ open class NetFetch {
             return
         }
 
-        request.dataTask = session.dataTask(with: urlRequest) { (data, urlResponse, error) in
+        request.dataTask = session.dataTask(with: urlRequest) { [unowned request] (data, urlResponse, error) in
             func packageResponse() -> NetFetchResponse {
                 let response = NetFetchResponse()
                 response.data = data
@@ -154,22 +191,34 @@ open class NetFetch {
                 return response
             }
             
+            func respond() {
+                let response = packageResponse()
+
+                DispatchQueue.main.async {
+                    if let observer = observer {
+                        observer(request, response)
+                    }
+                    
+                    if let completionHandler = request.completionHandler {
+                        queue.remove(request)
+                        processQueue()
+                        
+                        completionHandler(response)
+                    } else {
+                        queue.remove(request)
+                        processQueue()
+                    }
+                }
+            }
+            
             if error != nil {
                 if request.retryOnFailure {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
                         processQueue()
                     }
                     return
                 } else {
-
-                    let response = packageResponse()
-                    
-                    DispatchQueue.main.async {
-                        removeRequest(request)
-                        processQueue()
-
-                        request.completionHandler(response)
-                    }
+                    respond()
                     return
                 }
             }
@@ -180,17 +229,7 @@ open class NetFetch {
                     return
                 }
             }
-            
-            let response = packageResponse()
-
-            DispatchQueue.main.async {
-                if (queue.count > 0) {
-                    queue.removeObject(at: 0)
-                }
-                processQueue()
-                
-                request.completionHandler(response)
-            }
+            respond();
         }
         request.dataTask!.resume()
     }

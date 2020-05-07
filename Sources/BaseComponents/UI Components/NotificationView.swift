@@ -37,7 +37,7 @@ open class NotificationView: UIView {
     public static var font: UIFont = .size(.footnote, .bold)
     public static var messagePadding: CGFloat = 15.0
     
-    public static var iconWidth: CGFloat = 30.0
+    public static var iconWidth: CGFloat = 25.0
     public static var iconMessageSpacing: CGFloat = 10.0
     
     public var position: NotificationViewPosition = .top
@@ -144,12 +144,15 @@ open class NotificationView: UIView {
         swipeToDismissGesture.direction = position == .top ? .up : .down
         notificationView.addGestureRecognizer(swipeToDismissGesture)
         
-        UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.7, initialSpringVelocity: 0.6, options: .allowUserInteraction, animations: {
+        let animationDuration: TimeInterval = 0.6
+        UIView.animate(withDuration: animationDuration, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0.5, options: .allowUserInteraction, animations: {
             notificationView.transform = .identity
         })
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-            notificationView.dismiss()
+        if duration > 0.0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration + duration) {
+                notificationView.dismiss()
+            }
         }
         
         return notificationView
@@ -175,7 +178,13 @@ open class NotificationView: UIView {
         guard let superview = superview else { return .zero }
         
         let padding: CGFloat = NotificationView.bannerHorizontalPadding
-        let width: CGFloat =  min(superview.bounds.size.width, NotificationView.bannerMaximumWidth) - (padding * 2)
+        var width: CGFloat =  min(superview.bounds.size.width, NotificationView.bannerMaximumWidth) - (padding * 2)
+        
+        let widthCalculation = (messageLabel.text! as NSString).size(withAttributes: [NSAttributedString.Key.font: messageLabel.font!]).width
+        if widthCalculation < width - (NotificationView.iconWidth - NotificationView.iconMessageSpacing) {
+            width = widthCalculation + NotificationView.iconWidth + NotificationView.iconMessageSpacing + (padding * 2)
+        }
+        
         let x = (superview.bounds.size.width - width) / 2
         
         var notificationViewFrame: CGRect = .init(x: x, y: 0, width: width, height: 0)
