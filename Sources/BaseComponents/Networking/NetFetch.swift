@@ -179,7 +179,7 @@ open class NetFetch {
             return
         }
 
-        request.dataTask = session.dataTask(with: urlRequest) { [unowned request] (data, urlResponse, error) in
+        request.dataTask = session.dataTask(with: urlRequest) { (data, urlResponse, error) in
             func packageResponse() -> NetFetchResponse {
                 let response = NetFetchResponse()
                 response.data = data
