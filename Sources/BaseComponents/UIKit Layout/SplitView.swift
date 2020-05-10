@@ -87,7 +87,7 @@ public class SplitViewLayoutInstruction {
 
 open class SplitView: UIView {
     public static let ExcludeLayoutTag = 102
-    public static let onePixelHeight: CGFloat = 1 / UIScreen.main.scale
+    public static let onePixelHeight: CGFloat = .onePixel
     
     public var direction: SplitViewDirection = .vertical
     
@@ -300,7 +300,7 @@ extension SplitView {
             }
             
             if fixedValueFloat < 1.0 && fixedValueFloat > 0.0 {
-                fixedValueFloat = SplitView.onePixelHeight
+                fixedValueFloat = .onePixel
                 instruction.value = fixedValueFloat
             }
             

@@ -125,11 +125,7 @@ open class NotificationView: UIView {
         notificationViewLayer.shadowRadius = 10
         
         notificationView.layer.borderWidth = 1 / UIScreen.main.scale
-        if #available(iOS 13.0, *) {
-            notificationView.layer.borderColor = UIColor.separator.cgColor
-        } else {
-            notificationView.layer.borderColor = UIColor.init(white: 0.6, alpha: 0.4).cgColor
-        }
+        notificationView.layer.borderColor = UIColor.hairline.cgColor
         
         notificationView.transform = notificationView.hiddenTransform()
         

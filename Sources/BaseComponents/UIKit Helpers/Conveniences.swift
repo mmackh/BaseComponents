@@ -62,6 +62,14 @@ public extension UIFont {
 }
 
 public extension UIColor {
+    static let hairline: UIColor = {
+        if #available(iOS 13.0, *) {
+            return .separator
+        } else {
+            return .init(white: 0.79, alpha: 1)
+        }
+    }()
+    
     static func dynamic(light: UIColor, dark: UIColor) -> UIColor {
         if #available(iOS 13.0, *) {
             return UIColor { (traitCollection) -> UIColor in
@@ -579,6 +587,12 @@ public extension UIEdgeInsets {
     init(horizontal: CGFloat, vertical: CGFloat) {
         self.init(top: vertical, left: horizontal, bottom: vertical, right: horizontal)
     }
+}
+
+extension CGFloat {
+    public static let onePixel: CGFloat = {
+        return 1 / UIScreen.main.scale
+    }()
 }
 
 public extension Array {
