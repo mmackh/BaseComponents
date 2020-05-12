@@ -644,3 +644,11 @@ public extension Array {
         return matchesSorted
     }
 }
+
+public extension UIGestureRecognizer {
+    func cancel() {
+        state = .cancelled
+        isEnabled = false
+        isEnabled = true
+    }
+}
