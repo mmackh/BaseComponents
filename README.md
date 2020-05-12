@@ -32,6 +32,7 @@ Current Version: 0.5
 #### UI Components
 - [x] NotificationView
 - [x] ProgressView
+- [x] SheetView
 
 ## Reasoning
 
