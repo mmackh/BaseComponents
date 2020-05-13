@@ -5,10 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "BaseComponents",
-    platforms: [
-        .macOS(.v10_15),
-        .iOS(.v11),
-    ],
+    platforms: [.iOS(.v11)],
     products: [
         // Products define the executables and libraries produced by a package, and make them visible to other packages.
         .library(
