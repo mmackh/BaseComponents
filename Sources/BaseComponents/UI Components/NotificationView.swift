@@ -15,19 +15,19 @@
 
 import UIKit
 
-public enum NotificationViewType {
-    case info
-    case alert
-    case error
-    case success
-}
-
-public enum NotificationViewPosition {
-    case top
-    case bottom
-}
-
 open class NotificationView: UIView {
+    public enum Style {
+        case info
+        case alert
+        case error
+        case success
+    }
+
+    public enum Position {
+        case top
+        case bottom
+    }
+    
     public static var bannerHorizontalPadding: CGFloat = 15.0
     public static var bannerCornerRadius: CGFloat = 12.0
     public static var bannerAdditionalYDistance: CGFloat = 10.0
@@ -40,7 +40,7 @@ open class NotificationView: UIView {
     public static var iconWidth: CGFloat = 25.0
     public static var iconMessageSpacing: CGFloat = 10.0
     
-    public var position: NotificationViewPosition = .top
+    public var position: Position = .top
     public let messageLabel: UILabel = UILabel().lines(0)
     public var iconImageView: UIImageView?
     
@@ -49,7 +49,7 @@ open class NotificationView: UIView {
     public var previousSuperviewWidth: CGFloat = 0
 
     @discardableResult
-    public static func show(_ type: NotificationViewType = .info, in view: UIView?, for duration: TimeInterval, message: String, position: NotificationViewPosition = .top, onTap: (()->())? = nil ) -> NotificationView? {
+    public static func show(_ style: Style = .info, in view: UIView?, for duration: TimeInterval, message: String, position: Position = .top, onTap: (()->())? = nil ) -> NotificationView? {
         guard let view = view else { return nil }
         
         let notificationView = NotificationView()
@@ -67,7 +67,7 @@ open class NotificationView: UIView {
         
         if iconWidth > 0 {
             var iconName = ""
-            switch type {
+            switch style {
             case .info:
                 iconName = "exclamationmark.circle"
             case .alert:
@@ -92,7 +92,7 @@ open class NotificationView: UIView {
             foregroundColor = .label
         }
         var iconColor: UIColor = .lightGray
-        switch type {
+        switch style {
         case .info:
             iconColor = .lightGray
         case .alert:
