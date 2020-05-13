@@ -15,57 +15,161 @@
 
 import UIKit
 
-fileprivate class SheetViewInternalComponent {
-    let spacing: CGFloat
-    let components: [SheetViewComponent]
-    
-    weak var containerView: UIVisualEffectView? = nil
-    
-    init(spacing: CGFloat, components: [SheetViewComponent]) {
-        self.spacing = spacing
-        self.components = components
-    }
-}
-
+/**
+ Display a customisable sheet similar to `UIAlertController.Style.actionSheet`, that is both more flexible and easier to use.
+ 
+ A `SheetView` instance can be constructed using `components`. A component provides a contentView and a given height (height can either be static or dynamic - use `invalidateLayout()` to recalculate). Premade `SheetViewComponent`s include:
+    - **SheetViewPullTab**: A pill view indicating that the sheet can be interactively dismissed
+    - **SheetViewNavigationBar**: A simple compact `UINavigationBar` replica
+    - **SheetViewButton**: A button module that highlights and acts like an UIAlertController button
+    - **SheetViewSeparator**: A hairline divider used to separate components
+    - **SheetViewSpace**: Divides components into sections
+    - **SheetViewCustomView**: A base class to use for adding custom UI to SheetView
+ 
+ Each section (divided by SheetViewSpace), has a background which can be styled using `sectionBackgroundViewProvider()`. To further style the sheet, use `maximumWidth`, `adjustToSafeAreaInsets` or `horizontalInset`. After components have been added and the sheet is styled, display it using `show(in view: UIView?)`.
+ 
+ # Best Practices
+ 1. Set `components` only once
+ 2. Be careful about creating retain cycles when working with closures
+ 3. If the app supports landscape, test if your `SheetView` instance does not overflow
+ 
+# Code Example
+ 
+ *Basic*
+ 
+ SheetView containing 2 buttons, separated into two sections. One button is styled red.
+ ```
+ let sheetView = SheetView()
+ sheetView.components = [
+    SheetViewButton("Delete", configurationHandler: { (button) in
+        button.color(.text, .red)
+    }, onTap: nil),
+    SheetViewSpace(),
+    SheetViewButton("Cancel", onTap: nil),
+ ]
+ sheetView.show(in: self.view)
+ ```
+ 
+ *Advanced*
+ 
+ SheetView mimicking a `UIViewController`, including a `UINavigationBar`, sliding in from the bottom. Has the ability to be interactivly dismissed. Features a `UIDatePicker` in a `SheetViewCustomView` component.
+ ```
+ let sheetView = SheetView()
+ let sheetNavigationBarComponent = SheetViewNavigationBar(title: "Navigation Bar", leftBarButton: UIButton(title: "Cancel", type: .system), rightBarButton: UIButton(title: "Save", type: .system))
+ sheetNavigationBarComponent.enableInteractiveDismissGuesture = true
+ 
+ let dynamicBottomPadding = SheetViewCustomView(UIView(), height: 0)
+ dynamicBottomPadding.dynamicHeightHandler = { [unowned self] parentRect in
+     return self.navigationController?.view.safeAreaInsets.bottom ?? 0
+ }
+ sheetView.components = [
+     SheetViewPullTab(style: .navigationBar),
+     sheetNavigationBarComponent,
+     SheetViewCustomView(UIDatePicker(frame: .zero), height: 200),
+     SheetViewButton("Done", onTap: nil),
+     dynamicBottomPadding,
+ ]
+ sheetView.adjustToSafeAreaInsets = false
+ sheetView.horizontalInset = 0
+ sheetView.show(in: self.navigationController?.view)
+ ```
+*/
 public class SheetView: UIView, UIGestureRecognizerDelegate {
     private var componentView: UIView = UIView()
     private var componentViewHeight: CGFloat = 0
     private var componentViewBoundsCache: CGRect = .zero
     
-    private var internalComponents: [SheetViewInternalComponent] = []
+    private var internalSectionComponents: [SheetView.InternalSectionComponent] = []
     private var buttonComponents: [SheetViewButton.HighlightButton] = []
     
     private var shown: Bool = false
     private var dismissed: Bool = false
     
+    /**
+     Declare components for use in a `SheetView` instance
+     
+     Once the sheet is shown for the first time, `contentView`s defined within components are added to the sheet permanently. This behaviour chould change in the future.
+     
+     - Attention: Can only be set once before the sheet is shown
+     */
     public var components: [SheetViewComponent] = [] {
         didSet {
             var temporaryComponents: [SheetViewComponent] = []
             for component in components {
                 if let space = component as? SheetViewSpace {
-                    internalComponents.append(SheetViewInternalComponent(spacing: space.height, components: temporaryComponents))
+                    internalSectionComponents.append(SheetView.InternalSectionComponent(spacing: space.height, components: temporaryComponents))
                     temporaryComponents.removeAll()
                 }
                 temporaryComponents.append(component)
             }
             if temporaryComponents.count > 0 {
-                internalComponents.append(SheetViewInternalComponent(spacing: 0, components: temporaryComponents))
+                internalSectionComponents.append(SheetView.InternalSectionComponent(spacing: 0, components: temporaryComponents))
             }
         }
     }
     
-    public var horizontalPadding: CGFloat = 15.0
+    /**
+     Prevent the sheet from being dismissed, if the user needs to meet a certain state
+     
+     The sheet can still be moved through interactive gestures, however it will refuse to close and thus prevent the user from tapping views below the sheet.
+     */
+    public var isDismissable: Bool = true
+    
+    /**
+     Declare the left and right inset
+     
+     By default, an inset of 15pts is applied on either side and `SheetView` to follow the conventions of UIKit. This yields a design similar to to `UIAlertController.Style.actionSheet`.
+     */
+    public var horizontalInset: CGFloat = 15.0
+    
+    /**
+     Declare whether the `SheetView` adheres to `superview`'s safeAreaInsets
+     
+     In order to avoid displaying UI below the home indicator on all-screen phones/pads, the default behaviour is to adhere to safeAreaInsets defined by the `view` on which `SheetView` is presented. When this variable is `false`, an additional dynamic height component should be added to avoid overlapping UI elements.
+     */
     public var adjustToSafeAreaInsets: Bool = true
+    
+    /**
+     The maximum width `SheetView` can have on wider screens
+     
+     The value for `horizontalInset` is deducted from `maximumWidth` for consistency purposes.
+     */
     public var maximumWidth: CGFloat = 420.0
     
-    public var componentBackgroundViewProvider: ((_ section: Int)->(UIVisualEffectView))? = nil
+    /**
+     Define custom backgrounds for sections created by adding `SheetViewSpace` inbetween other components
+     
+     In order mimic the style of `UIAlertController.Style.actionSheet`, an instance of `UIVisualEffectView` has to be returned. If desired, the background can be colored using e.g., `.color(.background, UIColor.blue.alpha(0.5))`. Determine the transparency by tweaking the alpha value.
+     A custom `borderRadius` value can determine the appearance of the edges
+     
+     # Code Example
+     ```
+     sheetView.sectionBackgroundViewProvider = { section in
+         let view = UIVisualEffectView()
+             .color(.background, .white)
+             .border(cornerRadius: 12)
+         return view
+     }
+     ```
+     */
+    public var sectionBackgroundViewProvider: ((_ section: Int)->(UIVisualEffectView))? = nil
     
-    public init(components: [SheetViewComponent]) {
-        super.init(frame: .zero)
-        autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    /**
+     Convenience initializer for situations not requiring components to reference the `SheetView` instance for more complex behaviour.
+     
+     - parameter components: Array of `SheetViewComponent`s to build the sheet.
+     */
+    public convenience init(components: [SheetViewComponent]) {
+        self.init()
+        
         self.components = components
     }
     
+    /**
+     Initializes an instance of `SheetView`
+     
+     In order to create more complex behaviour, an instance of the sheets needs to be sometimes referenced in components. Always make sure to add `[unowned self]` or `[weak self]` whenever appropriate to avoid retain cycles.
+     */
     public init() {
         super.init(frame: .zero)
         autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -75,6 +179,26 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
         fatalError("init(coder:) has not been implemented")
     }
     
+    /**
+     Display an instance of `SheetView` in a view
+     
+     It is often better to display a sheetView in a `UIViewController`'s `navigationController?.view` or `tabBarController?.view` in order for the entire background to be dimmed and thus to prevent the user from entering an invalid state.
+     
+     Ensure that the view does exist, otherwise `SheetView` will refuse to show.
+     
+     # Code Example
+     ```
+     sheetView.show(in: self.navigationController?.view)
+     ```
+     or
+     ```
+     if let view = self.tabBarController?.view {
+         sheetView.show(in: view)
+     }
+     ```
+     
+     - parameter view: Superview upon which all `SheetView` components will be added.
+     */
     public func show(in view: UIView?) {
         guard let view = view else { return }
         self.frame = view.bounds
@@ -82,13 +206,31 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
         show(true)
     }
     
+    /**
+     Recalculates every component's `contentView` manually. Only useful when a component was added that features a dynamic height
+     
+     Occures also when `layoutSubviews()` is called, however an additional bounds check will prevent `SheetView` from doing unecessary work.
+     */
+    public func invalidateLayout() {
+        componentViewBoundsCache = .zero
+        layoutSubviews()
+    }
+    
+    /**
+     Manually dismiss a `SheetView` instance
+     
+     Once dismissed, the same sheet cannot be shown again.
+     */
     public func dismiss() {
         show(false)
     }
     
     private func show(_ show: Bool) {
-        
         if !show {
+            if !self.isDismissable {
+                return
+            }
+            
             if dismissed {
                 return
             }
@@ -127,21 +269,21 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
         self.addGestureRecognizer(dismissTap)
     }
     
-    private func backgroundViewFactory(_ section: Int) -> UIVisualEffectView {
-        if let backgroundViewProvider = componentBackgroundViewProvider {
-            return backgroundViewProvider(section)
+    private func sectionBackgroundViewFactory(_ section: Int) -> UIVisualEffectView {
+        if let sectionBackgroundViewProvider = sectionBackgroundViewProvider {
+            return sectionBackgroundViewProvider(section)
         }
         let visualEffectView = UIVisualEffectView(effect: UIBlurEffect(style: .regular)).border(cornerRadius: 12.0)
         visualEffectView.contentView.color(.background, .dynamic(light: .init(white: 1, alpha: 0.4), dark: .init(white: 0.3, alpha: 0.4)))
         return visualEffectView
     }
     
-    func suggestedWidth() -> CGFloat {
+    private func suggestedWidth() -> CGFloat {
         guard let superview = superview else { return 0 }
-        return min(superview.bounds.width - horizontalPadding * 2, 480)
+        return min(superview.bounds.width - horizontalInset * 2, maximumWidth)
     }
     
-    func currentFrame() -> CGRect {
+    private func currentFrame() -> CGRect {
         guard let superview = superview else { return .zero }
         
         let x = (superview.bounds.width - suggestedWidth()) / 2
@@ -153,23 +295,20 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
         return .init(x: x, y: superview.bounds.height - (adjustToSafeAreaInsets ? superview.safeAreaInsets.bottom : 0) - componentViewHeight, width: suggestedWidth(), height: componentViewHeight)
     }
     
-    func destroy() {
-        for internalComponent in internalComponents {
+    private func destroy() {
+        for internalComponent in internalSectionComponents {
             for component in internalComponent.components {
                 component.contentView?.removeFromSuperview()
                 component.contentView = nil
             }
             internalComponent.containerView?.removeFromSuperview()
         }
-        internalComponents.removeAll()
+        internalSectionComponents.removeAll()
         buttonComponents.removeAll()
         
+        componentView.removeFromSuperview()
+        
         removeFromSuperview()
-    }
-    
-    public func invalidateLayout() {
-        componentViewBoundsCache = .zero
-        layoutSubviews()
     }
     
     public override func layoutSubviews() {
@@ -194,9 +333,9 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
         }
         
         var overallHeightTracker: CGFloat = 0.0
-        for (idx, internalComponent) in internalComponents.enumerated() {
+        for (idx, internalComponent) in internalSectionComponents.enumerated() {
             var internalComponentHeightTracker: CGFloat = 0.0
-            let subComponentView = internalComponent.containerView != nil ? internalComponent.containerView! : backgroundViewFactory(idx)
+            let subComponentView = internalComponent.containerView != nil ? internalComponent.containerView! : sectionBackgroundViewFactory(idx)
             subComponentView.frame = .init(x: 0, y: 0, width: width, height: 0)
             if initialLayout {
                 internalComponent.containerView = subComponentView
@@ -228,10 +367,9 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
                         if let button = buttonComponent.contentView as? SheetViewButton.HighlightButton {
                             buttonComponents.append(button)
                         }
-                        
                     }
                     if let customViewComponent = component as? SheetViewCustomView {
-                        if customViewComponent.enableInteractiveDismissGuesture {
+                        if customViewComponent.enableInteractiveDismissGesture {
                             customViewComponent.contentView?.addGestureRecognizer(UIPanGestureRecognizer({ [unowned self] (gesture) in
                                 guard let pan = gesture as? UIPanGestureRecognizer else { return }
                                 
@@ -240,7 +378,7 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
                                     
                                     let threshold: CGFloat = 50
                                     
-                                    if (yTranslation <= threshold) {
+                                    if (yTranslation <= threshold) || !self.isDismissable {
                                         let animationDuration = TimeInterval(0.001 * abs(yTranslation) + 0.35)
                                         UIView.animate(withDuration: animationDuration, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0, options: .allowUserInteraction, animations: {
                                             self.componentView.transform = .identity
@@ -334,18 +472,81 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
             return false
         }
     }
+
+    fileprivate class InternalSectionComponent {
+        let spacing: CGFloat
+        let components: [SheetViewComponent]
+        
+        weak var containerView: UIVisualEffectView? = nil
+        
+        init(spacing: CGFloat, components: [SheetViewComponent]) {
+            self.spacing = spacing
+            self.components = components
+        }
+    }
 }
 
+/**
+ Used as a base class for all components
+ 
+ Not recommended as a subclass for custom components, use `SheetViewCustomView` instead.
+ */
 open class SheetViewComponent {
+    /**
+     References the view to add when `show(in view: UIView?)` is called
+     
+     Should not be reassigned or nilled, once the sheet has been shown. Used as a reference in `layoutSubviews()`
+     */
     public var contentView: UIView?
+    
+    /**
+     Determines the height of the component
+     
+     All premade components have a pre-determined height.
+     */
     public var height: CGFloat = 0.0
+    
+    /**
+     Implement for dynamic height handling of a component
+     
+     Should a sheet require additional tuning or components have a different height depending on device orientation, implement this handler. The sheet will update automatically on `layoutSubviews()` or manually when `invalidateLayout()` is called.
+     
+     # Code Example
+     ```
+     let sheetViewCustomView = SheetViewCustomView(UIView(), height: 0)
+     sheetViewCustomView.dynamicHeightHandler = { [unowned self] parentRect in
+         return self.view.safeAreaInsets.bottom
+     }
+     ```
+     */
     public var dynamicHeightHandler: ((_ superviewBounds: CGRect)->(CGFloat))? = nil
+    
+    /**
+     Prevents the `contentView` from overflowing when its height is less than that of its subviews
+     
+     Useful when used in conjunction with `dynamicHeightHandler` - a component's visiblity can be toggled for a more complex sheet interface.
+     */
     public var clipsToBounds: Bool = true
 }
 
+/**
+ A component used to add buttons to a `SheetView` instance
+ 
+ In order to mimick the handeling and style of `UIAlertController` buttons, this class provides all the necessary logic. When a sheet is shown, the user can tap on a given button, change their mind and slide to a different one - changing the highlight states in the process. Since UIButton does not provide us with all necessary behaviour, `SheetViewButton` uses its own private subclass.
+ 
+ - Attention: Don't overwrite the `contentView` with a UIButton instance, this will break the custom gesture recognizer and internal logic.
+ */
 open class SheetViewButton: SheetViewComponent {
-    public var dismissOnTap: Bool = true
+    fileprivate var dismissOnTap: Bool = true
     
+    /**
+     Initializes a new button component with a default height of 54.0pts
+     
+     - parameter title: Title of the button in `.normal` state
+     - parameter configurationHandler: Optionally style the button, e.g. to change the color or font size
+     - parameter onTap: Called when the user taps the button
+     - parameter dismissOnTap: Change the value to `false` to prevent the `SheetView` instance from being dismissed when the button is being tapped
+     */
     public init(_ title: String, configurationHandler: ((UIButton)->())? = nil, onTap: ((UIButton)->())?, dismissOnTap: Bool = true) {
         super.init()
         
@@ -388,8 +589,17 @@ open class SheetViewButton: SheetViewComponent {
         }
     }
 }
+/**
+ A component used to separate components into sections within a `SheetView` instance
 
+ In order to logically divide the sheet into sections, insert space components where necessary. Mimicks the behaviour of `UIAlertController`, where usually the *Dismiss* or *Cancel* buttons are visually separated from the rest of the button groups.
+ */
 open class SheetViewSpace: SheetViewComponent {
+    /**
+      Initializes a new space component with a separation distance of 15.0pts
+
+      - parameter height: Distance between two sections
+     */
     public init(_ height: CGFloat = 15.0) {
         super.init()
         
@@ -397,9 +607,25 @@ open class SheetViewSpace: SheetViewComponent {
     }
 }
 
+/**
+A component used as a foundation for embedding custom views into a `SheetView` instance
+
+Subclass this component or use as-is. What separates this class from `SheetViewComponent` is the ability to enable an interactive dismiss gesture, which lets the user dismiss the `SheetView`.
+*/
 open class SheetViewCustomView: SheetViewComponent {
-    public var enableInteractiveDismissGuesture: Bool = false
+    /**
+     Determines if a `UIPanGestureRecognizer` is added to the `contentView`
+     
+     Before enabeling this property, make sure that adding an additional `UIGestureRecognizer` will not conflict with any existing ones, e.g. when the contentView is a `UITableView`.
+     */
+    public var enableInteractiveDismissGesture: Bool = false
     
+    /**
+     Initializes a new `SheetViewCustomView` instance
+
+     - parameter view: Assign a view that is to be embedded into the sheet
+     - parameter height: Determines the height of the component
+    */
     public init(_ view: UIView, height: CGFloat) {
         super.init()
         
@@ -408,15 +634,89 @@ open class SheetViewCustomView: SheetViewComponent {
     }
 }
 
+/**
+A component used to visually separate buttons or other components with a thin (1px) line
+*/
 open class SheetViewSeparator: SheetViewCustomView {
     public init() {
         super.init(UIView().color(.background, .hairline), height: .onePixel)
     }
 }
 
+/**
+A component used to communicate the availability of being able to interactivly dismiss the sheet through a panning gesture
+*/
+open class SheetViewPullTab: SheetViewCustomView {
+    /// Style makes sure that the pullTab fits in, regardless of the positioning
+    public enum Style {
+        /// Features a height of 30pts and a clear background color
+        case standard
+        /// Choose when pullTab is positioned above a `SheetViewNavigationBar` component to decrease the height and match background colors
+        case navigationBar
+    }
+    
+    /**
+     Initializes a new `SheetViewPullTab` instance
+
+     - parameter style: Change to a different style, depending on the component's positioning
+    */
+    public init(style: Style = .standard) {
+        let height: CGFloat = 30
+        
+        let pillIndicator = UIView(frame: .init(x: 0, y: 0, width: 40, height: 5))
+            .border(cornerRadius: 2.5)
+            .color(.background, .dynamic(light: .init(white: 0.2, alpha: 0.3), dark: .init(white: 1, alpha: 0.2)))
+        pillIndicator.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin, .flexibleBottomMargin]
+        
+        let contentView = UIView(frame: .init(x: 0, y: 0, width: 320, height: height))
+        contentView.addSubview(pillIndicator)
+        pillIndicator.center = contentView.center
+        
+        super.init(contentView, height: height)
+        
+        enableInteractiveDismissGesture = true
+        
+        if style == .navigationBar {
+            contentView.color(.background, SheetViewNavigationBar.backgroundColor)
+            self.height = 20
+        }
+    }
+}
+
+/**
+A component mimicking the style of `UINavigationBar` with a smaller title label
+*/
 open class SheetViewNavigationBar: SheetViewCustomView {
+    
+    /**
+     Define a default backgroundColor for all instances of `SheetViewNavigationBar`
+     
+     This property will also determine the background color of the `SheetViewPullTab` component when `SheetViewPullTab.Style` is set to `.navigationBar`
+     */
+    public static var backgroundColor: UIColor = .dynamic(light: .init(white: 1, alpha: 0.2), dark: .init(white: 0.3, alpha: 0.4))
+    
+    /**
+     Initializes a new `SheetViewNavigationBar` instance
+
+     - parameter title: Positioned in the center with a fixed size of 17.5pts
+     - parameter leftBarButton: Optional, add a UIButton on the left side of the navigation bar
+     - parameter rightBarButton: Optional, add a UIButton on the right side of the navigation bar
+     
+     This code serves as example for how to design and implement more complex custom views for a `SheetView`. `SplitView`s are being used to illustrate on how achive a more complex layout with minimal LOC.
+     
+     # Code Example
+     ```
+     let sheetNavigationBarComponent = SheetViewNavigationBar(
+         title: "Navigation Bar",
+         leftBarButton: nil,
+         rightBarButton: UIButton(title: "Save", type: .system).addAction(for: .touchUpInside, { (button) in
+             // perform save action
+         })
+     )
+     ```
+    */
     public init(title: String, leftBarButton: UIButton?, rightBarButton: UIButton?) {
-        let containerView = UIView().color(.background, .dynamic(light: .init(white: 1, alpha: 0.2), dark: .init(white: 0.3, alpha: 0.4)))
+        let containerView = UIView().color(.background, SheetViewNavigationBar.backgroundColor)
         let titleLabel = UILabel(title).size(17.5, .bold).align(.center)
         titleLabel.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         containerView.addSubview(titleLabel)
