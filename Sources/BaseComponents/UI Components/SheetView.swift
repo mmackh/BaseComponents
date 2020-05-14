@@ -109,6 +109,17 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
     }
     
     /**
+     Get notified when the sheet has completed the showing animation
+     */
+    public var onShow: ((SheetView)->())? = nil
+    
+    
+    /**
+     Get notified when the sheet was completely dismissed, but before it has been removed from the superview
+     */
+    public var onDismissed: ((SheetView)->())? = nil
+    
+    /**
      Prevent the sheet from being dismissed, if the user needs to meet a certain state
      
      The sheet can still be moved through interactive gestures, however it will refuse to close and thus prevent the user from tapping views below the sheet.
@@ -242,6 +253,11 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
             }) { (complete) in
                 if !complete { return }
                 
+                if let onDismissed = self.onDismissed {
+                    unowned let weakSelf = self
+                    onDismissed(weakSelf)
+                }
+                
                 self.destroy()
             }
             
@@ -254,6 +270,13 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
         
         UIView.animate(withDuration: 0.45, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.2, options: .allowUserInteraction, animations: {
             self.componentView.frame = self.currentFrame()
+        }, completion: { completed in
+            if !completed { return }
+            
+            if let onShow = self.onShow {
+                unowned let weakSelf = self
+                onShow(weakSelf)
+            }
         })
         
         self.color(.background, .clear)
