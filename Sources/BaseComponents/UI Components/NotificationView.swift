@@ -39,6 +39,8 @@ open class NotificationView: UIView {
     
     public static var iconWidth: CGFloat = 25.0
     public static var iconMessageSpacing: CGFloat = 10.0
+    public static var iconImageProvider: ((Style)->(UIImage))? = nil
+    public static var iconColorProvider: ((Style)->(UIColor))? = nil
     
     public var position: Position = .top
     public let messageLabel: UILabel = UILabel().lines(0)
@@ -61,11 +63,14 @@ open class NotificationView: UIView {
         view.addSubview(notificationView)
         
         if #available(iOS 13.0, *) {
-        } else {
-            iconWidth = 0
+        } else if NotificationView.iconImageProvider == nil {
+            NotificationView.iconWidth = 0
         }
         
-        if iconWidth > 0 {
+        if let iconProvider = NotificationView.iconImageProvider {
+            notificationView.iconImageView = UIImageView(image: iconProvider(style)).mode(.scaleAspectFit)
+            notificationView.addSubview(notificationView.iconImageView!)
+        } else if iconWidth > 0  {
             var iconName = ""
             switch style {
             case .info:
@@ -79,11 +84,11 @@ open class NotificationView: UIView {
             }
             
             if #available(iOS 13.0, *) {
-                notificationView.iconImageView = UIImageView(image: UIImage(systemName: iconName)).mode(.scaleAspectFit)
-                notificationView.addSubview(notificationView.iconImageView!)
+                let iconImageView = UIImageView(image: UIImage(systemName: iconName)).mode(.scaleAspectFit)
+                notificationView.iconImageView = iconImageView
+                notificationView.addSubview(iconImageView)
             }
         }
-        
         
         notificationView.frame = notificationView.currentFrame()
         
@@ -92,15 +97,19 @@ open class NotificationView: UIView {
             foregroundColor = .label
         }
         var iconColor: UIColor = .lightGray
-        switch style {
-        case .info:
-            iconColor = .lightGray
-        case .alert:
-            iconColor = UIColor(red:1.00, green:0.80, blue:0.00, alpha:1.00)
-        case .error:
-            iconColor = UIColor(red:1.00, green:0.27, blue:0.23, alpha:1.00)
-        case .success:
-            iconColor = UIColor(red:0.20, green:0.78, blue:0.35, alpha:1.00)
+        if let iconColorProvider =  NotificationView.iconColorProvider {
+            iconColor = iconColorProvider(style)
+        } else {
+            switch style {
+            case .info:
+                iconColor = .lightGray
+            case .alert:
+                iconColor = UIColor(red:1.00, green:0.80, blue:0.00, alpha:1.00)
+            case .error:
+                iconColor = UIColor(red:1.00, green:0.27, blue:0.23, alpha:1.00)
+            case .success:
+                iconColor = UIColor(red:0.20, green:0.78, blue:0.35, alpha:1.00)
+            }
         }
         
         var blurEffect = UIBlurEffect(style: .regular)
@@ -157,7 +166,7 @@ open class NotificationView: UIView {
         return notificationView
     }
     
-    func dismiss() {
+    public func dismiss() {
         if dismissed {
             return
         }
@@ -173,7 +182,11 @@ open class NotificationView: UIView {
          }
     }
     
-    func currentFrame() -> CGRect {
+    public func setIconImage(_ image: UIImage?) {
+        iconImageView?.image = image
+    }
+    
+    private func currentFrame() -> CGRect {
         guard let superview = superview else { return .zero }
         
         let padding: CGFloat = NotificationView.bannerHorizontalPadding
@@ -205,7 +218,7 @@ open class NotificationView: UIView {
         return notificationViewFrame
     }
     
-    func hiddenTransform() -> CGAffineTransform {
+    private func hiddenTransform() -> CGAffineTransform {
         return position == .top ? .init(translationX: 0, y: -(self.frame.height + self.frame.origin.y)) : .init(translationX: 0, y: frame.height + (superview!.frame.height - self.frame.origin.y))
     }
 
