@@ -421,7 +421,7 @@ public extension UIControl {
 public extension UIImageView {
     private struct Static {
         static var ImageViewRequestKey = "fetchRequestImageViewKey"
-        static let ImageViewQueue = DispatchQueue.init(label: "com.BaseComponents.UIImageView.Async")
+        static let ImageViewQueue = DispatchQueue.init(label: "at.BaseComponents.UIImageView.Async")
         static let Cache: URLCache = {
             #if targetEnvironment(macCatalyst)
                 return URLCache.shared
