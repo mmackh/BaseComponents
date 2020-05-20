@@ -4,7 +4,7 @@
 
 BaseComponents aims to provide easily reusable and understandable components to increase productivity with UIKit. Formerly written in Objective-C and used extensivly in production, the time has come to transition to Swift.
 
-Current Version: 0.6
+Current Version: 0.7
 
 **Important Note: API for Components is currently unstable.**
 
@@ -16,6 +16,7 @@ Current Version: 0.6
 
 #### Storage
 - [x] DiskData
+- [x] CloudKitData
 
 #### Networking
 - [x] NetFetch
