@@ -78,6 +78,7 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
     private var componentView: UIView = UIView()
     private var componentViewHeight: CGFloat = 0
     private var componentViewBoundsCache: CGRect = .zero
+    private var keyboardVisible = false
     
     private var internalSectionComponents: [SheetView.InternalSectionComponent] = []
     private var buttonComponents: [SheetViewButton.HighlightButton] = []
@@ -109,10 +110,14 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
     }
     
     /**
+     Get notified when the sheet will start the showing animation
+     */
+    public var onBeforeShow: ((SheetView)->())? = nil
+    
+    /**
      Get notified when the sheet has completed the showing animation
      */
     public var onShow: ((SheetView)->())? = nil
-    
     
     /**
      Get notified when the sheet was completely dismissed, but before it has been removed from the superview
@@ -146,6 +151,11 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
      The value for `horizontalInset` is deducted from `maximumWidth` for consistency purposes.
      */
     public var maximumWidth: CGFloat = 420.0
+    
+    /**
+     A `UITextField` or `UITextView` can require a software keyboard to be shown, which covers up a large portion of the screen. The default behaviour for the sheet is to reposition itself automatically in those situations
+     */
+    public var automaticKeyboardRepositioning: Bool = true
     
     /**
      Define custom backgrounds for sections created by adding `SheetViewSpace` inbetween other components
@@ -264,12 +274,26 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
             return
         }
         
+        if automaticKeyboardRepositioning {
+            let notificationCenter = NotificationCenter.default
+            notificationCenter.addObserver(self, selector:#selector(showKeyboard), name: UIResponder.keyboardWillShowNotification, object: nil)
+            notificationCenter.addObserver(self, selector:#selector(showKeyboard), name: UIResponder.keyboardDidShowNotification, object: nil)
+            notificationCenter.addObserver(self, selector:#selector(showKeyboard), name: UIResponder.keyboardWillHideNotification, object: nil)
+        }
+        
         invalidateLayout()
         self.componentView.frame = currentFrame()
         shown = true
         
+        if let onBeforeShow = self.onBeforeShow {
+            unowned let weakSelf = self
+            onBeforeShow(weakSelf)
+        }
+        
         UIView.animate(withDuration: 0.45, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.2, options: .allowUserInteraction, animations: {
-            self.componentView.frame = self.currentFrame()
+            if !self.keyboardVisible {
+                self.componentView.frame = self.currentFrame()
+            }
         }, completion: { completed in
             if !completed { return }
             
@@ -292,6 +316,34 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
         self.addGestureRecognizer(dismissTap)
     }
     
+    @objc func showKeyboard(notificationObject: Notification) {
+        let show = (notificationObject.name == UIResponder.keyboardDidShowNotification || notificationObject.name == UIResponder.keyboardWillShowNotification)
+        keyboardVisible = show
+        
+        let keyboardFrame = (notificationObject.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue ?? CGRect.zero
+        let animationDuration = (notificationObject.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0.0
+        let animationCurve = (notificationObject.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.uintValue ?? 0
+        if let superview = superview {
+            let masterFrame = superview.convert(superview.frame, to: window)
+            let intersectionFrame = masterFrame.intersection(keyboardFrame)
+            var targetFrame = superview.bounds
+            targetFrame.size.height -= intersectionFrame.size.height
+            UIView.animate(withDuration: animationDuration, delay: 0, options: UIView.AnimationOptions(rawValue: animationCurve), animations: {
+                self.frame = targetFrame
+                self.componentView.frame = self.currentFrame()
+            }, completion: nil)
+        }
+    }
+    
+    deinit {
+        if !automaticKeyboardRepositioning { return }
+        
+        let notificationCenter = NotificationCenter.default
+        notificationCenter.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        notificationCenter.removeObserver(self, name: UIResponder.keyboardDidShowNotification, object: nil)
+        notificationCenter.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
     private func sectionBackgroundViewFactory(_ section: Int) -> UIVisualEffectView {
         if let sectionBackgroundViewProvider = sectionBackgroundViewProvider {
             return sectionBackgroundViewProvider(section)
@@ -302,20 +354,17 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
     }
     
     private func suggestedWidth() -> CGFloat {
-        guard let superview = superview else { return 0 }
-        return min(superview.bounds.width - horizontalInset * 2, maximumWidth)
+        return min(bounds.width - horizontalInset * 2, maximumWidth)
     }
     
     private func currentFrame() -> CGRect {
-        guard let superview = superview else { return .zero }
-        
-        let x = (superview.bounds.width - suggestedWidth()) / 2
+        let x = (bounds.width - suggestedWidth()) / 2
         
         if dismissed || !shown {
-            return .init(x: x, y: superview.bounds.height, width: suggestedWidth(), height: componentViewHeight)
+            return .init(x: x, y: bounds.height, width: suggestedWidth(), height: componentViewHeight)
         }
         
-        return .init(x: x, y: superview.bounds.height - (adjustToSafeAreaInsets ? superview.safeAreaInsets.bottom : 0) - componentViewHeight, width: suggestedWidth(), height: componentViewHeight)
+        return .init(x: x, y: bounds.height - (adjustToSafeAreaInsets ? safeAreaInsets.bottom : 0) - componentViewHeight - (keyboardVisible ? 15 : 0), width: suggestedWidth(), height: componentViewHeight)
     }
     
     private func destroy() {
