@@ -146,6 +146,13 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
     public var adjustToSafeAreaInsets: Bool = true
     
     /**
+     The default bottom padding when `safeAreaInsets.bottom` is zero
+     
+     The safe area insets can be zero when the device has a homebutton or when the software keyboard is shown.
+     */
+    public var bottomPaddingOnSafeAreaUnavailable: CGFloat = 15.0
+    
+    /**
      The maximum width `SheetView` can have on wider screens
      
      The value for `horizontalInset` is deducted from `maximumWidth` for consistency purposes.
@@ -364,7 +371,7 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
             return .init(x: x, y: bounds.height, width: suggestedWidth(), height: componentViewHeight)
         }
         
-        return .init(x: x, y: bounds.height - (adjustToSafeAreaInsets ? safeAreaInsets.bottom : 0) - componentViewHeight - (keyboardVisible ? 15 : 0), width: suggestedWidth(), height: componentViewHeight)
+        return .init(x: x, y: bounds.height - (adjustToSafeAreaInsets ? (safeAreaInsets.bottom > 0 ? safeAreaInsets.bottom : bottomPaddingOnSafeAreaUnavailable) : 0) - componentViewHeight, width: suggestedWidth(), height: componentViewHeight)
     }
     
     private func destroy() {
