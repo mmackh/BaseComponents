@@ -58,7 +58,15 @@ open class ProgressView: UIView {
     fileprivate init(superview: UIView, type: ProgressViewType) {
         self.type = type
         
-        spinner = UIActivityIndicatorView(style: (type == .spinnerOnlySmall ? .gray : .whiteLarge))
+        let style: UIActivityIndicatorView.Style = {
+            if #available(iOS 13.0, *) {
+                return type == .spinnerOnlySmall ? .medium : .large
+            } else {
+                return type == .spinnerOnlySmall ? .gray : .whiteLarge
+            }
+        }()
+        
+        spinner = UIActivityIndicatorView(style: style)
         spinner.color = color
         spinner.autoresizingMask = [.flexibleTopMargin, .flexibleBottomMargin, .flexibleLeftMargin, .flexibleRightMargin]
         
