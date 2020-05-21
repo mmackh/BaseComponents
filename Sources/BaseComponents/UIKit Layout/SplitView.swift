@@ -145,7 +145,11 @@ open class SplitView: UIView {
     public static func suggestedSuperviewInsets() -> UIEdgeInsets {
         let defaultInset: CGFloat = 15.0
         var suggestedInsets = UIEdgeInsets(top: defaultInset, left: defaultInset, bottom: defaultInset, right: defaultInset)
-        if #available(iOS 11.0, *) {
+        if #available(iOS 13.0, *) {
+            if let keyWindow = UIApplication.shared.windows.first {
+                suggestedInsets = keyWindow.safeAreaInsets
+            }
+        } else {
             if let keyWindow = UIApplication.shared.keyWindow {
                 suggestedInsets = keyWindow.safeAreaInsets
             }
