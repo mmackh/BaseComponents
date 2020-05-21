@@ -449,6 +449,8 @@ open class DataRender: UIView {
     }
     
     public override func willMove(toSuperview newSuperview: UIView?) {
+        super.willMove(toSuperview: newSuperview)
+        
         frame = newSuperview?.bounds ?? CGRect.zero
     }
     
