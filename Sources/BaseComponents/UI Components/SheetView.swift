@@ -312,7 +312,7 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
         
         self.color(.background, .clear)
         UIView.animate(withDuration: 0.3) {
-            self.color(.background, .init(white: 0, alpha: 0.3))
+            self.color(.background, .dynamic(light: .init(white: 0, alpha: 0.2), dark: .init(white: 0, alpha: 0.6)))
         }
         
         let dismissTap = UITapGestureRecognizer { [weak self] (tap) in
