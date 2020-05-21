@@ -148,6 +148,11 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         super.addSubview(view)
     }
     
+    @available(*, unavailable)
+    public override func addSplitView(configurationHandler: (SplitView) -> Void) -> SplitView {
+        return super.addSplitView(configurationHandler: configurationHandler)
+    }
+    
     public func addSubview(_ view: UIView, layoutType: ScrollingViewLayoutType = .automatic, value: CGFloat = 0, edgeInsets: UIEdgeInsets = .zero) {
         let handler = ScrollingViewHandler()
         handler.layoutType = layoutType
