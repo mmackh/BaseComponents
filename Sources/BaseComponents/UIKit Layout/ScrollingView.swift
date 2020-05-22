@@ -137,10 +137,13 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
             let superSplitView = superview as! SplitView
             superSplitView.addSubview(self, layoutType: .percentage, value: 100)
         } else {
-            frame = superview.bounds
-            autoresizingMask = [.flexibleWidth,.flexibleHeight]
             superview.addSubview(self)
         }
+    }
+    
+    public override func didMoveToSuperview() {
+        frame = superview?.bounds ?? .zero
+        autoresizingMask = [.flexibleWidth,.flexibleHeight]
     }
     
     @available(*, unavailable)
