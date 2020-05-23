@@ -117,6 +117,7 @@ open class DataRender: UIView {
     fileprivate var dimensionCache: Dictionary<Int, Dictionary<AnyHashable, CGSize>> = Dictionary()
     fileprivate var dimensionRender: DataRender?
     fileprivate var dimensionPreviousWidth: Int = 0
+    fileprivate var waitingForDimensionRenderToLayout: Bool = false
     
     public private(set) var mode: DataRenderMode = .table
     
@@ -143,6 +144,7 @@ open class DataRender: UIView {
         }()
     
         self.itemSizeHandler { [unowned self] (itemLayoutProperties) -> CGSize in
+            if self.waitingForDimensionRenderToLayout { return .zero }
             
             let width = Int(self.dimensionRender?.bounds.width ?? 0);
             let cacheKey: AnyHashable = cacheKeyHandler(itemLayoutProperties)
@@ -158,7 +160,16 @@ open class DataRender: UIView {
             
             if self.dimensionPreviousWidth != width {
                 self.dimensionRender?.renderArray([itemLayoutProperties.object])
+                self.waitingForDimensionRenderToLayout = true
+                DispatchQueue.main.async {
+                    self.waitingForDimensionRenderToLayout = false
+                    UIView.performWithoutAnimation {
+                        self.tableView?.beginUpdates()
+                        self.tableView?.endUpdates()
+                    }
+                }
                 self.dimensionPreviousWidth = width
+                if self.waitingForDimensionRenderToLayout { return .zero }
             }
             
             if self.dimensionCache[width] == nil {
@@ -563,7 +574,6 @@ open class DataRender: UIView {
 extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     public override func layoutSubviews() {
         collectionView?.collectionViewLayout.invalidateLayout()
-        
         super.layoutSubviews()
     }
     
@@ -593,6 +603,8 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
     }
     
     public func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if waitingForDimensionRenderToLayout { return tableView.bounds.height }
+        
         if let itemSizeHandler = itemSizeHandler {
             weak var render = self
             return itemSizeHandler(DataRenderItemLayoutProperties(indexPath: indexPath, renderBounds: tableView.bounds, insets: tableView.contentInset, spacing: 0.0, render: render, object: objectForIndexPath(indexPath))).height
@@ -601,6 +613,8 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
     }
     
     public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        cell.alpha = waitingForDimensionRenderToLayout ? 0 : 1
+        
         if let beforeDisplay = beforeDisplay {
             weak var render = self
             beforeDisplay(DataRenderItemRenderProperties(indexPath: indexPath, cell: cell, object: objectForIndexPath(indexPath), render: render))

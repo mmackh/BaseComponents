@@ -36,6 +36,17 @@ public extension CloudKitDataCodable {
     }
 }
 
+public class CloudKitAsset: Codable {
+    var metadata: [String:String] = [:]
+    var fileURL: URL
+    var record: CloudKitRecord?
+    
+    init(fileURL: URL, metadata: [String:String]) {
+        self.fileURL = fileURL
+        self.metadata = metadata
+    }
+}
+
 open class CloudKitRecord: Codable {
     public let id: String
     public let changeTag: String
@@ -43,6 +54,7 @@ open class CloudKitRecord: Codable {
     public let modificationDate: Date?
     public let zoneName: String
     public let zoneOwnerName: String
+    public let ckRecordBackingData: Data?
    
     init(record: CKRecord) {
         self.id = record.recordID.recordName
@@ -50,9 +62,23 @@ open class CloudKitRecord: Codable {
         self.creationDate = record.creationDate
         self.modificationDate = record.modificationDate
         
-        
         self.zoneName = record.recordID.zoneID.zoneName
         self.zoneOwnerName = record.recordID.zoneID.ownerName
+        
+        do {
+            self.ckRecordBackingData = try NSKeyedArchiver.archivedData(withRootObject: record, requiringSecureCoding: false)
+        } catch {
+            self.ckRecordBackingData = nil
+        }
+    }
+    
+    func ckRecord() -> CKRecord? {
+        do {
+            if let ckRecordBackingData = ckRecordBackingData {
+                return try NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(ckRecordBackingData) as? CKRecord
+            }
+        } catch { }
+        return nil
     }
     
     func ckRecordID() -> CKRecord.ID {
@@ -61,15 +87,24 @@ open class CloudKitRecord: Codable {
 }
 
 open class CloudKitDataProvider {
+    public enum ShouldUpdateReason {
+        case triggeredByKeyValueStoreChange
+        case triggeredExternally
+    }
+    
     private class Keys {
         static let dataKey = "data"
         static let searchKey = "search"
+        
+        static let metadataKey = "metadata"
+        static let assetKey = "asset"
+        static let parentKey = "parent"
     }
     
     public static let queue = DispatchQueue.init(label: "at.BaseComponents.CloudKitData.Async")
     public static var qualityOfService: QualityOfService = .userInteractive
     
-    public var container = CKContainer.default()
+    public var container: CKContainer
     public var databaseScope: CKDatabase.Scope
     public var database: CKDatabase {
         get {
@@ -78,27 +113,54 @@ open class CloudKitDataProvider {
     }
     public var zone: CKRecordZone
     public var userID: CKRecord.ID?
-    public var onShouldUpdate: (()->())? = nil
     
-    public init(_ databaseScope: CKDatabase.Scope, zone: CKRecordZone = .default()) {
+    private static var dateWrittenToKeyValueStore: Date = Date()
+    public static var enabledKeyValueStoreUpdateTrigger: Bool = true
+    public var onShouldUpdate: ((_ reason: ShouldUpdateReason)->())? = nil
+    
+    public init(_ databaseScope: CKDatabase.Scope, zone: CKRecordZone = .default(), container: CKContainer = CKContainer.default()) {
         self.databaseScope = databaseScope
         self.zone = zone
+        self.container = container
         
-        NotificationCenter.default.addObserver(self, selector: #selector(onKeyValueChanged(_:)), name: NSUbiquitousKeyValueStore.didChangeExternallyNotification, object: NSUbiquitousKeyValueStore.default)
-        NSUbiquitousKeyValueStore.default.synchronize()
-    }
-    
-    @objc func onKeyValueChanged(_ notification:Notification) {
-        if let onShouldUpdate = onShouldUpdate {
-            onShouldUpdate()
+        if CloudKitDataProvider.enabledKeyValueStoreUpdateTrigger {
+            NotificationCenter.default.addObserver(self, selector: #selector(onKeyValueChanged(_:)), name: NSUbiquitousKeyValueStore.didChangeExternallyNotification, object: NSUbiquitousKeyValueStore.default)
+            NSUbiquitousKeyValueStore.default.synchronize()
         }
     }
     
+    @objc func onKeyValueChanged(_ notification:Notification) {
+        let keyValueStore = NSUbiquitousKeyValueStore.default
+        if let storedDate = keyValueStore.object(forKey: "sync") as? Date {
+            if storedDate <= CloudKitDataProvider.dateWrittenToKeyValueStore { return }
+        }
+        
+        triggerOnShouldUpdateHandler(with: .triggeredByKeyValueStoreChange)
+    }
+    
     static func storeChangeInKeyValueCloud() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        if !CloudKitDataProvider.enabledKeyValueStoreUpdateTrigger { return }
+        
+        dateWrittenToKeyValueStore = Date()
+        
+        DispatchQueue.main.async {
             let keyValueStore = NSUbiquitousKeyValueStore.default
-            keyValueStore.set(Date(), forKey: "sync")
+            keyValueStore.set(dateWrittenToKeyValueStore, forKey: "sync")
             keyValueStore.synchronize()
+        }
+    }
+    
+    deinit {
+        if CloudKitDataProvider.enabledKeyValueStoreUpdateTrigger {
+            NotificationCenter.default.removeObserver(self)
+        }
+    }
+    
+    public func triggerOnShouldUpdateHandler(with reason: ShouldUpdateReason) {
+        if let onShouldUpdate = onShouldUpdate {
+            DispatchQueue.main.async {
+                onShouldUpdate(reason)
+            }
         }
     }
     
@@ -120,10 +182,20 @@ open class CloudKitDataProvider {
             return token
         }
         
-        let defaultZoneOptions = CKFetchRecordZoneChangesOperation.ZoneOptions()
-        defaultZoneOptions.previousServerChangeToken = getToken()
+        let operation: CKFetchRecordZoneChangesOperation = {
+            if #available(iOS 12.0, *) {
+                let defaultZoneOptions = CKFetchRecordZoneChangesOperation.ZoneConfiguration()
+                defaultZoneOptions.previousServerChangeToken = getToken()
+                
+                return CKFetchRecordZoneChangesOperation(recordZoneIDs: [zone.zoneID], configurationsByRecordZoneID: [zone.zoneID: defaultZoneOptions])
+            } else {
+                let defaultZoneOptions = CKFetchRecordZoneChangesOperation.ZoneOptions()
+                defaultZoneOptions.previousServerChangeToken = getToken()
+                
+                return CKFetchRecordZoneChangesOperation(recordZoneIDs: [zone.zoneID], optionsByRecordZoneID: [zone.zoneID:defaultZoneOptions])
+            }
+        }()
         
-        let operation = CKFetchRecordZoneChangesOperation(recordZoneIDs: [zone.zoneID], optionsByRecordZoneID: [zone.zoneID:defaultZoneOptions])
         operation.recordChangedBlock = { record in
             onRecordChanged(record)
         }
@@ -165,16 +237,16 @@ open class CloudKitDataProvider {
             }
         }
         
-        CloudKitDataProvider.ckRecord(from: object) { (record, error) in
-            guard let record = record else {
+        CloudKitDataProvider.ckRecord(from: object) { (ckRecord, error) in
+            guard let ckRecord = ckRecord else {
                 respond(nil, error)
                 return
             }
             
             if object.record != nil {
                 let modifyOperation = CKModifyRecordsOperation()
-                modifyOperation.recordsToSave = [record]
-                modifyOperation.savePolicy = .allKeys
+                modifyOperation.recordsToSave = [ckRecord]
+                modifyOperation.savePolicy = .ifServerRecordUnchanged
                 modifyOperation.qualityOfService = CloudKitDataProvider.qualityOfService
                 modifyOperation.perRecordCompletionBlock = { ckRecord, error in
                     respond(ckRecord, error)
@@ -183,13 +255,13 @@ open class CloudKitDataProvider {
                 return
             }
             
-            self.database.save(record) { (ckRecord, error) in
+            self.database.save(ckRecord) { (ckRecord, error) in
                 respond(ckRecord, nil)
             }
         }
     }
     
-    public func fetch<T: CloudKitDataCodable>(_ type: T.Type, with request: CloudKitRequest = .init(), completionHandler: @escaping([T]?,Error?) -> ()) {
+    public func fetch<T: CloudKitDataCodable>(_ type: T.Type, with request: Request = .init(), completionHandler: @escaping([T]?,Error?) -> ()) {
         CloudKitDataProvider.queue.async {
             let limitRequestToCurrentUser = request.limitResultsToCurrentUser && self.database.databaseScope == .public
             
@@ -215,10 +287,19 @@ open class CloudKitDataProvider {
             }
             
             let query = CKQuery(recordType: String(describing: type), predicate: predicate)
+            query.sortDescriptors = request.sortDescriptors
+            
             let operation = CKQueryOperation(query: query)
             operation.qualityOfService = CloudKitDataProvider.qualityOfService
             operation.resultsLimit = request.resultsLimit
             operation.zoneID = self.zone.zoneID
+            operation.recordFetchedBlock = { record in
+                addModelFromRecord(record)
+            }
+            operation.queryCompletionBlock = { (cursor, error) in
+                continueFetchIfNecessary(with: cursor, error: error)
+            }
+            self.database.add(operation)
             
             func addModelFromRecord(_ ckRecord: CKRecord) {
                 CloudKitDataProvider.model(type, from: ckRecord, completionHandler: { object, error in
@@ -250,14 +331,6 @@ open class CloudKitDataProvider {
                 }
                 self.database.add(operation)
             }
-            
-            operation.recordFetchedBlock = { record in
-                addModelFromRecord(record)
-            }
-            operation.queryCompletionBlock = { (cursor, error) in
-                continueFetchIfNecessary(with: cursor, error: error)
-            }
-            self.database.add(operation)
         }
     }
     
@@ -274,12 +347,146 @@ open class CloudKitDataProvider {
             }
         }
     }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
+
+    public struct Request {
+        public var resultsLimit: Int = 50
+        public var limitResultsToCurrentUser: Bool = true
+        public var predicate: NSPredicate?
+        public var sortDescriptors: [NSSortDescriptor] = [.init(key: "modificationDate", ascending: false)]
+        
+        public init(predicate: NSPredicate? = nil) {
+            self.predicate = predicate
+        }
     }
 }
 
+/**
+ Manage assets for `CloudKitCodable` objects
+ */
+public extension CloudKitDataProvider {
+    func add<T: CloudKitDataCodable>(asset: CloudKitAsset, to object: T, action: CKRecord_Reference_Action = .deleteSelf,completionHandler: @escaping(CloudKitAsset?, Error?)->()) {
+        func signal(_ asset: CloudKitAsset?,_ error: Error?) {
+            DispatchQueue.main.async {
+                completionHandler(asset, error)
+            }
+        }
+        
+        CloudKitDataProvider.queue.async {
+            if let parentRecord = object.record?.ckRecordID() {
+                let ckRecord = CKRecord(recordType: String(describing: CloudKitAsset.self))
+                do {
+                    try ckRecord[Keys.dataKey] = NSKeyedArchiver.archivedData(withRootObject: asset.metadata, requiringSecureCoding: false)
+                } catch {
+                    signal(nil, error)
+                    return
+                }
+                ckRecord[Keys.parentKey] = CKRecord.Reference(recordID: parentRecord, action: action)
+                ckRecord[Keys.assetKey] = CKAsset(fileURL: asset.fileURL)
+                
+                self.database.save(ckRecord) { (savedCKRecord, error) in
+                    if error != nil || savedCKRecord == nil {
+                        signal(nil, error)
+                        return
+                    }
+                    guard let savedCKRecord = savedCKRecord else { return }
+                    asset.record = CloudKitRecord(record: savedCKRecord)
+                    signal(asset, error)
+                }
+            }
+        }
+    }
+    
+    func getAssets<T: CloudKitDataCodable>(for object: T, completionHandler: @escaping([CloudKitAsset]?, Error?)->()) {
+        CloudKitDataProvider.queue.async {
+            guard let recordName = object.record?.ckRecordID().recordName else { return }
+            
+            let predicate = NSPredicate(format: "%@ = %@",Keys.parentKey, recordName)
+            let query = CKQuery(recordType: String(describing: CloudKitAsset.self), predicate: predicate)
+            query.sortDescriptors = [.init(key: "modifiedDate", ascending: false)]
+            
+            var targetArray: [CloudKitAsset] = []
+            
+            let operation = CKQueryOperation(query: query)
+            operation.qualityOfService = CloudKitDataProvider.qualityOfService
+            operation.resultsLimit = 50
+            operation.zoneID = self.zone.zoneID
+            operation.recordFetchedBlock = { record in
+                addAssetFromRecord(record)
+            }
+            operation.queryCompletionBlock = { (cursor, error) in
+                continueFetchIfNecessary(with: cursor, error: error)
+            }
+            self.database.add(operation)
+            
+            func addAssetFromRecord(_ ckRecord: CKRecord) {
+                if let ckAsset = ckRecord[Keys.assetKey] as? CKAsset, let fileURL = ckAsset.fileURL, let metadataData = ckRecord[Keys.metadataKey] as? Data {
+                    do {
+                        guard let metadata = try NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(metadataData) as? [String:String] else { return }
+                        let asset = CloudKitAsset(fileURL: fileURL, metadata: metadata)
+                        asset.record = CloudKitRecord(record: ckRecord)
+                        targetArray.append(asset)
+                    } catch {
+                        
+                    }
+                }
+            }
+            
+            func continueFetchIfNecessary(with cursor: CKQueryOperation.Cursor?, error: Error?) {
+                guard let cursor = cursor else {
+                    DispatchQueue.main.async {
+                        if error != nil {
+                            completionHandler(nil, error)
+                        } else {
+                            completionHandler(targetArray, nil)
+                        }
+                    }
+                    return
+                }
+                let operation = CKQueryOperation(cursor: cursor)
+                operation.qualityOfService = CloudKitDataProvider.qualityOfService
+                operation.zoneID = self.zone.zoneID
+                operation.recordFetchedBlock = { record in
+                    addAssetFromRecord(record)
+                }
+                operation.queryCompletionBlock = { (cursor, error) in
+                    continueFetchIfNecessary(with: cursor, error: error)
+                }
+                self.database.add(operation)
+            }
+        }
+    }
+    
+    func removeAsset<T: CloudKitDataCodable>(_ asset: CloudKitAsset, from object: T, completionHandler: @escaping(Error?)->()) {
+        guard let record = asset.record else { return }
+        CloudKitDataProvider.queue.async {
+            self.database.delete(withRecordID: record.ckRecordID()) { (recordID, error) in
+                DispatchQueue.main.async {
+                    if error == nil {
+                        
+                    }
+                    completionHandler(error)
+                }
+            }
+        }
+    }
+    
+    static func storeAssetChangeInKeyValueCloud<T: CloudKitDataCodable>(for object: T) {
+        if !CloudKitDataProvider.enabledKeyValueStoreUpdateTrigger { return }
+        
+        guard let record = object.record else { return }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            let keyValueStore = NSUbiquitousKeyValueStore.default
+            keyValueStore.set(Date(), forKey: record.id)
+            keyValueStore.synchronize()
+        }
+    }
+    
+}
+
+/**
+ Extension to handle the conversions between `CloudKitCodable` and `CKRecord`
+ */
 public extension CloudKitDataProvider {
     static func ckRecord<T: CloudKitDataCodable>(from object: T, completionHandler: @escaping(CKRecord?,Error?)->()) {
         queue.async {
@@ -290,8 +497,8 @@ public extension CloudKitDataProvider {
                 data = try JSONEncoder().encode(object)
                 object.record = recordBackup
                 let ckRecord: CKRecord = {
-                    if let record = object.record {
-                        return CKRecord(recordType: recordType, recordID: record.ckRecordID())
+                    if let ckRecord = object.record?.ckRecord() {
+                        return ckRecord
                     }
                     return CKRecord(recordType: recordType)
                 }()
@@ -315,29 +522,5 @@ public extension CloudKitDataProvider {
             }
         }
         completionHandler(nil, nil)
-    }
-}
-
-public struct CloudKitRequest {
-    public let resultsLimit: Int = 50
-    public let limitResultsToCurrentUser: Bool = true
-    public let predicate: NSPredicate?
-    
-    public init(predicate: NSPredicate? = nil) {
-        self.predicate = predicate
-    }
-}
-
-//TODO: be able to attach assets
-public class Asset {
-    var data: Data? = nil
-    var metadata: [String:String] = [:]
-    
-    var fileURL: URL
-    var key: String
-    
-    init(key: String, fileURL: URL) {
-        self.key = key
-        self.fileURL = fileURL
     }
 }

@@ -572,6 +572,17 @@ public extension UIAlertController {
 }
 
 public extension UIEdgeInsets {
+    var horizontal: CGFloat {
+        get {
+            return left + right
+        }
+    }
+    var vertical: CGFloat {
+        get {
+            return top + bottom
+        }
+    }
+    
     init(padding: CGFloat) {
         self.init(top: padding, left: padding, bottom: padding, right: padding)
     }
