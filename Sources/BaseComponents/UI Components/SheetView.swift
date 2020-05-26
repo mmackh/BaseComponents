@@ -356,7 +356,7 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
             return sectionBackgroundViewProvider(section)
         }
         let visualEffectView = UIVisualEffectView(effect: UIBlurEffect(style: .regular)).border(cornerRadius: 12.0)
-        visualEffectView.contentView.color(.background, .dynamic(light: .init(white: 1, alpha: 0.4), dark: .init(white: 0.3, alpha: 0.4)))
+        visualEffectView.contentView.color(.background, .dynamic(light: .init(white: 1, alpha: 0.7), dark: .init(white: 0.1, alpha: 0.4)))
         return visualEffectView
     }
     
@@ -619,7 +619,7 @@ open class SheetViewButton: SheetViewComponent {
     fileprivate var dismissOnTap: Bool = true
     
     /**
-     Initializes a new button component with a default height of 54.0pts
+     Initializes a new button component with a default height of 57.0pts
      
      - parameter title: Title of the button in `.normal` state
      - parameter configurationHandler: Optionally style the button, e.g. to change the color or font size
@@ -629,7 +629,7 @@ open class SheetViewButton: SheetViewComponent {
     public init(_ title: String, configurationHandler: ((UIButton)->())? = nil, onTap: ((UIButton)->())?, dismissOnTap: Bool = true) {
         super.init()
         
-        let button = HighlightButton(title: title).size(17.5)
+        let button = HighlightButton(title: title).size(19.0)
         
         if let configurationHandler = configurationHandler {
             unowned let buttonUnowned = button
@@ -644,7 +644,7 @@ open class SheetViewButton: SheetViewComponent {
         
         self.dismissOnTap = dismissOnTap
         self.contentView = button
-        self.height = 54.0
+        self.height = 57.0
     }
     
     fileprivate class HighlightButton: UIButton {
@@ -675,11 +675,11 @@ open class SheetViewButton: SheetViewComponent {
  */
 open class SheetViewSpace: SheetViewComponent {
     /**
-      Initializes a new space component with a separation distance of 15.0pts
+      Initializes a new space component with a separation distance of 8.0pts
 
       - parameter height: Distance between two sections
      */
-    public init(_ height: CGFloat = 15.0) {
+    public init(_ height: CGFloat = 8.0) {
         super.init()
         
         self.height = height
