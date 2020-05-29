@@ -839,11 +839,11 @@ public extension SheetView {
     /**
      Convenience function to display an instance of `SheetView` with buttons and a closure as completion handler.
      
-     Buttons are tuples with an optional color variable. Useful when alerting the user to a destructive action.
+     Buttons are built out of the provided strings. To show a destructive action, set the appropriate index.
     
      # Code Example
      ```
-     SheetView.showIn(view: self.navigationController?.view, buttons: [("Edit Note",nil),("Delete",.red)], dismissButton: ("Dismiss",nil)) { [unowned self] (idx) in
+     SheetView.showIn(view: self.navigationController?.view, buttons: ["Edit Note","Delete"], destructiveButtonIndex: 1, dismissButton: "Dismiss") { (idx) in
          if idx == 0 {
              self.showEditSheet(for: itemRenderProperties.object as? Note)
          }
@@ -860,19 +860,20 @@ public extension SheetView {
      ```
     
      - parameter view: Superview upon which all `SheetView` components will be added.
-     - parameter buttons: Tuple with (title: String, color: UIColor?)
-     - parameter dismissButton: Optional: tuple with tile and optional color
-     - parameter onDismiss: closure that is called when a button has been tapped. Will not be called when the dismiss button has been tapped
+     - parameter buttons: Array of button title strings
+     - parameter destructiveButtonIndex: Adds a red color to the button at the given index. By default -1, which means no destructive action is present within the sheet
+     - parameter dismissButton: Optional: title for dismiss button
+     - parameter onDismiss: Closure that is called when a button has been tapped. Will not be called when the dismiss button has been tapped
     */
     @discardableResult
-    static func showIn(view: UIView?, buttons: [(String, UIColor?)], dismissButton: (String, UIColor?)?, onDismiss: @escaping(_ buttonIdx: Int)->()) -> SheetView {
+    static func showIn(view: UIView?, buttons: [String], destructiveButtonIndex: NSInteger = -1, dismissButton: String?, onDismiss: @escaping(_ buttonIdx: Int)->()) -> SheetView {
         let sheetView = SheetView()
         let lastIdx = buttons.count - 1
         var components: [SheetViewComponent] = []
         for (idx, button) in buttons.enumerated() {
-            components.append(SheetViewButton(button.0, configurationHandler: { (uiButton) in
-                if let color = button.1 {
-                    uiButton.color(.text, color)
+            components.append(SheetViewButton(button, configurationHandler: { (uiButton) in
+                if idx == destructiveButtonIndex {
+                    uiButton.color(.text, .red)
                 }
             }, onTap: { (uiButton) in
                 onDismiss(idx)
@@ -884,10 +885,8 @@ public extension SheetView {
         
         if let dismissButton = dismissButton {
             components.append(SheetViewSpace())
-            components.append(SheetViewButton(dismissButton.0, configurationHandler: { (button) in
-                if let dismissButtonColor = dismissButton.1 {
-                    button.color(.text, dismissButtonColor).size(19, .bold)
-                }
+            components.append(SheetViewButton(dismissButton, configurationHandler: { (button) in
+                button.size(19, .bold)
             }, onTap: nil, dismissOnTap: true))
         }
         
