@@ -629,7 +629,7 @@ open class SheetViewButton: SheetViewComponent {
     public init(_ title: String, configurationHandler: ((UIButton)->())? = nil, onTap: ((UIButton)->())?, dismissOnTap: Bool = true) {
         super.init()
         
-        let button = HighlightButton(title: title).size(19.0)
+        let button = HighlightButton.button(with: title).size(19.0)
         
         if let configurationHandler = configurationHandler {
             unowned let buttonUnowned = button
@@ -654,17 +654,10 @@ open class SheetViewButton: SheetViewComponent {
             }
         }
         
-        init(title: String) {
-            super.init(frame: .zero)
-            
-            setTitle(title, for: .normal)
-            setTitleColor(tintColor, for: .normal)
-            
-            isUserInteractionEnabled = false
-        }
-        
-        required init?(coder: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
+        static func button(with title: String) -> HighlightButton {
+            let button: HighlightButton = HighlightButton(title: title, type: .system)
+            button.isUserInteractionEnabled = false
+            return button
         }
     }
 }
