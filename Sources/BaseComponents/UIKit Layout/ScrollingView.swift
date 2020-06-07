@@ -39,7 +39,10 @@ private class ScrollingViewHandler {
     var staticEdgeInsets: UIEdgeInsets = UIEdgeInsets.zero
 
     func getLayoutInstruction(_ superviewBounds: CGRect) -> ScrollingViewLayoutInstruction {
-        return (valueHandler == nil) ? ScrollingViewLayoutInstruction(layoutType: layoutType, value: staticValue, edgeInsets: staticEdgeInsets) : valueHandler!(superviewBounds)
+        guard let valueHandler = valueHandler else {
+            return ScrollingViewLayoutInstruction(layoutType: layoutType, value: staticValue, edgeInsets: staticEdgeInsets)
+        }
+        return valueHandler(superviewBounds)
     }
 }
 
