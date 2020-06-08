@@ -31,6 +31,7 @@ Current Version: 0.7
 - [x] PerformLabel
 
 #### UI Components
+- [x] CountdownPickerView
 - [x] NotificationView
 - [x] ProgressView
 - [x] SheetView
