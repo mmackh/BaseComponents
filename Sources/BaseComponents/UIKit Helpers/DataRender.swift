@@ -722,9 +722,8 @@ extension DataRender: UITableViewDelegate, UITableViewDataSource, UICollectionVi
     }
     
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        if let itemSizeHandler = itemSizeHandler {
+        if let itemSizeHandler = itemSizeHandler, let flowLayout = collectionViewLayout as? UICollectionViewFlowLayout {
             weak var render = self
-            let flowLayout = collectionViewLayout as! UICollectionViewFlowLayout
             return itemSizeHandler(DataRenderItemLayoutProperties(indexPath: indexPath, renderBounds: collectionView.bounds, insets: flowLayout.sectionInset, spacing: flowLayout.minimumLineSpacing, render: render, object: objectForIndexPath(indexPath)))
         }
         return CGSize(width: 100, height: 100)
