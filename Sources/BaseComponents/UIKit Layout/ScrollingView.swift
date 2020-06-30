@@ -27,7 +27,7 @@ public enum ScrollingViewLayoutType: Int {
 
 public extension UIView {
     @discardableResult
-    func addScrollingView(configurationHandler: (_ scrollingView: ScrollingView) -> Void) -> ScrollingView {
+    @objc func addScrollingView(configurationHandler: (_ scrollingView: ScrollingView) -> Void) -> ScrollingView {
         return ScrollingView(superview: self, configurationHandler: configurationHandler)
     }
 }

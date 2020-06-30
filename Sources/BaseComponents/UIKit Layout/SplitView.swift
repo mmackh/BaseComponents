@@ -53,14 +53,17 @@ public extension SplitView {
     }
 }
 
-private class SplitViewHandler {
+public class SplitViewHandler {
     var layoutType: SplitViewLayoutType = .fixed
     var valueHandler: ((CGRect) -> SplitViewLayoutInstruction)?
     var staticValue: CGFloat = 0.0
     var staticEdgeInsets: UIEdgeInsets = UIEdgeInsets.zero
     
     func getLayoutInstruction(_ superviewBounds: CGRect) -> SplitViewLayoutInstruction {
-        return (valueHandler == nil) ? SplitViewLayoutInstruction(layoutType: layoutType, value: staticValue, edgeInsets: staticEdgeInsets) : valueHandler!(superviewBounds)
+        if let valueHandler = valueHandler {
+            return valueHandler(superviewBounds)
+        }
+        return SplitViewLayoutInstruction(layoutType: layoutType, value: staticValue, edgeInsets: staticEdgeInsets)
     }
 }
 
