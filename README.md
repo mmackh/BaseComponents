@@ -8,30 +8,245 @@ Current Version: 0.8
 
 **Important Note: API for Components is currently unstable.**
 
-### Components Roadmap
+## Components
 
-#### Layout
-- [x] ConditionalLayoutView
-- [x] ScrollingView
-- [x] SplitView
+### Layout
+#### ConditionalLayoutView  
 
-#### Storage
-- [x] DiskData
-- [x] CloudKitData
+<details>
+<summary>Adjust the order, size and selection of subviews based on traitCollections, userInterfaceIdiom, screen size or any other condition. The actual layout is performed by a ```SplitView``` instance.</summary>
 
-#### Networking
-- [x] NetFetch
+**First Steps**  
+Use ```addConditionalLayoutView()``` on any ```UIView```. To add conditional layout paths use ```addSubviews()``` and return ```true``` if a layout condition is met.
 
-#### UIKit Helpers
-- [x] ControlClosures
-- [x] Conveniences
-- [x] DataRender
-- [x] KeyboardManager
+**Code Sample**
+```
+view.addConditionalLayoutView { (conditionalLayoutView) in
+    let redView = UIView().color(.background, .red)
+    let greenView = UIView().color(.background, .green)
+    let blueView = UIView().color(.background, .blue)
 
-#### UIKit Reimplementations
+    conditionalLayoutView.addSubviews({ (targetView) in
+        targetView.addSubview(redView, layoutType: .equal)
+        targetView.addSubview(greenView, layoutType: .equal)
+        targetView.addSubview(blueView, layoutType: .equal)
+    }) { (traitCollection) -> Bool in
+        return traitCollection.horizontalSizeClass == .compact || traitCollection.horizontalSizeClass == .unspecified
+    }
+
+    conditionalLayoutView.addSubviews({ (targetView) in
+        targetView.addSubview(greenView, layoutType: .percentage, value: 30, edgeInsets: .init(horizontal: 10))
+        targetView.addSubview(redView, layoutType: .percentage, value: 70)
+    }) { (traitCollection) -> Bool in
+        return traitCollection.horizontalSizeClass == .regular
+    }
+}
+```
+---
+</details>
+
+#### ScrollingView
+<details>
+<summary>A subclass of ```UIScrollView``` to programatically layout  subviews in a given direction. The size of a subview along a horizontal or vertical direction can be determined automatically, e.g. ```UILabel```, or by providing a fixed point value.</summary>
+
+**First Steps**  
+Use ```addScrollingView()``` on any ```UIView```. 
+
+**Code Sample**
+```
+view.addScrollingView { (scrollingView) in
+    let label = UILabel("Large Title").size(.largeTitle, .bold)
+    scrollingView.addSubview(label, edgeInsets: .init(horizontal: 15))
+
+    let contentView = UIView().color(.background, .red)
+    scrollingView.addSubview(contentView, layoutType: .fixed, value: 500)
+
+    let footerView = UIView().color(.background, .blue)
+    scrollingView.addSubview(footerView, layoutType: .fixed, value: 400)
+}
+```
+---
+</details>
+
+#### SplitView
+<details>
+<summary>Divide the available ```width``` or ```height``` of a ```UIView``` amongst its subviews programmatically. </summary>
+
+**First Steps**  
+Use ```addSplitView()``` on any ```UIView```. 
+
+**Code Sample**
+```
+view.addSplitView { (splitView) in
+    splitView.direction = .vertical
+    
+    splitView.addSubview(UIView().color(.background, .red), layoutType: .equal)
+    splitView.addSubview(UIView().color(.background, .blue), layoutType: .equal)
+    splitView.addSubview(UIView().color(.background, .green), layoutType: .fixed, value: 44)
+}
+```
+</details>
+
+---
+
+### Storage
+#### DiskData
+<details>
+<summary>Store and retrieve ```Codable``` objects, images, strings or data on the local file system. Has the ability to compress directories into a ```.zip``` archive.</summary>
+
+**First Steps**  
+Create an instance of ```File``` or ```Directory```. Use ```save()``` to store data. 
+
+**Code Sample**
+```
+let file = File(name: "helloWorld.txt")
+file.save("Hello World!")
+if let content = file.read(as: String.self) {
+    print("File read", content)
+}
+file.delete()
+```
+---
+</details>
+
+
+#### CloudKitData
+<details>
+<summary>Store and retrieve objects conforming to ```CloudKitDataCodable ``` in CloudKit.</summary>
+
+**First Steps**  
+Create a class conforming to the ```CloudKitDataCodable``` protocol. Create an instance of ```CloudKitDataProvider``` to perform CRUD operations on objects. When first trying to query objects, attributes will have to be adjusted in the CloudKit Dashboard. Check the error parameter in the ```completionHandler``` for more information. 
+
+**Code Sample**
+```
+class Note: CloudKitDataCodable {
+    var record: CloudKitRecord?
+    func searchableKeywords() -> String? {
+        return text
+    }
+    
+    var text: String = ""
+}
+
+let dataProvider: CloudKitDataProvider = CloudKitDataProvider(.public)
+
+let note = Note()
+note.text = "Hello World"
+dataProvider.save(note) { (storedNote, error) in
+    if error != nil {
+        print("Error storing note, try again?")
+    }
+    if let storedNote = storedNote {
+        print("Note saved with id:", storedNote.record?.id)
+    }
+}
+```
+</details>
+
+---
+
+### Networking
+#### NetFetch
+<details>
+<summary>Create network requests that can be sent immediately or added to a queue. Convert a response into an object using ```bind()```.</summary>
+
+**First Steps**  
+Create a `NetFetchRequest` and call `fetch()` 
+
+**Code Sample**
+```
+NetFetchRequest(urlString: "https://twitter.com/mmackh") { (response) in
+    print(response.string())
+}.fetch()
+```
+</details>
+
+---
+
+### UIKit Helpers
+#### ControlClosures
+<details>
+<summary>Adds closures for actions and delegates to `UIControl`, `UIGestureRecognizer`, `UIBarButtonItem`, `UITextField`, `UISearchBar`, etc. </summary>
+
+**First Steps**  
+Create a `UIButton` and `addAction` for the desired control event.
+
+**Code Sample**
+```
+let button = UIButton(title: "Tap me!", type: .system)
+button.addAction(for: .touchUpInside) { (button) in
+    print("Hello World!")
+}
+```
+---
+</details>
+
+#### Conveniences
+<details>
+<summary>Chainable properties for popular `UIKit` methods. Adds ability to populate an `UIImageView` with remote images. Introduces many other conveniences.</summary>
+
+**Code Sample**
+```
+let label = UILabel("Hello World!")
+    .size(.largeTitle, .bold)
+    .color(.text, .blue)
+    .color(.background, .white)
+    .align(.center)
+```
+---
+</details>
+
+#### DataRender
+<details>
+<summary>Avoid writing boilerplate and common pitfalls when displaying data in a `UITableView` or `UICollectionView`.</summary>
+
+**First Steps**  
+Create a `UITableViewCell` or `UICollectionView` subclass and overwrite `bindObject()`. Create an instance of `DataRenderConfiguration` and use it to init `DataRender`. Finally call `renderArray()`.
+
+**Code Sample**
+```
+class Cell: UITableViewCell {
+    override func bindObject(_ obj: AnyObject) {
+        textLabel?.text = obj as? String
+    }
+}
+
+lazy var dataRender: DataRender = {
+    let config = DataRenderConfiguration(cellClass: Cell.self)
+    let render = DataRender(configuration: config)
+    render.adjustInsets = true
+    render.onSelect { (itemRenderProperties) in
+        print("Tapped:",itemRenderProperties.object)
+    }
+    view.addSubview(render)
+    return render
+}()
+
+override func viewDidLoad() {
+    super.viewDidLoad()
+
+    dataRender.renderArray(["Hello","World"])
+}
+```
+---
+</details>
+
+#### KeyboardManager
+<details>
+<summary>Repositions and resizes a `SplitView` instance to avoid overlapping issues based on the visibility of the keyboard.</summary>
+
+**Code Sample**
+```
+KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
+```
+</details>
+
+---
+
+### UIKit Reimplementations
 - [x] PerformLabel
 
-#### UI Components
+### UI Components
 - [x] CountdownPickerView
 - [x] NotificationView
 - [x] ProgressView
@@ -217,4 +432,6 @@ public class KeybardViewController: UIViewController {
 
 ## Documentation
 
-Documentation on the components, particularly in code, is currently severly lacking. I'm working on improving it over time and pull requests are always welcome.
+Documentation on the components is currently lacking. I'm working on improving it over time and pull requests are always welcome.
+
+

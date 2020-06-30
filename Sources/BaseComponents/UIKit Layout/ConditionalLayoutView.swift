@@ -117,6 +117,7 @@ public class ConditionalLayoutView: UIView {
         
         for targetView in conditionalTargetViews {
             if targetView.matches(traitCollection) {
+                splitView.direction = targetView.direction
                 for targetSubview in targetView.targetSubviews {
                     if let valueHandler = targetSubview.handler.valueHandler {
                         splitView.addSubview(targetSubview.view, valueHandler: valueHandler)
