@@ -20,7 +20,7 @@ Current Version: 0.8
 Use ```addConditionalLayoutView()``` on any ```UIView```. To add conditional layout paths use ```addSubviews()``` and return ```true``` if a layout condition is met.
   
 ##### Code Sample
-```
+```swift
 view.addConditionalLayoutView { (conditionalLayoutView) in
     let redView = UIView().color(.background, .red)
     let greenView = UIView().color(.background, .green)
@@ -53,7 +53,7 @@ view.addConditionalLayoutView { (conditionalLayoutView) in
 Use ```addScrollingView()``` on any ```UIView```. 
 
 ##### Code Sample
-```
+```swift
 view.addScrollingView { (scrollingView) in
     let label = UILabel("Large Title").size(.largeTitle, .bold)
     scrollingView.addSubview(label, edgeInsets: .init(horizontal: 15))
@@ -76,7 +76,7 @@ view.addScrollingView { (scrollingView) in
 Use ```addSplitView()``` on any ```UIView```. 
 
 ##### Code Sample
-```
+```swift
 view.addSplitView { (splitView) in
     splitView.direction = .vertical
     
@@ -98,7 +98,7 @@ view.addSplitView { (splitView) in
 Create an instance of ```File``` or ```Directory```. Use ```save()``` to store data. 
 
 ##### Code Sample
-```
+```swift
 let file = File(name: "helloWorld.txt")
 file.save("Hello World!")
 if let content = file.read(as: String.self) {
@@ -118,7 +118,7 @@ file.delete()
 Create a class conforming to the ```CloudKitDataCodable``` protocol. Create an instance of ```CloudKitDataProvider``` to perform CRUD operations on objects. When first trying to query objects, attributes will have to be adjusted in the CloudKit Dashboard. Check the error parameter in the ```completionHandler``` for more information. 
 
 ##### Code Sample
-```
+```swift
 class Note: CloudKitDataCodable {
     var record: CloudKitRecord?
     func searchableKeywords() -> String? {
@@ -154,7 +154,7 @@ dataProvider.save(note) { (storedNote, error) in
 Create a `NetFetchRequest` and call `fetch()` 
 
 ##### Code Sample
-```
+```swift
 NetFetchRequest(urlString: "https://twitter.com/mmackh") { (response) in
     print(response.string())
 }.fetch()
@@ -172,7 +172,7 @@ NetFetchRequest(urlString: "https://twitter.com/mmackh") { (response) in
 Create a `UIButton` and `addAction` for the desired control event.
 
 ##### Code Sample
-```
+```swift
 let button = UIButton(title: "Tap me!", type: .system)
 button.addAction(for: .touchUpInside) { (button) in
     print("Hello World!")
@@ -186,7 +186,7 @@ button.addAction(for: .touchUpInside) { (button) in
 <summary>Chainable properties for popular <code>UIKit</code> methods. Populate an <code>UIImageView</code> with remote images. Introduces many other conveniences.</summary>
 
 ##### Code Sample
-```
+```swift
 let label = UILabel("Hello World!")
     .size(.largeTitle, .bold)
     .color(.text, .blue)
@@ -204,7 +204,7 @@ let label = UILabel("Hello World!")
 Create a `UITableViewCell` or `UICollectionView` subclass and overwrite `bindObject()`. Create an instance of `DataRenderConfiguration` and use it to init `DataRender`. Finally call `renderArray()`.
 
 ##### Code Sample
-```
+```swift
 class Cell: UITableViewCell {
     override func bindObject(_ obj: AnyObject) {
         textLabel?.text = obj as? String
@@ -236,7 +236,7 @@ override func viewDidLoad() {
 <summary>Repositions and resizes a <code>SplitView</code> instance to avoid overlapping issues based on the visibility of the keyboard.</summary>
 
 ##### Code Sample
-```
+```swift
 KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
 ```
 </details>
@@ -274,7 +274,7 @@ When looking at the sample code blow, we have a View Controller that supports:
 - Fetching JSON data and binding it to a model
 - Responding to size of Keyboard
 
-```
+```swift
 import UIKit
 
 import BaseComponents
