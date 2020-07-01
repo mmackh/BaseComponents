@@ -14,12 +14,12 @@ Current Version: 0.8
 #### ConditionalLayoutView  
 
 <details>
-<summary>Adjust the order, size and selection of subviews based on traitCollections, userInterfaceIdiom, screen size or any other condition. The actual layout is performed by a ```SplitView``` instance.</summary>
+<summary>Adjust the order, size and selection of subviews based on traitCollections, userInterfaceIdiom, screen size or any other condition. The actual layout is performed by a <code>SplitView</code> instance.</summary>
 
-**First Steps**  
+##### First Steps
 Use ```addConditionalLayoutView()``` on any ```UIView```. To add conditional layout paths use ```addSubviews()``` and return ```true``` if a layout condition is met.
-
-**Code Sample**
+  
+##### Code Sample
 ```
 view.addConditionalLayoutView { (conditionalLayoutView) in
     let redView = UIView().color(.background, .red)
@@ -47,12 +47,12 @@ view.addConditionalLayoutView { (conditionalLayoutView) in
 
 #### ScrollingView
 <details>
-<summary>A subclass of ```UIScrollView``` to programatically layout  subviews in a given direction. The size of a subview along a horizontal or vertical direction can be determined automatically, e.g. ```UILabel```, or by providing a fixed point value.</summary>
+<summary>A subclass of <code>UIScrollView</code> to programatically layout  subviews in a given direction. The size of a subview along a horizontal or vertical direction can be determined automatically, e.g. <code>UILabel</code> , or by providing a fixed point value.</summary>
 
-**First Steps**  
+##### First Steps
 Use ```addScrollingView()``` on any ```UIView```. 
 
-**Code Sample**
+##### Code Sample
 ```
 view.addScrollingView { (scrollingView) in
     let label = UILabel("Large Title").size(.largeTitle, .bold)
@@ -70,12 +70,12 @@ view.addScrollingView { (scrollingView) in
 
 #### SplitView
 <details>
-<summary>Divide the available ```width``` or ```height``` of a ```UIView``` amongst its subviews programmatically. </summary>
+<summary>Divide the available width or height of a <code>UIView</code> amongst its subviews programmatically. </summary>
 
-**First Steps**  
+##### First Steps
 Use ```addSplitView()``` on any ```UIView```. 
 
-**Code Sample**
+##### Code Sample
 ```
 view.addSplitView { (splitView) in
     splitView.direction = .vertical
@@ -92,12 +92,12 @@ view.addSplitView { (splitView) in
 ### Storage
 #### DiskData
 <details>
-<summary>Store and retrieve ```Codable``` objects, images, strings or data on the local file system. Has the ability to compress directories into a ```.zip``` archive.</summary>
+<summary>Store and retrieve <code>Codable</code> objects, images, strings or data on the local file system. Has the ability to compress directories into a <code>.zip</code> archive.</summary>
 
-**First Steps**  
+##### First Steps
 Create an instance of ```File``` or ```Directory```. Use ```save()``` to store data. 
 
-**Code Sample**
+##### Code Sample
 ```
 let file = File(name: "helloWorld.txt")
 file.save("Hello World!")
@@ -112,12 +112,12 @@ file.delete()
 
 #### CloudKitData
 <details>
-<summary>Store and retrieve objects conforming to ```CloudKitDataCodable ``` in CloudKit.</summary>
+<summary>Store and retrieve objects conforming to <code>CloudKitDataCodable</code> in CloudKit.</summary>
 
-**First Steps**  
+##### First Steps 
 Create a class conforming to the ```CloudKitDataCodable``` protocol. Create an instance of ```CloudKitDataProvider``` to perform CRUD operations on objects. When first trying to query objects, attributes will have to be adjusted in the CloudKit Dashboard. Check the error parameter in the ```completionHandler``` for more information. 
 
-**Code Sample**
+##### Code Sample
 ```
 class Note: CloudKitDataCodable {
     var record: CloudKitRecord?
@@ -148,12 +148,12 @@ dataProvider.save(note) { (storedNote, error) in
 ### Networking
 #### NetFetch
 <details>
-<summary>Create network requests that can be sent immediately or added to a queue. Convert a response into an object using ```bind()```.</summary>
+<summary>Create network requests that can be sent immediately or added to a queue. Convert a response into an object using <code>bind()</code>.</summary>
 
-**First Steps**  
+##### First Steps
 Create a `NetFetchRequest` and call `fetch()` 
 
-**Code Sample**
+##### Code Sample
 ```
 NetFetchRequest(urlString: "https://twitter.com/mmackh") { (response) in
     print(response.string())
@@ -168,10 +168,10 @@ NetFetchRequest(urlString: "https://twitter.com/mmackh") { (response) in
 <details>
 <summary>Adds closures for actions and delegates to `UIControl`, `UIGestureRecognizer`, `UIBarButtonItem`, `UITextField`, `UISearchBar`, etc. </summary>
 
-**First Steps**  
+##### First Steps
 Create a `UIButton` and `addAction` for the desired control event.
 
-**Code Sample**
+##### Code Sample
 ```
 let button = UIButton(title: "Tap me!", type: .system)
 button.addAction(for: .touchUpInside) { (button) in
@@ -183,9 +183,9 @@ button.addAction(for: .touchUpInside) { (button) in
 
 #### Conveniences
 <details>
-<summary>Chainable properties for popular `UIKit` methods. Adds ability to populate an `UIImageView` with remote images. Introduces many other conveniences.</summary>
+<summary>Chainable properties for popular <code>UIKit</code> methods. Populate an <code>UIImageView</code> with remote images. Introduces many other conveniences.</summary>
 
-**Code Sample**
+##### Code Sample
 ```
 let label = UILabel("Hello World!")
     .size(.largeTitle, .bold)
@@ -198,12 +198,12 @@ let label = UILabel("Hello World!")
 
 #### DataRender
 <details>
-<summary>Avoid writing boilerplate and common pitfalls when displaying data in a `UITableView` or `UICollectionView`.</summary>
+<summary>Avoid writing boilerplate and common pitfalls when displaying data in a <code>UITableView</code> or <code>UICollectionView</code>.</summary>
 
-**First Steps**  
+##### First Steps
 Create a `UITableViewCell` or `UICollectionView` subclass and overwrite `bindObject()`. Create an instance of `DataRenderConfiguration` and use it to init `DataRender`. Finally call `renderArray()`.
 
-**Code Sample**
+##### Code Sample
 ```
 class Cell: UITableViewCell {
     override func bindObject(_ obj: AnyObject) {
@@ -233,9 +233,9 @@ override func viewDidLoad() {
 
 #### KeyboardManager
 <details>
-<summary>Repositions and resizes a `SplitView` instance to avoid overlapping issues based on the visibility of the keyboard.</summary>
+<summary>Repositions and resizes a <code>SplitView</code> instance to avoid overlapping issues based on the visibility of the keyboard.</summary>
 
-**Code Sample**
+##### Code Sample
 ```
 KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
 ```
