@@ -115,7 +115,7 @@ file.delete()
 <summary>Store and retrieve objects conforming to <code>CloudKitDataCodable</code> in CloudKit.</summary>
 
 ##### First Steps 
-Create a class conforming to the ```CloudKitDataCodable``` protocol. Create an instance of ```CloudKitDataProvider``` to perform CRUD operations on objects. When first trying to query objects, attributes will have to be adjusted in the CloudKit Dashboard. Check the error parameter in the ```completionHandler``` for more information. 
+Create a class conforming to the ```CloudKitDataCodable``` protocol. Create an instance of ```CloudKitDataProvider``` to perform CRUD operations on objects. When first trying to query objects, attributes will have to be adjusted in the CloudKit Dashboard. **Check the error parameter in the ```completionHandler``` for more information.**
 
 ##### Code Sample
 ```swift
@@ -198,10 +198,16 @@ let label = UILabel("Hello World!")
 
 #### DataRender
 <details>
-<summary>Avoid writing boilerplate and common pitfalls when displaying data in a <code>UITableView</code> or <code>UICollectionView</code>.</summary>
+<summary>Avoid writing boilerplate and common pitfalls when displaying data in a <code>UITableView</code> or <code>UICollectionView</code>. Supports fast and accurate automatic cell sizing with <code>ScrollingView</code>. </summary>
 
 ##### First Steps
 Create a `UITableViewCell` or `UICollectionView` subclass and overwrite `bindObject()`. Create an instance of `DataRenderConfiguration` and use it to init `DataRender`. Finally call `renderArray()`.
+
+##### Automatic Height for `UITableViewCell`
+- Implement `itemAutomaticRowHeightCacheKeyHandler()` on your `DataRender` instance
+- Add a `ScrollingView` as the first subview of the cell's `contentView`, i.e. `contentView.addScrollingView()`.
+- To accurately measure the required height, `safeAreaInsets` and `layoutMargins` for every object in advance, an invisible child `UITableView` is added the provided `UITableViewCell` subclass. To recalculate a height based on new information or user action `recalculateAutomaticHeight()`
+
 
 ##### Code Sample
 ```swift
@@ -233,7 +239,7 @@ override func viewDidLoad() {
 
 #### KeyboardManager
 <details>
-<summary>Repositions and resizes a <code>SplitView</code> instance to avoid overlapping issues based on the visibility of the keyboard.</summary>
+<summary>Repositions and resizes a <code>SplitView</code> instance to avoid overlapping issues caused by the keyboard.</summary>
 
 ##### Code Sample
 ```swift
@@ -244,13 +250,104 @@ KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
 ---
 
 ### UIKit Reimplementations
-- [x] PerformLabel
+#### PerformLabel
+<details>
+<summary>A faster label useful for auto sizing cells. Animates smoothly by streching. Even though a `numberOfLines`  API is defined, the current implementation will disregard this setting.</summary>
+
+##### Code Sample
+```swift
+lazy var contentLabel: PerformLabel = {
+    return PerformLabel()
+        .align(.left)
+        .color(.background, .black)
+        .color(.text, .white)
+        .size(.body)
+}()
+```
+</details>
+
+---
 
 ### UI Components
-- [x] CountdownPickerView
-- [x] NotificationView
-- [x] ProgressView
-- [x] SheetView
+
+#### CountdownPickerView
+<details>
+<summary>Display a countdown picker with seconds that is very close to the native iOS Timer app. All labels will be translated automatically depending on the phone's locale. A maximum width prevents this view from overflowing.</summary>
+
+##### First Steps
+Create a new `CountdownPickerView` instance and add it to a target view.
+
+##### Code Sample
+```swift
+let datePicker = CountdownPickerView()
+datePicker.isEndless = true
+datePicker.countDownDuration = TimeInterval(3 * 60 * 60 + 2 * 60 + 1)
+view.addSubview(datePicker)
+```
+---
+</details>
+
+#### NotificationView
+<details>
+<summary>Display a short message with an icon to inform about a success or error case. The message will dismiss itself after a certain duration or with a swipe.</summary>
+
+##### Important Notes
+Only show short messages. A message with a required width less than the width of the superview's frame will only take up the minimum required space.
+
+##### Code Sample
+```swift
+NotificationView.show(.success, in: self.navigationController?.view, for: 2, message: "Document Uploaded")
+```
+---
+</details>
+
+#### ProgressView
+<details>
+<summary>Able to display an indetermined progress spinner in different styles to indicate a loading state. Blocks interaction of the underlying UI when visible.</summary>
+
+##### First Steps
+Use the convenience method `showProgressView()` on any `UIView` to display a loading state.
+
+##### Code Sample
+```swift
+view.showProgressView(true, type: .appleStyle)
+DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+    view.showProgressView(false)
+}
+```
+---
+</details>
+
+#### SheetView
+<details>
+<summary>Display a customisable sheet similar to `UIAlertController.Style.actionSheet`, that is both more flexible and easier to use.</summary>
+
+##### Structure
+ A `SheetView` instance can be constructed using `components`. A component provides a contentView and a given height (height can either be static or dynamic, use `invalidateLayout()` to recalculate). Premade `SheetViewComponent` include:
+ ```
+    - SheetViewPullTab: A pill view indicating that the sheet can be interactively dismissed  
+    - SheetViewNavigationBar: A simple compact `UINavigationBar` replica   
+    - SheetViewButton: A button module that highlights and acts like an UIAlertController button   
+    - SheetViewSeparator: A hairline divider used to separate components   
+    - SheetViewSpace: Divides components into sections   
+    - SheetViewCustomView: A base class to use for adding custom UI to SheetView   
+ ```
+ Each section (divided by SheetViewSpace), has a background which can be styled using `sectionBackgroundViewProvider()`. To further style the sheet, use `maximumWidth`, `adjustToSafeAreaInsets` or `horizontalInset`. After components have been added and the sheet is styled, display it using `show(in view: UIView?)`.    
+
+##### Code Sample
+```swift
+let sheetView = SheetView()
+ sheetView.components = [
+    SheetViewButton("Delete", configurationHandler: { (button) in
+        button.color(.text, .red)
+    }, onTap: nil),
+    SheetViewSpace(),
+    SheetViewButton("Cancel", onTap: nil),
+ ]
+ sheetView.show(in: self.view)
+```
+</details>
+---
 
 ## Reasoning
 
@@ -264,7 +361,7 @@ KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
 
 ![Screenshot](https://user-images.githubusercontent.com/948693/71639820-2a930100-2c7e-11ea-8700-24bb3c0b6318.png)
 
-When looking at the sample code blow, we have a View Controller that supports:
+When looking at the sample code, we have a View Controller that supports:
 - Dynamic Type
 - Self-sizing cells
 - Refresh control, reloading the data
@@ -274,164 +371,12 @@ When looking at the sample code blow, we have a View Controller that supports:
 - Fetching JSON data and binding it to a model
 - Responding to size of Keyboard
 
-```swift
-import UIKit
-
-import BaseComponents
-
-struct Post: Codable {
-    var userId: Int?
-    var id: Int?
-    var title: String?
-    var body: String?
-}
-
-public class PostCell: UITableViewCell {
-    public override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: .subtitle, reuseIdentifier: reuseIdentifier)
-        
-        textLabel?.lines(0)
-            .size(.body, .bold)
-        detailTextLabel?.lines(3)
-            .size(.subheadline)
-            .color(.text, .black)
-        accessoryType = .disclosureIndicator
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    public override func bindObject(_ obj: AnyObject) {
-        let post = obj as! Post
-        let title = post.title!
-        let subtitle = "Posted by News"
-        let headline = title.appendingFormat("\n%@", subtitle)
-        let range = (headline as NSString).range(of: subtitle)
-        let attributedString = NSMutableAttributedString(string: headline)
-        attributedString.addAttribute(.font, value: UIFont.size(.footnote), range: range)
-        attributedString.addAttribute(.foregroundColor, value: UIColor.lightGray, range: range)
-        textLabel?.attributedText = attributedString
-        detailTextLabel?.text = post.body?.replacingOccurrences(of: "\n", with: "")
-    }
-    
-    public override func layoutSubviews() {
-        super.layoutSubviews()
-    }
-}
-
-public class KeybardViewController: UIViewController {
-
-    lazy var dataRender: DataRender = {
-        let configuration = DataRenderConfiguration(cellClass: PostCell.self)
-        let dataRender = DataRender(configuration: configuration)
-        dataRender.rowHeight = UITableView.automaticDimension
-        dataRender.clipsToBounds = true
-        return dataRender
-    }()
-    
-    override public func viewDidLoad() {
-        super.viewDidLoad()
-        
-        title = "Welcome to BaseComponents"
-        
-        view.backgroundColor = UIColor.white
-
-        let splitView = view.addSplitView { (splitView) in
-            
-            splitView.insertSafeAreaInsetsPadding(form: self.view, paddingDirection: .top)
-            
-            let segmentedControl = UISegmentedControl(items: ["Hello","World","Swift"])
-            segmentedControl.selectedSegmentIndex = 0
-            segmentedControl.addAction(for: .valueChanged) { (segmentedControl) in
-                let item = segmentedControl.titleForSegment(at: segmentedControl.selectedSegmentIndex)!
-                print(item)
-            }
-            splitView.addSubview(segmentedControl, layoutType: .fixed, value: 44.0, edgeInsets: UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10))
-        
-            dataRender.onRefresh { [weak self] (render) in
-                let request = NetFetchRequest(urlString: "https://jsonplaceholder.typicode.com/posts") { (response) in
-                    self?.dataRender.refreshing = false
-                    self?.view.showProgressView(false)
-                    if let posts = response.bind([Post].self) {
-                        NotificationView.show(.success, in: self?.dataRender, for: 2, message: "Updated to the latest News", position: .bottom)
-                        self?.dataRender.renderArray(posts)
-                    }
-                    else {
-                        NotificationView.show(.error, in: self?.view, for: 2, message: "Check your Network Connection")
-                    }
-                }
-                NetFetch.fetch(request)
-            }
-            dataRender.onSelect { (itemProperites) in
-                let post = itemProperites.object as! Post
-                print("Read:",post.body!)
-            }
-            splitView.addSubview(dataRender, layoutType: .percentage, value: 100)
-            dataRender.refreshing = true
-            
-            splitView.addSubview(UIView().color(.background, .init(white: 0.89, alpha: 1)), layoutType: .fixed, value: 0.5)
-            
-            splitView.addSplitView(configurationHandler: { (splitView) in
-                splitView.direction = .horizontal
-                
-                let valueLabel = PerformLabel("0.00")
-                    .size(.body, [.monoSpaceDigit,.bold])
-                    .lines(0)
-                
-                let slider = UISlider()
-                    .addAction(for: .valueChanged) { (slider) in
-                        valueLabel.text = NSString(format: "%.02f", slider.value) as String
-                }
-                splitView.addSubview(slider, layoutType: .percentage, value: 100, edgeInsets: UIEdgeInsets(top: 0, left: 15, bottom: 0, right: 0))
-                splitView.addSubview(valueLabel, layoutType: .automatic, edgeInsets: UIEdgeInsets(top: 0, left: 15, bottom: 0, right: 15))
-            }) { (parentRect) -> SplitViewLayoutInstruction in
-                return .init(layoutType: .fixed, value: 44)
-            }
-            
-            splitView.addSubview(UIView().color(.background, .init(white: 0.89, alpha: 1)), layoutType: .fixed, value: 0.5)
-            
-            let textField = UITextField(placeholder: "Enter a new Title")
-                .align(.center)
-                .size(.body)
-                .addAction(for: .editingChanged) { (textField) in
-                    print(textField.text!)
-                }
-                .addAction(for: .editingDidEnd, { (textField) in
-                    self.title = textField.text
-                })
-                .shouldReturn { (textField) -> (Bool) in
-                    textField.resignFirstResponder()
-                    return true
-                }
-            splitView.addSubview(textField, layoutType: .fixed, value: 84.0)
-            
-            let paddingView = UIView()
-            splitView.addSubview(paddingView) { (parentRect) -> SplitViewLayoutInstruction in
-                var bottomInset: CGFloat = 0.0;
-                if #available(iOS 11.0, *) {
-                    bottomInset = self.view.safeAreaInsets.bottom
-                }
-                if KeyboardManager.visibility == .visible {
-                    bottomInset = 0
-                }
-                return SplitViewLayoutInstruction(layoutType: .fixed, value: bottomInset)
-            }
-            
-        }
-        splitView.direction = .vertical
-        
-        KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
-        
-        view.showProgressView(true, type: .appleStyle)
-    }
-    
-}
-
-```
+Check out the [complete code for the screenshot here](https://github.com/mmackh/BaseComponents/wiki/Sample-Code) or others in the [wiki](https://github.com/mmackh/BaseComponents/wiki).
 
 ## Documentation
 
-Documentation on the components is currently lacking. I'm working on improving it over time and pull requests are always welcome.
+Documentation on the components is improving and pull requests are always welcome.
+
+
 
 
