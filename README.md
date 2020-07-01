@@ -347,7 +347,6 @@ let sheetView = SheetView()
  sheetView.show(in: self.view)
 ```
 </details>
----
 
 ## Reasoning
 
