@@ -166,7 +166,7 @@ NetFetchRequest(urlString: "https://twitter.com/mmackh") { (response) in
 ### UIKit Helpers
 #### ControlClosures
 <details>
-<summary>Adds closures for actions and delegates to `UIControl`, `UIGestureRecognizer`, `UIBarButtonItem`, `UITextField`, `UISearchBar`, etc. </summary>
+<summary>Adds closures for actions and delegates to <code>UIControl</code>, <code>UIGestureRecognizer</code>, <code>UIBarButtonItem</code>, <code>UITextField</code>, <code>UISearchBar</code>, etc. </summary>
 
 ##### First Steps
 Create a `UIButton` and `addAction` for the desired control event.
