@@ -31,45 +31,118 @@ public class ConditionalLayoutView: UIView {
     private var boundsCache: CGRect = .zero
     private var splitView: SplitView? = nil
     
-    private class ConditionalSplitView: SplitView {
-        struct Subview {
+    public class ConditionalSplitView {
+        class Subview {
             let view: UIView
             let handler: SplitViewHandler
-        }
-        
-        let conditionHandler: (_ traitCollection: UITraitCollection)->Bool
-        var targetSubviews: [Subview] = []
-        
-        init(conditionHandler: @escaping (_ traitCollection: UITraitCollection)->Bool) {
-            self.conditionHandler = conditionHandler
+            let conditionalSplitView: ConditionalSplitView?
             
-            super.init(frame: .zero)
+            var frameCache: CGRect? = nil
+            
+            init(view: UIView, handler: SplitViewHandler, conditionalSplitView: ConditionalSplitView? = nil) {
+                self.view = view
+                self.handler = handler
+                self.conditionalSplitView = conditionalSplitView
+            }
         }
         
-        override func addSubview(_ view: UIView, layoutType: SplitViewLayoutType, value: CGFloat, edgeInsets: UIEdgeInsets) {
+        public var direction: SplitViewDirection = .vertical
+        public var preventAnimations: Bool = false
+        public var backgroundColor: UIColor? = nil
+        
+        private var didLayoutSubviews: (() -> Void)?
+        public func didLayoutSubviews(_ willLayoutSubviews: @escaping () -> Void) {
+            self.didLayoutSubviews = willLayoutSubviews
+        }
+        
+        var conditionHandler: ((_ traitCollection: UITraitCollection)->Bool)? = nil
+        var subviews: [Subview] = []
+        
+        init(conditionHandler: ((_ traitCollection: UITraitCollection)->Bool)? = nil) {
+            self.conditionHandler = conditionHandler
+        }
+        
+        public func addSubview(_ view: UIView, layoutType: SplitViewLayoutType, value: CGFloat = 0, edgeInsets: UIEdgeInsets = .zero) {
             let handler = SplitViewHandler()
             handler.layoutType = layoutType
             handler.staticValue = value
             handler.staticEdgeInsets = edgeInsets
             
-            let subview = Subview(view: view, handler: handler)
-            targetSubviews.append(subview)
+            let subview = Subview(view: view, handler: handler, conditionalSplitView: nil)
+            subviews.append(subview)
         }
         
-        override func addSubview(_ view: UIView, valueHandler: @escaping (CGRect) -> SplitViewLayoutInstruction) {
+        public func addSubview(_ view: UIView, valueHandler: @escaping (CGRect) -> SplitViewLayoutInstruction) {
             let handler = SplitViewHandler()
             handler.valueHandler = valueHandler
             
-            let subview = Subview(view: view, handler: handler)
-            targetSubviews.append(subview)
+            let subview = Subview(view: view, handler: handler, conditionalSplitView: nil)
+            subviews.append(subview)
         }
         
+        @discardableResult
+        public func addSplitView(configurationHandler: (_ splitView: ConditionalSplitView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction) -> ConditionalSplitView {
+            let conditionalSplitView = ConditionalSplitView()
+            unowned let weakConditionalSplitView = conditionalSplitView
+            configurationHandler(weakConditionalSplitView)
+            
+            let handler = SplitViewHandler()
+            handler.valueHandler = valueHandler
+            let subview = Subview(view: UIView(), handler: handler, conditionalSplitView: conditionalSplitView)
+            subviews.append(subview)
+            
+            return conditionalSplitView
+        }
+        
+        public func addPadding(_ value: CGFloat) {
+            addSubview(UIView(), layoutType: .fixed, value: value)
+        }
+        
+        public func addPadding(layoutType: SplitViewLayoutType, value: CGFloat = 0.0) {
+            addSubview(UIView(), layoutType: layoutType, value: value)
+        }
         
         func matches(_ traitCollection: UITraitCollection) -> Bool {
-            return conditionHandler(traitCollection)
+            if let conditionHandler = conditionHandler {
+                return conditionHandler(traitCollection)
+            }
+            return false
         }
         
-        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+        func build() -> SplitView {
+            let splitView = SplitView()
+            splitView.direction = direction
+            splitView.preventAnimations = preventAnimations
+            if backgroundColor != nil {
+                splitView.backgroundColor = backgroundColor
+            }
+            
+            for targetSubview in subviews {
+                if let valueHandler = targetSubview.handler.valueHandler {
+                    if let conditionalSplitView = targetSubview.conditionalSplitView {
+                        splitView.addSubview(conditionalSplitView.build(), valueHandler: valueHandler)
+                    } else {
+                        targetSubview.view.removeFromSuperview()
+                        splitView.addSubview(targetSubview.view, valueHandler: valueHandler)
+                    }
+                } else {
+                    targetSubview.view.removeFromSuperview()
+                    splitView.addSubview(targetSubview.view, layoutType: targetSubview.handler.layoutType, value: targetSubview.handler.staticValue, edgeInsets: targetSubview.handler.staticEdgeInsets)
+                }
+                
+                UIView.performWithoutAnimation {
+                    if let frameCache = targetSubview.frameCache {
+                        targetSubview.view.frame = frameCache
+                    }
+                }
+            }
+            
+            if let didLayoutSubviews = didLayoutSubviews {
+                didLayoutSubviews()
+            }
+            
+            return splitView
+        }
     }
     
     @available(*, unavailable)
@@ -87,7 +160,7 @@ public class ConditionalLayoutView: UIView {
         super.addScrollingView(configurationHandler: configurationHandler)
     }
     
-    public func addSubviews(_ configurationHandler: (_ targetView: SplitView)->Void, conditionHandler: @escaping (_ traitCollection: UITraitCollection) -> Bool) {
+    public func addSubviews(_ configurationHandler: (_ targetView: ConditionalSplitView)->Void, conditionHandler: @escaping (_ traitCollection: UITraitCollection) -> Bool) {
         let targetView = ConditionalSplitView(conditionHandler: conditionHandler)
         configurationHandler(targetView)
         self.conditionalTargetViews.append(targetView)
@@ -106,30 +179,25 @@ public class ConditionalLayoutView: UIView {
         boundsCache = bounds
         
         for targetView in conditionalTargetViews {
-            for targetSubview in targetView.targetSubviews {
-                targetSubview.view.removeFromSuperview()
+            for subview in targetView.subviews {
+                subview.frameCache = self.splitView?.convert(subview.view.bounds, from: subview.view)
             }
         }
-        
         self.splitView?.removeFromSuperview()
-        let splitView = SplitView()
-        self.splitView = splitView
+        self.splitView = nil
         
         for targetView in conditionalTargetViews {
             if targetView.matches(traitCollection) {
-                splitView.direction = targetView.direction
-                for targetSubview in targetView.targetSubviews {
-                    if let valueHandler = targetSubview.handler.valueHandler {
-                        splitView.addSubview(targetSubview.view, valueHandler: valueHandler)
-                    } else {
-                        splitView.addSubview(targetSubview.view, layoutType: targetSubview.handler.layoutType, value: targetSubview.handler.staticValue, edgeInsets: targetSubview.handler.staticEdgeInsets)
-                    }
-                }
+                self.splitView = targetView.build()
                 break
             }
         }
-        super.addSubview(splitView)
-        splitView.frame = bounds
+        
+        if let splitView = self.splitView {
+            super.addSubview(splitView)
+            splitView.frame = bounds
+            splitView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        }
     }
     
     public func invalidateLayout() {
