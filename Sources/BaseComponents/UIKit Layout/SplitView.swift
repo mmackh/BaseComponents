@@ -51,6 +51,20 @@ public extension SplitView {
     func addSplitView(configurationHandler: (_ splitView: SplitView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction) -> SplitView {
         return SplitView(superSplitView: self, configurationHandler: configurationHandler, valueHandler: valueHandler)
     }
+    
+    @available(*, unavailable)
+    override func addConditionalLayoutView(configurationHandler: (ConditionalLayoutView) -> Void) -> ConditionalLayoutView {
+        return super.addConditionalLayoutView(configurationHandler: configurationHandler)
+    }
+    
+    @discardableResult
+    func addConditionalLayoutView(configurationHandler: (ConditionalLayoutView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction) -> ConditionalLayoutView  {
+        let conditionalLayoutView = ConditionalLayoutView()
+        unowned let weakConditionalLayoutView = conditionalLayoutView
+        configurationHandler(weakConditionalLayoutView)
+        addSubview(conditionalLayoutView, valueHandler: valueHandler)
+        return conditionalLayoutView
+    }
 }
 
 public class SplitViewHandler {

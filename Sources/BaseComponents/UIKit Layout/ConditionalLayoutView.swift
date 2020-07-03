@@ -17,7 +17,7 @@ import UIKit
 
 public extension UIView {
     @discardableResult
-    func addConditionalLayoutView(configurationHandler: (_ conditionalLayoutView: ConditionalLayoutView) -> Void) -> ConditionalLayoutView {
+    @objc func addConditionalLayoutView(configurationHandler: (_ conditionalLayoutView: ConditionalLayoutView) -> Void) -> ConditionalLayoutView {
         let conditionalLayoutView = ConditionalLayoutView()
         unowned let weakConditionalLayoutView = conditionalLayoutView
         configurationHandler(weakConditionalLayoutView)
@@ -30,14 +30,13 @@ public class ConditionalLayoutView: UIView {
     private var conditionalTargetViews: [ConditionalSplitView] = []
     private var boundsCache: CGRect = .zero
     private var splitView: SplitView? = nil
+    private var frameCacheMap: Dictionary<NSValue, CGRect> = [:]
     
     public class ConditionalSplitView {
         class Subview {
             let view: UIView
             let handler: SplitViewHandler
             let conditionalSplitView: ConditionalSplitView?
-            
-            var frameCache: CGRect? = nil
             
             init(view: UIView, handler: SplitViewHandler, conditionalSplitView: ConditionalSplitView? = nil) {
                 self.view = view
@@ -109,7 +108,7 @@ public class ConditionalLayoutView: UIView {
             return false
         }
         
-        func build() -> SplitView {
+        func build(frameCacheMap: Dictionary<NSValue, CGRect>) -> SplitView {
             let splitView = SplitView()
             splitView.direction = direction
             splitView.preventAnimations = preventAnimations
@@ -117,10 +116,10 @@ public class ConditionalLayoutView: UIView {
                 splitView.backgroundColor = backgroundColor
             }
             
-            for targetSubview in subviews {
+            for targetSubview in subviews {               
                 if let valueHandler = targetSubview.handler.valueHandler {
                     if let conditionalSplitView = targetSubview.conditionalSplitView {
-                        splitView.addSubview(conditionalSplitView.build(), valueHandler: valueHandler)
+                        splitView.addSubview(conditionalSplitView.build(frameCacheMap: frameCacheMap), valueHandler: valueHandler)
                     } else {
                         targetSubview.view.removeFromSuperview()
                         splitView.addSubview(targetSubview.view, valueHandler: valueHandler)
@@ -130,9 +129,22 @@ public class ConditionalLayoutView: UIView {
                     splitView.addSubview(targetSubview.view, layoutType: targetSubview.handler.layoutType, value: targetSubview.handler.staticValue, edgeInsets: targetSubview.handler.staticEdgeInsets)
                 }
                 
+                if targetSubview.view.tag == 77 {
+                }
+                
                 UIView.performWithoutAnimation {
-                    if let frameCache = targetSubview.frameCache {
+                    
+                    let value = NSValue(nonretainedObject: targetSubview.view)
+                    if let frameCache = frameCacheMap[value] {
+                        
+                        if targetSubview.view.tag == 77 {
+                            print("fc", frameCache)
+                        }
                         targetSubview.view.frame = frameCache
+                    }
+
+                    if targetSubview.view.tag == 77 {
+                        print("Sub af", targetSubview.view)
                     }
                 }
             }
@@ -180,15 +192,23 @@ public class ConditionalLayoutView: UIView {
         
         for targetView in conditionalTargetViews {
             for subview in targetView.subviews {
-                subview.frameCache = self.splitView?.convert(subview.view.bounds, from: subview.view)
+                if (subview.view.superview == nil) {
+                    continue
+                }
+                
+                let value = NSValue(nonretainedObject: subview.view)
+                frameCacheMap[value] = self.convert(subview.view.bounds, from: subview.view)
             }
         }
+        
+        print(frameCacheMap)
+        
         self.splitView?.removeFromSuperview()
         self.splitView = nil
         
         for targetView in conditionalTargetViews {
             if targetView.matches(traitCollection) {
-                self.splitView = targetView.build()
+                self.splitView = targetView.build(frameCacheMap: frameCacheMap)
                 break
             }
         }
