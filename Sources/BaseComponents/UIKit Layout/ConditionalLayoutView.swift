@@ -129,22 +129,10 @@ public class ConditionalLayoutView: UIView {
                     splitView.addSubview(targetSubview.view, layoutType: targetSubview.handler.layoutType, value: targetSubview.handler.staticValue, edgeInsets: targetSubview.handler.staticEdgeInsets)
                 }
                 
-                if targetSubview.view.tag == 77 {
-                }
-                
                 UIView.performWithoutAnimation {
-                    
                     let value = NSValue(nonretainedObject: targetSubview.view)
                     if let frameCache = frameCacheMap[value] {
-                        
-                        if targetSubview.view.tag == 77 {
-                            print("fc", frameCache)
-                        }
                         targetSubview.view.frame = frameCache
-                    }
-
-                    if targetSubview.view.tag == 77 {
-                        print("Sub af", targetSubview.view)
                     }
                 }
             }
@@ -200,8 +188,6 @@ public class ConditionalLayoutView: UIView {
                 frameCacheMap[value] = self.convert(subview.view.bounds, from: subview.view)
             }
         }
-        
-        print(frameCacheMap)
         
         self.splitView?.removeFromSuperview()
         self.splitView = nil
