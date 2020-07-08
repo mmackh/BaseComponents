@@ -158,6 +158,19 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     public override func addSplitView(configurationHandler: (SplitView) -> Void) -> SplitView {
         return super.addSplitView(configurationHandler: configurationHandler)
     }
+        
+    @available(*, unavailable)
+    public override func addConditionalLayoutView(configurationHandler: (ConditionalLayoutView) -> Void) -> ConditionalLayoutView {
+        return super.addConditionalLayoutView(configurationHandler: configurationHandler)
+    }
+        
+    public func addConditionalLayoutView(configurationHandler: (ConditionalLayoutView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> ScrollingViewLayoutInstruction) -> ConditionalLayoutView {
+        let conditionalLayoutView = ConditionalLayoutView()
+        unowned let weakConditionalLayoutView = conditionalLayoutView
+        configurationHandler(weakConditionalLayoutView)
+        addSubview(conditionalLayoutView, valueHandler: valueHandler)
+        return conditionalLayoutView
+    }
     
     public func addSubview(_ view: UIView, layoutType: ScrollingViewLayoutType = .automatic, value: CGFloat = 0, edgeInsets: UIEdgeInsets = .zero) {
         let handler = ScrollingViewHandler()
@@ -310,6 +323,14 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     
     public override func sizeThatFits(_ size: CGSize) -> CGSize {
         return contentSize
+    }
+    
+    public func calculateContentSize(_ layoutPassMode: Bool = true) -> CGSize {
+        if layoutPassMode { layoutPass = true }
+        invalidateLayout()
+        let size = contentSize
+        if layoutPassMode { layoutPass = false }
+        return size
     }
 }
 
