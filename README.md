@@ -4,9 +4,7 @@
 
 BaseComponents aims to provide easily reusable and understandable components to increase productivity with UIKit. Formerly written in Objective-C and used extensivly in production, the time has come to transition to Swift.
 
-Current Version: 0.8
-
-**Important Note: API for Components is currently unstable.**
+Current Version: 0.9
 
 ## Components
 
