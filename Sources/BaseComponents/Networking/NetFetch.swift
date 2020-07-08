@@ -55,7 +55,7 @@ open class NetFetchRequest: Codable {
     public var body: Data? = nil
     public var headers: Dictionary<String, String>? = nil
     public var timeoutInterval: TimeInterval = 30.0
-    public var cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+    public var cachePolicy: URLRequest.CachePolicy?
     public var retryOnFailure = false
     public var ignoreQueue = false
     public weak var dataTask: URLSessionDataTask?
@@ -79,7 +79,7 @@ open class NetFetchRequest: Codable {
         try container.encode(body, forKey: .body)
         try container.encode(headers, forKey: .headers)
         try container.encode(timeoutInterval, forKey: .timeoutInterval)
-        try container.encode(cachePolicy.rawValue, forKey: .cachePolicy)
+        try container.encode(cachePolicy?.rawValue, forKey: .cachePolicy)
         try container.encode(retryOnFailure, forKey: .retryOnFailure)
         try container.encode(ignoreQueue, forKey: .ignoreQueue)
     }
@@ -113,7 +113,16 @@ open class NetFetchRequest: Codable {
         guard let url = urlComponents?.url else {
             return nil
         }
-        var urlRequest = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: timeoutInterval)
+        
+        let requestCachePolicy: URLRequest.CachePolicy = {
+            if let individualCachePolicy = self.cachePolicy {
+                return individualCachePolicy
+            } else {
+                return NetFetch.cachePolicy
+            }
+        }()        
+        
+        var urlRequest = URLRequest(url: url, cachePolicy: requestCachePolicy, timeoutInterval: timeoutInterval)
         if let headers = headers {
             headers.forEach {
                 urlRequest.setValue($1, forHTTPHeaderField: $0)
@@ -147,6 +156,7 @@ open class NetFetchRequest: Codable {
 open class NetFetch {
     static public var observer: ((_ request: NetFetchRequest,_ response: NetFetchResponse)->())? = nil
     static public var session = URLSession(configuration: .default)
+    static public var cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
     static private var queue: NSMutableArray = NSMutableArray()
     static private var currentTask: URLSessionDataTask?
     
@@ -164,8 +174,8 @@ open class NetFetch {
     }
     
     static private func processQueue() {
-        if let request = queue.firstObject {
-            submitRequest(request as! NetFetchRequest)
+        if let request = queue.firstObject as? NetFetchRequest {
+            submitRequest(request)
         }
     }
     
