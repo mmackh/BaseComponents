@@ -379,6 +379,14 @@ extension SplitView {
         
         didLayoutSubviews?()
     }
+    
+    open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let hitView = super.hitTest(point, with: event)
+        if hitView == self {
+            return nil
+        }
+        return hitView
+    }
 }
 
 /// Convenience functions to add margins around a specific root splitView
