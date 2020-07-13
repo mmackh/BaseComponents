@@ -18,6 +18,7 @@ import UIKit
 
 public enum ProgressViewType {
     case fullscreenBlur
+    case fullscreenBlurSmallSpinner
     case appleStyle
     case spinnerOnlyLarge
     case spinnerOnlySmall
@@ -60,9 +61,9 @@ open class ProgressView: UIView {
         
         let style: UIActivityIndicatorView.Style = {
             if #available(iOS 13.0, *) {
-                return type == .spinnerOnlySmall ? .medium : .large
+                return type == .spinnerOnlySmall || type == .fullscreenBlurSmallSpinner ? .medium : .large
             } else {
-                return type == .spinnerOnlySmall ? .gray : .whiteLarge
+                return type == .spinnerOnlySmall || type == .fullscreenBlurSmallSpinner ? .gray : .whiteLarge
             }
         }()
         
@@ -70,7 +71,7 @@ open class ProgressView: UIView {
         spinner.color = color
         spinner.autoresizingMask = [.flexibleTopMargin, .flexibleBottomMargin, .flexibleLeftMargin, .flexibleRightMargin]
         
-        if type == .fullscreenBlur {
+        if type == .fullscreenBlur || type == .fullscreenBlurSmallSpinner {
             backgroundView = UIVisualEffectView(effect: nil)
         } else {
             backgroundView = UIView()
@@ -128,7 +129,7 @@ open class ProgressView: UIView {
                 self.backgroundView.color(.background, .init(white: 0, alpha: 0.2))
             }
             
-            if self.type == .fullscreenBlur {
+            if self.type == .fullscreenBlur || self.type == .fullscreenBlurSmallSpinner {
                 (self.backgroundView as? UIVisualEffectView)?.effect = UIBlurEffect.init(style: .regular)
             }
             self.spinner.startAnimating()
@@ -137,7 +138,7 @@ open class ProgressView: UIView {
     }
     
     func hide() {
-        if type == .fullscreenBlur || type == .appleStyle {
+        if type == .fullscreenBlur || type == .appleStyle || type == .fullscreenBlurSmallSpinner {
             UIView.animate(withDuration: 0.3, animations: {
                 if self.type == .fullscreenBlur {
                     self.spinner.alpha = 0
@@ -150,9 +151,6 @@ open class ProgressView: UIView {
                     self.backgroundView.color(.background, .clear)
                 }
             }) { (done) in
-                if !done {
-                    return
-                }
                 self.removeFromSuperview()
             }
             return
