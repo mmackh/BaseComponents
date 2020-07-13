@@ -177,8 +177,6 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         handler.layoutType = layoutType
         handler.staticValue = value
         handler.staticEdgeInsets = edgeInsets
-        
-        view.translatesAutoresizingMaskIntoConstraints = false
 
         layoutHandlers[view] = handler
 
@@ -188,8 +186,6 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     public func addSubview(_ view: UIView, valueHandler: @escaping (_ superviewBounds: CGRect) -> ScrollingViewLayoutInstruction) {
         let handler = ScrollingViewHandler()
         handler.valueHandler = valueHandler
-        
-        view.translatesAutoresizingMaskIntoConstraints = false
 
         layoutHandlers[view] = handler
 
