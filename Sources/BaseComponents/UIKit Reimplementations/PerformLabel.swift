@@ -55,6 +55,12 @@ public class PerformLabel: UIView {
         }
     }
     
+    open var kern: CGFloat? {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
     public override var accessibilityLabel: String? {
         get {
             return text
@@ -101,6 +107,10 @@ public class PerformLabel: UIView {
             }
             mutableAttributedString.addAttribute(.font, value: font, range: totalRange)
             mutableAttributedString.addAttribute(.paragraphStyle, value: paragraphStyleMutable, range: totalRange)
+            
+            if let kern = kern {
+                mutableAttributedString.addAttribute(.kern, value: kern, range: totalRange)
+            }
             
             self.attributedStringToDraw = mutableAttributedString
         }
