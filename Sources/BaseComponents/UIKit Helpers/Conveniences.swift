@@ -669,10 +669,32 @@ public extension UIGestureRecognizer {
     }
 }
 
-public class UIInstantPanGestureRecognizer: UIPanGestureRecognizer {
+public class UILongPressPanGestureRecognizer: UIPanGestureRecognizer {
+    public var minimumPressDuration: TimeInterval = 0.5
+    private var minimumPressDurationTimer: Timer?
+    
+    public override var state: UIGestureRecognizer.State {
+        didSet {
+            if minimumPressDurationTimer != nil && state == .began {
+                stopTimer()
+            }
+            if minimumPressDurationTimer != nil && (state == .failed || state == .cancelled || state == .ended) {
+                stopTimer()
+            }
+        }
+    }
+    
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesBegan(touches, with: event)
         
-        state = .began
+        self.minimumPressDurationTimer = Timer(timeInterval: minimumPressDuration, repeats: false) { [unowned self] (timer) in
+            self.state = .began
+        }
+        RunLoop.current.add(self.minimumPressDurationTimer!, forMode: .common)
+    }
+    
+    func stopTimer() {
+        minimumPressDurationTimer?.invalidate()
+        minimumPressDurationTimer = nil
     }
 }
