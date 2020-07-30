@@ -340,6 +340,11 @@ public extension UIButton {
         setTitle(title, for: .normal)
     }
     
+    convenience init(_ title: String) {
+        self.init(type: .system)
+        setTitle(title, for: .normal)
+    }
+    
     @available(iOS 13.0, *)
     convenience init(symbol: String, weight: UIImage.SymbolWeight = .regular, mode: UIView.ContentMode = .center) {
         self.init(type: .system)
