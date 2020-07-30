@@ -303,6 +303,13 @@ public extension UIView {
         clipsToBounds = (cornerRadius > 0)
         return self
     }
+    
+    @discardableResult
+    func cornerRadius(_ cornerRadius: CGFloat = 0.0) -> Self {
+        layer.cornerRadius = cornerRadius
+        clipsToBounds = (cornerRadius > 0)
+        return self
+    }
 }
 
 public extension UIImage {
