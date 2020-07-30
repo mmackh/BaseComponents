@@ -668,6 +668,12 @@ public extension Array {
     }
 }
 
+public extension CGPoint {
+    func offsetBy(dx: CGFloat, dy: CGFloat) -> CGPoint {
+        CGPoint(x: x + dx, y: y + dy)
+    }
+}
+
 public extension UIGestureRecognizer {
     func cancel() {
         state = .cancelled
