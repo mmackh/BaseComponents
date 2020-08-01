@@ -310,6 +310,12 @@ public extension UIView {
         clipsToBounds = (cornerRadius > 0)
         return self
     }
+    
+    @discardableResult
+    func userInteractionEnabled(_ userInteractionEnabled: Bool) -> Self {
+        isUserInteractionEnabled = userInteractionEnabled
+        return self
+    }
 }
 
 public extension UIImage {
@@ -551,6 +557,16 @@ public extension UIViewController {
         }
         return navigationController
     }
+    
+    var initialSafeAreaInsets: UIEdgeInsets {
+        let safeAreaInsets = view.safeAreaInsets
+        let additionalSafeAreaInsets = self.additionalSafeAreaInsets
+        
+        return UIEdgeInsets(top: safeAreaInsets.top - additionalSafeAreaInsets.top,
+                            left: safeAreaInsets.left - additionalSafeAreaInsets.left,
+                            bottom: safeAreaInsets.bottom - additionalSafeAreaInsets.bottom,
+                            right: safeAreaInsets.right - additionalSafeAreaInsets.right)
+    }
 }
 
 public extension UIAlertController {
@@ -583,41 +599,6 @@ public extension UIAlertController {
     }
 }
 
-public extension UIEdgeInsets {
-    var horizontal: CGFloat {
-        get {
-            return left + right
-        }
-    }
-    var vertical: CGFloat {
-        get {
-            return top + bottom
-        }
-    }
-    
-    init(padding: CGFloat) {
-        self.init(top: padding, left: padding, bottom: padding, right: padding)
-    }
-    
-    init(horizontal: CGFloat) {
-        self.init(top: 0, left: horizontal, bottom: 0, right: horizontal)
-    }
-    
-    init(vertical: CGFloat) {
-        self.init(top: vertical, left: 0, bottom: vertical, right: 0)
-    }
-    
-    init(horizontal: CGFloat, vertical: CGFloat) {
-        self.init(top: vertical, left: horizontal, bottom: vertical, right: horizontal)
-    }
-}
-
-extension CGFloat {
-    public static let onePixel: CGFloat = {
-        return 1 / UIScreen.main.scale
-    }()
-}
-
 public extension Array {
     func fuzzySearch(_ searchText: String?, objectValueHandler: (Element) -> (String)) -> [Element] {
         guard let searchText = searchText?.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil) else { return self }
@@ -641,8 +622,10 @@ public extension Array {
                 continue
             }
             
-            var searchTextIdx = searchText.startIndex, objectValueIdx = objectValue.startIndex
-            let searchTextEndIdx = searchText.endIndex, objectValueEndIdx = objectValue.endIndex
+            let fuzzyText = searchText.replacingOccurrences(of: " ", with: "")
+            
+            var searchTextIdx = fuzzyText.startIndex, objectValueIdx = objectValue.startIndex
+            let searchTextEndIdx = fuzzyText.endIndex, objectValueEndIdx = objectValue.endIndex
                
             var successfulMatch = true
             while searchTextIdx != searchTextEndIdx {
@@ -650,8 +633,8 @@ public extension Array {
                     successfulMatch = false
                     break
                 }
-                if searchText[searchTextIdx] == objectValue[objectValueIdx] {
-                    searchTextIdx = searchText.index(after: searchTextIdx)
+                if fuzzyText[searchTextIdx] == objectValue[objectValueIdx] {
+                    searchTextIdx = fuzzyText.index(after: searchTextIdx)
                 }
                 objectValueIdx = objectValue.index(after: objectValueIdx)
             }
@@ -709,5 +692,11 @@ public class UILongPressPanGestureRecognizer: UIPanGestureRecognizer {
     func stopTimer() {
         minimumPressDurationTimer?.invalidate()
         minimumPressDurationTimer = nil
+    }
+}
+
+public extension DispatchQueue {
+    static func async(after timeInterval: TimeInterval, execute work: @escaping @convention(block) () -> Void) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeInterval, execute: work)
     }
 }

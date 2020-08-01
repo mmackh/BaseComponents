@@ -98,13 +98,13 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
             var temporaryComponents: [SheetViewComponent] = []
             for component in components {
                 if let space = component as? SheetViewSpace {
-                    internalSectionComponents.append(SheetView.InternalSectionComponent(spacing: space.height, components: temporaryComponents))
+                    internalSectionComponents.append(SheetView.InternalSectionComponent(space: space, components: temporaryComponents))
                     temporaryComponents.removeAll()
                 }
                 temporaryComponents.append(component)
             }
             if temporaryComponents.count > 0 {
-                internalSectionComponents.append(SheetView.InternalSectionComponent(spacing: 0, components: temporaryComponents))
+                internalSectionComponents.append(SheetView.InternalSectionComponent(space: SheetViewSpace(0), components: temporaryComponents))
             }
         }
     }
@@ -190,7 +190,9 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
     public convenience init(components: [SheetViewComponent]) {
         self.init()
         
-        self.components = components
+        defer {
+            self.components = components
+        }
     }
     
     /**
@@ -312,7 +314,7 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
         
         self.color(.background, .clear)
         UIView.animate(withDuration: 0.3) {
-            self.color(.background, .dynamic(light: .init(white: 0, alpha: 0.2), dark: .init(white: 0, alpha: 0.6)))
+            self.color(.background, self.backgroundColor != nil ? self.backgroundColor! : .dynamic(light: .init(white: 0, alpha: 0.2), dark: .init(white: 0, alpha: 0.6)))
         }
         
         let dismissTap = UITapGestureRecognizer { [weak self] (tap) in
@@ -477,7 +479,11 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
             }
             subComponentView.frame = .init(x: 0, y: overallHeightTracker, width: width, height: internalComponentHeightTracker)
             overallHeightTracker += internalComponentHeightTracker
-            overallHeightTracker += internalComponent.spacing
+            if let dyanmicHeightHandler = internalComponent.space.dynamicHeightHandler {
+                overallHeightTracker += dyanmicHeightHandler(superview.bounds)
+            } else {
+                overallHeightTracker += internalComponent.space.height
+            }
             componentView.addSubview(subComponentView)
         }
         
@@ -553,13 +559,13 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
     }
 
     fileprivate class InternalSectionComponent {
-        let spacing: CGFloat
+        let space: SheetViewSpace
         let components: [SheetViewComponent]
         
         weak var containerView: UIVisualEffectView? = nil
         
-        init(spacing: CGFloat, components: [SheetViewComponent]) {
-            self.spacing = spacing
+        init(space: SheetViewSpace, components: [SheetViewComponent]) {
+            self.space = space
             self.components = components
         }
     }
@@ -667,6 +673,7 @@ open class SheetViewButton: SheetViewComponent {
  In order to logically divide the sheet into sections, insert space components where necessary. Mimicks the behaviour of `UIAlertController`, where usually the *Dismiss* or *Cancel* buttons are visually separated from the rest of the button groups.
  */
 open class SheetViewSpace: SheetViewComponent {
+
     /**
       Initializes a new space component with a separation distance of 8.0pts
 

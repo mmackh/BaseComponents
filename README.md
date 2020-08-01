@@ -194,6 +194,23 @@ let label = UILabel("Hello World!")
 ---
 </details>
 
+#### Geometry
+<details>
+<summary>Adds shortcuts to UIView, CGRect & UIEdgeInsets for manually managing frames.</summary>
+
+##### Code Sample
+```swift
+let label = UILabel("Hello World!")
+label.x = 10
+label.y = 10
+label.width = 200
+label.height = 300
+
+let view = UIView().width(50).height(50)
+```
+---
+</details>
+
 #### DataRender
 <details>
 <summary>Avoid writing boilerplate and common pitfalls when displaying data in a <code>UITableView</code> or <code>UICollectionView</code>. Supports fast and accurate automatic cell sizing with <code>ScrollingView</code>. </summary>
