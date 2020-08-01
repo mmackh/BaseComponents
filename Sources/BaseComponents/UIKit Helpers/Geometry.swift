@@ -32,24 +32,6 @@ public extension CGRect {
             origin.y = newValue
         }
     }
-    
-    var width: CGFloat {
-        get {
-            size.width
-        }
-        set {
-            size.width = newValue
-        }
-    }
-    
-    var height: CGFloat {
-        get {
-            size.height
-        }
-        set {
-            size.height = newValue
-        }
-    }
 }
 
 public extension UIView {
@@ -81,7 +63,7 @@ public extension UIView {
         }
         set {
             var frame = self.frame
-            frame.width = newValue
+            frame.size.width = newValue
             self.frame = frame
         }
     }
@@ -92,7 +74,7 @@ public extension UIView {
         }
         set {
             var frame = self.frame
-            frame.height = newValue
+            frame.size.height = newValue
             self.frame = frame
         }
     }
@@ -183,4 +165,40 @@ extension CGFloat {
     public static let onePixel: CGFloat = {
         return 1 / UIScreen.main.scale
     }()
+}
+
+public class ManualFrameView: UIView {
+    private let layoutSubviewsHandler: (_ view: ManualFrameView)->()
+    
+    public init(layoutSubviewsHandler: @escaping((_ view: ManualFrameView)->())) {
+        self.layoutSubviewsHandler = layoutSubviewsHandler
+        
+        super.init(frame: .zero)
+    }
+    
+    
+    @available(*, unavailable)
+    public override init(frame: CGRect) {
+        self.layoutSubviewsHandler = { view in }
+        
+        super.init(frame: frame)
+    }
+    
+    @available(*, unavailable)
+    public init() {
+        self.layoutSubviewsHandler = { view in }
+        
+        super.init(frame: .zero)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        
+        unowned let weakSelf = self
+        layoutSubviewsHandler(weakSelf)
+    }
 }
