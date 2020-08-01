@@ -49,6 +49,7 @@ public class ConditionalLayoutView: UIView {
         public var preventAnimations: Bool = false
         public var backgroundColor: UIColor? = nil
         
+        fileprivate var initialLayout: Bool = true
         private var didLayoutSubviews: (() -> Void)?
         public func didLayoutSubviews(_ willLayoutSubviews: @escaping () -> Void) {
             self.didLayoutSubviews = willLayoutSubviews
@@ -160,6 +161,11 @@ public class ConditionalLayoutView: UIView {
         super.addScrollingView(configurationHandler: configurationHandler)
     }
     
+    @available(*, unavailable)
+    public override func addConditionalLayoutView(configurationHandler: (ConditionalLayoutView) -> Void) -> ConditionalLayoutView {
+        super.addConditionalLayoutView(configurationHandler: configurationHandler)
+    }
+    
     public func addSubviews(_ configurationHandler: (_ targetView: ConditionalSplitView)->Void, conditionHandler: @escaping (_ traitCollection: UITraitCollection) -> Bool) {
         let targetView = ConditionalSplitView(conditionHandler: conditionHandler)
         configurationHandler(targetView)
@@ -179,13 +185,25 @@ public class ConditionalLayoutView: UIView {
         boundsCache = bounds
         
         for targetView in conditionalTargetViews {
-            for subview in targetView.subviews {
-                if (subview.view.superview == nil) {
-                    continue
-                }
+            if targetView.initialLayout {
+                targetView.initialLayout = false
                 
-                let value = NSValue(nonretainedObject: subview.view)
-                frameCacheMap[value] = self.convert(subview.view.bounds, from: subview.view)
+                let splitView = targetView.build(frameCacheMap: frameCacheMap)
+                splitView.frame = bounds
+                splitView.layoutSubviews()
+                for subview in splitView.subviews {
+                    let value = NSValue(nonretainedObject: subview)
+                    frameCacheMap[value] = self.convert(subview.bounds, from: subview)
+                }
+            } else {
+                for subview in targetView.subviews {
+                    if (subview.view.superview == nil) {
+                        continue
+                    }
+                    
+                    let value = NSValue(nonretainedObject: subview.view)
+                    frameCacheMap[value] = self.convert(subview.view.bounds, from: subview.view)
+                }
             }
         }
         
@@ -194,15 +212,12 @@ public class ConditionalLayoutView: UIView {
         
         for targetView in conditionalTargetViews {
             if targetView.matches(traitCollection) {
-                self.splitView = targetView.build(frameCacheMap: frameCacheMap)
+                let splitView = targetView.build(frameCacheMap: frameCacheMap)
+                splitView.frame = bounds
+                super.addSubview(splitView)
+                self.splitView = splitView
                 break
             }
-        }
-        
-        if let splitView = self.splitView {
-            super.addSubview(splitView)
-            splitView.frame = bounds
-            splitView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         }
     }
     
