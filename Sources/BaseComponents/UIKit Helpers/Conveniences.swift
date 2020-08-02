@@ -371,6 +371,14 @@ public extension UIButton {
         }
     }
     
+    @available(iOS 13.0, *)
+    convenience init(symbol: String, weight: UIImage.SymbolWeight = .regular, pointSize: CGFloat) {
+        self.init(type: .system)
+        setImage(UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize, weight: weight, scale: .default)), for: .normal)
+        
+        imageView?.contentMode = .scaleAspectFit
+    }
+    
     @discardableResult
     func size(_ textStyle: UIFont.TextStyle, _ fontStyle: UICustomFontStyle = []) -> Self {
         self.titleLabel?.font = UIFont.size(textStyle, fontStyle)

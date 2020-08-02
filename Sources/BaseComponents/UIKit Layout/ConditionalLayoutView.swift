@@ -190,10 +190,10 @@ public class ConditionalLayoutView: UIView {
                 
                 let splitView = targetView.build(frameCacheMap: frameCacheMap)
                 splitView.frame = bounds
-                splitView.layoutSubviews()
+                splitView.invalidateLayout()
                 for subview in splitView.subviews {
                     let value = NSValue(nonretainedObject: subview)
-                    frameCacheMap[value] = self.convert(subview.bounds, from: subview)
+                    frameCacheMap[value] = splitView.convert(subview.bounds, from: subview)
                 }
             } else {
                 for subview in targetView.subviews {
