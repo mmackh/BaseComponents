@@ -207,11 +207,11 @@ open class SplitView: UIView {
     }
     
     public func addPadding(_ value: CGFloat) {
-        addSubview(UIView(), layoutType: .fixed, value: value)
+        addPadding(layoutType: .fixed, value: value)
     }
     
     public func addPadding(layoutType: SplitViewLayoutType, value: CGFloat = 0.0) {
-        addSubview(UIView(), layoutType: layoutType, value: value)
+        addSubview(UIView().userInteractionEnabled(false), layoutType: layoutType, value: value)
     }
     
     private func snapToSuperview() {
