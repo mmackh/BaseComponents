@@ -2,7 +2,7 @@
 
 ## Introduction
 
-BaseComponents aims to provide easily reusable and understandable components to increase productivity with UIKit. Formerly written in Objective-C and used extensivly in production, the time has come to transition to Swift.
+BaseComponents aims to provide easily reusable and understandable components to increase productivity with UIKit. Formerly written in Objective-C and used extensively in production, the time has come to transition to Swift.
 
 Current Version: 0.9
 
@@ -156,6 +156,27 @@ Create a `NetFetchRequest` and call `fetch()`
 NetFetchRequest(urlString: "https://twitter.com/mmackh") { (response) in
     print(response.string())
 }.fetch()
+```
+</details>
+
+---
+
+### Dates & Time
+#### TimeKeep
+<details>
+<summary>Adds conveniece methods to Swift's <code>Date</code> in order to calculate time spans, add or remove time units and get formatted strings.</summary>
+
+##### First Steps
+Create a `Date` and call `remove()`  or `add()` to modify using time units. Use `format()` to retrieve a string.
+
+##### Code Sample
+```swift
+let date = Date()
+print(date.remove(.month(1)).dates(until: date))
+print("In 7 seconds", date.add(.second(7)).format())
+
+let past = date.remove(.year(5)).startOf(.month)
+print(past.format(string: "EEEE, YYYY-MM-dd"))
 ```
 </details>
 
@@ -318,7 +339,7 @@ NotificationView.show(.success, in: self.navigationController?.view, for: 2, mes
 
 #### ProgressView
 <details>
-<summary>Able to display an indetermined progress spinner in different styles to indicate a loading state. Blocks interaction of the underlying UI when visible.</summary>
+<summary>Able to display a progress spinner in different styles to indicate a loading state. Blocks interaction of the underlying UI when visible.</summary>
 
 ##### First Steps
 Use the convenience method `showProgressView()` on any `UIView` to display a loading state.
