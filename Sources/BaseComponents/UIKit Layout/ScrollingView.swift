@@ -305,8 +305,6 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         }
     }
     
-    // test
-    
     public override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         let target = super.hitTest(point, with: event)
         if (enclosedInRender) {
