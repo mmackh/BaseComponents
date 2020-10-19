@@ -704,7 +704,20 @@ public class UILongPressPanGestureRecognizer: UIPanGestureRecognizer {
 }
 
 public extension DispatchQueue {
-    static func async(after timeInterval: TimeInterval, execute work: @escaping @convention(block) () -> Void) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + timeInterval, execute: work)
+    func async(after timeInterval: TimeInterval, execute work: @escaping @convention(block) () -> Void) {
+        asyncAfter(deadline: .now() + timeInterval, execute: work)
+    }
+    
+    private static var tokens = [String]()
+    func once(file: String = #file, function: String = #function, line: Int = #line, execute work: () -> Void) {
+        once(token: "\(file)\(function)\(line)", execute: work)
+    }
+    
+    func once(token: String, execute work: ()->Void) {
+        objc_sync_enter(self)
+        defer { objc_sync_exit(self) }
+        if DispatchQueue.tokens.contains(token) { return }
+        DispatchQueue.tokens.append(token)
+        work()
     }
 }
