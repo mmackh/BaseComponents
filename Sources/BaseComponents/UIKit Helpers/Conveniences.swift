@@ -708,7 +708,7 @@ public extension DispatchQueue {
         asyncAfter(deadline: .now() + timeInterval, execute: work)
     }
     
-    private static var tokens = [String]()
+    private static var tokens: [String] = []
     func once(file: String = #file, function: String = #function, line: Int = #line, execute work: () -> Void) {
         once(token: "\(file)\(function)\(line)", execute: work)
     }
