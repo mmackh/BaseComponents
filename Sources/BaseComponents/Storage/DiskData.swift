@@ -34,8 +34,7 @@ public class DiskData: CustomDebugStringConvertible {
 }
 
 public class File: DiskData {
-    
-    public var directory: Directory
+    public let directory: Directory
     
     public init(name: String, searchPathDirectory: FileManager.SearchPathDirectory = .documentDirectory, createIfNeeded: Bool = true) {
         let basePathURL = Directory.basePathURL(for: searchPathDirectory)
