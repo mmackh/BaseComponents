@@ -35,7 +35,7 @@ public class DiskData: CustomDebugStringConvertible {
 
 public class File: DiskData {
     
-    public let directory: Directory
+    public var directory: Directory
     
     public init(name: String, searchPathDirectory: FileManager.SearchPathDirectory = .documentDirectory, createIfNeeded: Bool = true) {
         let basePathURL = Directory.basePathURL(for: searchPathDirectory)
@@ -145,6 +145,26 @@ public class File: DiskData {
     @discardableResult
     public func create() -> Bool {
         return FileManager.default.createFile(atPath: path, contents: nil, attributes: nil)
+    }
+}
+
+// Read & Write UIImages with File
+public extension File {
+    enum Quality: Float {
+        case png
+        case jpgOriginal = 1.0
+        case jpgHigh = 0.8
+        case jpgMedium = 0.5
+        case jpgLow = 0.3
+    }
+    
+    @discardableResult
+    func save(_ obj: UIImage, quality: Quality = .jpgHigh) -> Bool {
+        return save(quality == .png ? obj.pngData() : obj.jpegData(compressionQuality: CGFloat(quality.rawValue)))
+    }
+    
+    func read(as type: UIImage) -> UIImage? {
+        return UIImage(contentsOfFile: path)
     }
 }
 
