@@ -709,14 +709,19 @@ public extension DispatchQueue {
     }
     
     private static var tokens: [String] = []
-    func once(file: String = #file, function: String = #function, line: Int = #line, execute work: () -> Void) {
-        once(token: "\(file)\(function)\(line)", execute: work)
+    func once(file: String = #file, function: String = #function, line: Int = #line, execute work: () -> Void, else: (()->())? = nil) {
+        once(token: "\(file)\(function)\(line)", execute: work, else: `else`)
     }
     
-    func once(token: String, execute work: ()->Void) {
+    func once(token: String, execute work: ()->Void, else: (()->())? = nil) {
         objc_sync_enter(self)
         defer { objc_sync_exit(self) }
-        if DispatchQueue.tokens.contains(token) { return }
+        if DispatchQueue.tokens.contains(token) {
+            if let `else` = `else` {
+                `else`()
+            }
+            return
+        }
         DispatchQueue.tokens.append(token)
         work()
     }
