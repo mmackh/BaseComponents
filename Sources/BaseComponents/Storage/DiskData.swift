@@ -162,7 +162,7 @@ public extension File {
         return save(quality == .png ? obj.pngData() : obj.jpegData(compressionQuality: CGFloat(quality.rawValue)))
     }
     
-    func read(as type: UIImage) -> UIImage? {
+    func read(as type: UIImage.Type) -> UIImage? {
         return UIImage(contentsOfFile: path)
     }
 }
