@@ -163,7 +163,7 @@ public extension UIEdgeInsets {
 
 extension CGFloat {
     public static let onePixel: CGFloat = {
-        return 1 / UIScreen.main.scale
+        return 1 / UIScreen.main.nativeScale
     }()
 }
 
