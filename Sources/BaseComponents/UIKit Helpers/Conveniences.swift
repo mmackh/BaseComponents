@@ -726,3 +726,19 @@ public extension DispatchQueue {
         work()
     }
 }
+
+public extension String {
+    var lastPathComponent: String {
+        if let url = URL(string: self) {
+            return url.lastPathComponent
+        }
+        return ""
+    }
+    
+    var pathExtension: String {
+        if let url = URL(string: self) {
+            return url.pathExtension
+        }
+        return ""
+    }
+}
