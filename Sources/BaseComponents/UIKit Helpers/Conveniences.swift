@@ -429,6 +429,12 @@ public extension UIButton {
     }
 }
 
+public extension UIBarButtonItem {
+    convenience init(_ title: String, style: UIBarButtonItem.Style = .plain) {
+        self.init(title: title, style: style, target: nil, action: nil)
+    }
+}
+
 public extension UIControl {
     @objc @discardableResult
     func align(_ textAlignment: NSTextAlignment) -> Self {

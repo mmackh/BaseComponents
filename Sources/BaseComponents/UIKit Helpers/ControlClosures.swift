@@ -187,6 +187,17 @@ public extension UIBarButtonItem {
         closureContainer.owner = self
         addClosureContainer(closureContainer)
     }
+    
+    @discardableResult
+    func addAction( _ closure: @escaping (_ barButtonItem: UIBarButtonItem) -> ()) -> Self {
+        let closureContainer = ClosureContainer()
+        closureContainer.closureBarButtonItem = closure
+        closureContainer.owner = self
+        addClosureContainer(closureContainer)
+        target = closureContainer
+        action = #selector(ClosureContainer.invoke)
+        return self
+    }
 }
 
 /*

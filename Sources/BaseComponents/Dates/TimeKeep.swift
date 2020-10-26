@@ -34,6 +34,11 @@ public extension Date {
         return dateFormatter
     }()
     
+    @available(iOS 13.0, *)
+    static var relativeFormatter: RelativeDateTimeFormatter = {
+        RelativeDateTimeFormatter()
+    }()
+    
     static func dates(between startDate: Date, until endDate: Date) -> [Date] {
         var dates: [Date] = []
         if let days = Date.difference(between: startDate, until: endDate, components: [.day]).day {
@@ -165,5 +170,10 @@ public extension Date {
         let formatter = Date.formatter
         formatter.dateFormat = string
         return formatter.string(from: self)
+    }
+    
+    @available(iOS 13.0, *)
+    func format(relative to: Date) -> String {
+        Date.relativeFormatter.localizedString(for: self, relativeTo: to)
     }
 }
