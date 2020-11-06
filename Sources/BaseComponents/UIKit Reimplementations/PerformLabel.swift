@@ -61,6 +61,13 @@ public class PerformLabel: UIView {
         }
     }
     
+    open var lineHeightMultiple: CGFloat = 1.0 {
+        didSet {
+            paragraphStyleMutable.lineHeightMultiple = lineHeight
+            setNeedsDisplay()
+        }
+    }
+    
     public override var accessibilityLabel: String? {
         get {
             return text
