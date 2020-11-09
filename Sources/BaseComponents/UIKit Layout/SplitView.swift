@@ -65,6 +65,20 @@ public extension SplitView {
         addSubview(conditionalLayoutView, valueHandler: valueHandler)
         return conditionalLayoutView
     }
+    
+    @available(*, unavailable)
+    override func addScrollingView(configurationHandler: (ScrollingView) -> Void) -> ScrollingView {
+        return super.addScrollingView(configurationHandler: configurationHandler)
+    }
+    
+    @discardableResult
+    func addScrollingView(configurationHandler: (ScrollingView) -> Void, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction) -> ScrollingView  {
+        let scrollingView = ScrollingView()
+        unowned let weakScrollingView = scrollingView
+        configurationHandler(weakScrollingView)
+        addSubview(scrollingView, valueHandler: valueHandler)
+        return scrollingView
+    }
 }
 
 public class SplitViewHandler {
