@@ -140,6 +140,7 @@ open class SplitView: UIView {
     
     private var boundsCache: CGRect?
     private var observingSuperviewSafeAreaInsets = false
+    private var observingSuperviewLayoutMargins = false
     
     @discardableResult
     fileprivate convenience init(superview: UIView, configurationHandler: (_ splitView: SplitView) -> Void) {
@@ -414,7 +415,6 @@ public enum SplitViewPaddingDirection: Int {
 
 public extension SplitView {
     func insertSafeAreaInsetsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection) {
-        
         observingSuperviewSafeAreaInsets = true
         
         unowned let weakParentView = parentView
@@ -440,6 +440,36 @@ public extension SplitView {
     
     override func safeAreaInsetsDidChange() {
         if observingSuperviewSafeAreaInsets {
+            invalidateLayout()
+        }
+    }
+    
+    func insertLayoutMarginsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection) {
+        observingSuperviewLayoutMargins = true
+        
+        unowned let weakParentView = parentView
+        let padding = UIView()
+        self.addSubview(padding) { (parentRect) -> SplitViewLayoutInstruction in
+            var insetValue: CGFloat = 0.0;
+            if #available(iOS 11.0, *) {
+                let insets = weakParentView.layoutMargins
+                switch paddingDirection {
+                case .top:
+                    insetValue = insets.top
+                case .left:
+                    insetValue = insets.left
+                case .bottom:
+                    insetValue = insets.bottom
+                case .right:
+                    insetValue = insets.right
+                }
+            }
+            return SplitViewLayoutInstruction(layoutType: .fixed, value: insetValue)
+        }
+    }
+    
+    override func layoutMarginsDidChange() {
+        if observingSuperviewLayoutMargins {
             invalidateLayout()
         }
     }
