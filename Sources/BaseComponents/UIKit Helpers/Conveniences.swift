@@ -358,6 +358,12 @@ public extension UIButton {
         setTitle(title, for: .normal)
     }
     
+    convenience init(imageNamed: String, mode: UIView.ContentMode = .scaleAspectFit) {
+        self.init(type: .system)
+        imageView?.mode(mode)
+        setImage(UIImage(named: imageNamed), for: .normal)
+    }
+    
     @available(iOS 13.0, *)
     convenience init(symbol: String, weight: UIImage.SymbolWeight = .regular, mode: UIView.ContentMode = .center) {
         self.init(type: .system)
