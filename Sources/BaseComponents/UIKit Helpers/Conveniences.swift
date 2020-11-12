@@ -206,6 +206,18 @@ public extension PerformLabel {
     }
     
     @discardableResult
+    func lineHeightMultiple(_ lineHeightMultiple: CGFloat) -> Self {
+        self.lineHeightMultiple = lineHeightMultiple
+        return self
+    }
+    
+    @discardableResult
+    func kern(_ kern: CGFloat) -> Self {
+        self.kern = kern
+        return self
+    }
+    
+    @discardableResult
     func text(_ text: String?) -> Self {
         self.text = text ?? ""
         return self
