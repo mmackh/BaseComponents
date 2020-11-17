@@ -219,7 +219,8 @@ open class NotificationView: UIView {
     }
     
     private func hiddenTransform() -> CGAffineTransform {
-        return position == .top ? .init(translationX: 0, y: -(self.frame.height + self.frame.origin.y)) : .init(translationX: 0, y: frame.height + (superview!.frame.height - self.frame.origin.y))
+        guard let superview = self.superview else { return .identity }
+        return position == .top ? .init(translationX: 0, y: -(self.frame.height + self.frame.origin.y)) : .init(translationX: 0, y: frame.height + (superview.frame.height - self.frame.origin.y))
     }
 
     open override func layoutSubviews() {
