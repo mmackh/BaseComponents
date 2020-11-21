@@ -469,6 +469,11 @@ public extension UIControl {
 }
 
 public extension UIImageView {
+    enum Animation {
+        case none
+        case fade(TimeInterval)
+    }
+    
     private struct Static {
         static var ImageViewRequestKey = "fetchRequestImageViewKey"
         static let ImageViewQueue = DispatchQueue.init(label: "at.BaseComponents.UIImageView.Async")
@@ -494,7 +499,7 @@ public extension UIImageView {
     }
     
     @discardableResult
-    func image(urlString: String, placeholderImage: UIImage? = nil, completionHandler: ((Bool)->())? = nil) -> Self {
+    func image(urlString: String, animation: UIImageView.Animation = .none, placeholderImage: UIImage? = nil, completionHandler: ((Bool)->())? = nil) -> Self {
         
         let currentRequest = currentFetchRequest()
         
@@ -519,7 +524,16 @@ public extension UIImageView {
                         Static.Cache.storeCachedResponse(CachedURLResponse(response: response.urlResponse!, data: data), for: response.urlRequest!)
                         DispatchQueue.main.async {
                             if (response.urlString == self?.currentFetchRequest()?.urlString) {
-                                self?.image = image
+                                switch animation {
+                                case .none:
+                                    self?.image = image
+                                case .fade(let duration):
+                                    guard let avSelf = self else { return }
+                                    UIView.transition(with: avSelf, duration:duration, options: UIView.AnimationOptions.transitionCrossDissolve, animations: {
+                                        avSelf.image = image
+                                    }, completion: nil)
+                                }
+                                
                                 loadingComplete(success: true)
                             }
                         }
