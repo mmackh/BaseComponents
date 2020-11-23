@@ -129,6 +129,12 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     
     public var edgeInsets: UIEdgeInsets = .zero
     
+    public var automaticallyAdjustsLayoutMarginInsets = false {
+        didSet {
+            contentInsetAdjustmentBehavior = .never
+        }
+    }
+    
     @discardableResult
     fileprivate convenience init(superview: UIView, configurationHandler: (_ scrollingView: ScrollingView) -> Void) {
         self.init()
@@ -226,11 +232,14 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     }
     
     public override func layoutSubviews() {
-        if (frameCache.equalTo(frame)) {
+        if frameCache.equalTo(frame) {
             return
         }
-        
         frameCache = frame
+        
+        if automaticallyAdjustsLayoutMarginInsets {
+            edgeInsets = layoutMargins
+        }
         
         let vertical = direction == .vertical
         

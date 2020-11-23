@@ -157,7 +157,7 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
      
      The value for `horizontalInset` is deducted from `maximumWidth` for consistency purposes.
      */
-    public var maximumWidth: CGFloat = 420.0
+    public var maximumWidth: CGFloat = 480.0
     
     /**
      A `UITextField` or `UITextView` can require a software keyboard to be shown, which covers up a large portion of the screen. The default behaviour for the sheet is to reposition itself automatically in those situations
