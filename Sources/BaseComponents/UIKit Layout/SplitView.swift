@@ -191,6 +191,7 @@ open class SplitView: UIView {
     
     public func addSubview(_ view: UIView, valueHandler: @escaping (_ superviewBounds: CGRect) -> SplitViewLayoutInstruction) {
         let handler = SplitViewHandler()
+        handler.layoutType = valueHandler(.zero).layoutType
         handler.valueHandler = valueHandler
         
         handlerContainer[view] = handler
@@ -318,7 +319,6 @@ extension SplitView {
             var fixedValueFloat = instruction.value
             
             if layoutHandler.layoutType == .automatic {
-                
                 var additionalPadding: CGFloat = 0.0
                 if subview is UIButton {
                     let button = subview as! UIButton
