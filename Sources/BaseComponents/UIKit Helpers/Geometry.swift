@@ -32,6 +32,16 @@ public extension CGRect {
             origin.y = newValue
         }
     }
+    var isPortrait: Bool {
+        get {
+            height > width
+        }
+    }
+    var isLandscape: Bool {
+        get {
+            height < width
+        }
+    }
 }
 
 public extension UIView {
