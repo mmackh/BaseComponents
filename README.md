@@ -284,6 +284,23 @@ KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
 </details>
 
 ---
+</details>
+
+#### DebugController
+<details>
+<summary>Test ViewControllers by implementing `register` once and calling `open()` on `DebugController`. To quickly jump to a registered ViewController call `debugRegisteredViewController` in the completionHandler of `open()` - a shortcut that can be used when the app is launched.</summary>
+
+##### Code Sample
+```swift
+DebugController.register(name: "ScrollingView") { (parentViewController) in
+    parentViewController.present(ScrollingViewController(), animated: true, completion: nil)
+}
+
+DebugController.open(completionHandler: nil)
+```
+</details>
+
+---
 
 ### UIKit Reimplementations
 #### PerformLabel
