@@ -18,9 +18,9 @@ open class DebugController: UIViewController {
     public class Store {
         fileprivate class Item {
             let name: String
-            let presentationHandler: (_ parentViewController: UIViewController)->()
+            let presentationHandler: (_ coordinator: Coordinator)->()
             
-            fileprivate init(name: String, presentationHandler: @escaping((_ parentViewController: UIViewController)->())) {
+            fileprivate init(name: String, presentationHandler: @escaping((_ coordinator: Coordinator)->())) {
                 self.name = name
                 self.presentationHandler = presentationHandler
             }
@@ -29,8 +29,26 @@ open class DebugController: UIViewController {
         
         public static let defaultStore: Store = Store()
         
-        public func register(name: String, presentationHandler: @escaping((_ parentViewController: UIViewController)->())) {
+        public func register(name: String, presentationHandler: @escaping((_ coordinator: Coordinator)->())) {
             items.append(Item(name: name, presentationHandler: presentationHandler))
+        }
+    }
+    
+    public class Coordinator {
+        weak var parentViewController: UIViewController?
+        var animated: Bool = true
+        
+        init(_ parentViewController: UIViewController) {
+            self.parentViewController = parentViewController
+        }
+        
+        public func push(_ viewController: UIViewController) {
+            parentViewController?.navigationController?.pushViewController(viewController, animated: animated)
+            
+        }
+        
+        public func present(_ viewController: UIViewController, completionHandler: (()->())? = nil) {
+            parentViewController?.present(viewController, animated: animated, completion: completionHandler)
         }
     }
     
@@ -72,13 +90,13 @@ open class DebugController: UIViewController {
         }
         render.onSelect { [unowned self] (itemRenderProperties) in
             let item = itemRenderProperties.object as! Store.Item
-            item.presentationHandler(self)
+            item.presentationHandler(Coordinator(self))
         }
         render.renderArray(store.items)
         view.addSubview(render)
     }
     
-    public static func register(name: String, presentationHandler: @escaping((_ parentViewController: UIViewController)->())) {
+    public static func register(name: String, presentationHandler: @escaping((_ coordinator: Coordinator)->())) {
         Store.defaultStore.register(name: name, presentationHandler: presentationHandler)
     }
     
@@ -96,7 +114,7 @@ open class DebugController: UIViewController {
     }
     
     public func debugRegisteredViewController(at index: Int = 0) {
-        self.store.items[index].presentationHandler(self)
+        self.store.items[index].presentationHandler(Coordinator(self))
     }
     
     public static func currentViewController() -> UIViewController? {

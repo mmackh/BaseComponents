@@ -39,10 +39,12 @@ class MainViewController : UIViewController {
     override func viewDidLoad() {
         title = "Base Components"
         
-        DebugController.register(name: "ScrollingView") { (parentViewController) in
-            
-            parentViewController.present(ScrollingViewController(), animated: true, completion: nil)
-            
+        DebugController.register(name: "ScrollingView Push") { (coordinator) in
+            coordinator.push(ScrollingViewController())
+        }
+        
+        DebugController.register(name: "ScrollingView Present") { (coordinator) in
+            coordinator.present(ScrollingViewController())
         }
         
         navigationItem.rightBarButtonItem = UIBarButtonItem("Debug").addAction({ (item) in
