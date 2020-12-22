@@ -613,6 +613,16 @@ public extension UIViewController {
                             bottom: safeAreaInsets.bottom - additionalSafeAreaInsets.bottom,
                             right: safeAreaInsets.right - additionalSafeAreaInsets.right)
     }
+    
+    var largeTitle: String? {
+        get {
+            title
+        }
+        set {
+            title = newValue
+            navigationController?.navigationBar.prefersLargeTitles = true
+        }
+    }
 }
 
 public extension UIAlertController {
