@@ -290,8 +290,8 @@ KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
 
 ##### Code Sample
 ```swift
-DebugController.register(name: "ScrollingView") { (parentViewController) in
-    parentViewController.present(ScrollingViewController(), animated: true, completion: nil)
+DebugController.register(name: "ScrollingView") { (coordinator) in
+    parentViewController.present(ScrollingViewController())
 }
 
 DebugController.open(completionHandler: nil)
