@@ -61,19 +61,19 @@ public extension Date {
     
     func distance(in component: Calendar.Component, to date: Date) -> Int {
         if component == .second {
-            let difference = Date.difference(between: self, until: date, components: [.second])
+            let difference = Date.calendar.dateComponents([.second], from: self, to: date)
             if let value = difference.second {
                 return value
             }
         }
         if component == .minute {
-            let difference = Date.difference(between: self, until: date, components: [.minute])
+            let difference = Date.calendar.dateComponents([.minute], from: self, to: date)
             if let value = difference.minute {
                 return value
             }
         }
         if component == .hour {
-            let difference = Date.difference(between: self, until: date, components: [.hour])
+            let difference = Date.calendar.dateComponents([.hour], from: self, to: date)
             if let value = difference.hour {
                 return value
             }
