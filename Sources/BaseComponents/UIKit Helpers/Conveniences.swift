@@ -790,3 +790,38 @@ public extension String {
         return ""
     }
 }
+
+public extension NSObject {
+    fileprivate class NotificationReference {
+        let reference: Any
+
+        init(_ reference: Any) {
+            self.reference = reference
+        }
+
+        deinit {
+            NotificationCenter.default.removeObserver(reference)
+        }
+    }
+    
+    func observe<T>(file: String = #file, function: String = #function, line: Int = #line, _ notification: T, _ handler: @escaping (Notification)->()) {
+        guard let notificationName = NSObject.notificationName(notification) else { return }
+        let token = NotificationCenter.default.addObserver(forName: notificationName, object: nil, queue: .main, using: handler)
+        objc_setAssociatedObject(self, "bc_notf_\(file)\(function)\(line)", NotificationReference(token), objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
+
+    func emit<T>(_ notification: T, obj: Any? = nil) {
+        guard let notificationName = NSObject.notificationName(notification) else { return }
+        NotificationCenter.default.post(name: notificationName, object: obj)
+    }
+    
+    fileprivate static func notificationName<T>(_ input: T) -> Notification.Name? {
+        if let notificationNameString = input as? String {
+            return Notification.Name.init(notificationNameString)
+        }
+        if let notificationNameObject = input as? Notification.Name {
+            return notificationNameObject
+        }
+        return nil
+    }
+}
