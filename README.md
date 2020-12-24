@@ -200,7 +200,7 @@ button.addAction(for: .touchUpInside) { (button) in
 
 #### Conveniences
 <details>
-<summary>Chainable properties for popular <code>UIKit</code> methods. Populate an <code>UIImageView</code> with remote images. Introduces many other conveniences.</summary>
+<summary>Chainable properties for popular <code>UIKit</code> or <code>Foundation</code> methods. Populate an <code>UIImageView</code> with remote images. Observe and emit state changes through blocks with NotificationCenter. Introduces many other conveniences.</summary>
 
 ##### Code Sample
 ```swift
