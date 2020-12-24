@@ -94,12 +94,18 @@ public class ConditionalLayoutView: UIView {
             return conditionalSplitView
         }
         
-        public func addPadding(_ value: CGFloat) {
-            addSubview(UIView(), layoutType: .fixed, value: value)
+        @discardableResult
+        public func addPadding(_ value: CGFloat) -> UIView {
+            let padding = UIView()
+            addSubview(padding, layoutType: .fixed, value: value)
+            return padding
         }
         
-        public func addPadding(layoutType: SplitViewLayoutType, value: CGFloat = 0.0) {
-            addSubview(UIView(), layoutType: layoutType, value: value)
+        @discardableResult
+        public func addPadding(layoutType: SplitViewLayoutType, value: CGFloat = 0.0) -> UIView {
+            let padding = UIView()
+            addSubview(padding, layoutType: layoutType, value: value)
+            return padding
         }
         
         func matches(_ traitCollection: UITraitCollection) -> Bool {

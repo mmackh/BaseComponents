@@ -215,8 +215,11 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         return splitView
     }
     
-    public func addPadding(_ value: CGFloat) {
-        addSubview(UIView(), layoutType: .fixed, value: value)
+    @discardableResult
+    public func addPadding(_ value: CGFloat) -> UIView {
+        let padding = UIView()
+        addSubview(padding, layoutType: .fixed, value: value)
+        return padding
     }
     
     public override func willRemoveSubview(_ subview: UIView) {

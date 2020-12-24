@@ -222,12 +222,16 @@ open class SplitView: UIView {
         (self as UIView).addSubview(view)
     }
     
-    public func addPadding(_ value: CGFloat) {
+    @discardableResult
+    public func addPadding(_ value: CGFloat) -> UIView {
         addPadding(layoutType: .fixed, value: value)
     }
     
-    public func addPadding(layoutType: SplitViewLayoutType, value: CGFloat = 0.0) {
-        addSubview(UIView().userInteractionEnabled(false), layoutType: layoutType, value: value)
+    @discardableResult
+    public func addPadding(layoutType: SplitViewLayoutType, value: CGFloat = 0.0) -> UIView {
+        let padding = UIView()
+        addSubview(padding.userInteractionEnabled(false), layoutType: layoutType, value: value)
+        return padding
     }
     
     private func snapToSuperview() {
@@ -414,7 +418,9 @@ public enum SplitViewPaddingDirection: Int {
 }
 
 public extension SplitView {
-    func insertSafeAreaInsetsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection) {
+    
+    @discardableResult
+    func insertSafeAreaInsetsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection) -> UIView {
         observingSuperviewSafeAreaInsets = true
         
         unowned let weakParentView = parentView
@@ -436,6 +442,7 @@ public extension SplitView {
             }
             return SplitViewLayoutInstruction(layoutType: .fixed, value: insetValue)
         }
+        return padding
     }
     
     override func safeAreaInsetsDidChange() {
@@ -444,7 +451,8 @@ public extension SplitView {
         }
     }
     
-    func insertLayoutMarginsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection) {
+    @discardableResult
+    func insertLayoutMarginsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection) -> UIView {
         observingSuperviewLayoutMargins = true
         
         unowned let weakParentView = parentView
@@ -466,6 +474,7 @@ public extension SplitView {
             }
             return SplitViewLayoutInstruction(layoutType: .fixed, value: insetValue)
         }
+        return padding
     }
     
     override func layoutMarginsDidChange() {
