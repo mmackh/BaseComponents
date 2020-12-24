@@ -237,8 +237,12 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         }
         frameCache = frame
         
+        var edgeInsets = self.edgeInsets
         if automaticallyAdjustsLayoutMarginInsets {
-            edgeInsets = layoutMargins
+            edgeInsets.left += layoutMargins.left
+            edgeInsets.right += layoutMargins.right
+            edgeInsets.top += layoutMargins.top
+            edgeInsets.bottom += layoutMargins.bottom
         }
         
         let vertical = direction == .vertical
