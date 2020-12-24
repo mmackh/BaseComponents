@@ -34,7 +34,7 @@ public extension Date {
         return dateFormatter
     }()
     
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, watchOS 6.0, *)
     static var relativeFormatter: RelativeDateTimeFormatter = {
         RelativeDateTimeFormatter()
     }()
@@ -172,7 +172,7 @@ public extension Date {
         return formatter.string(from: self)
     }
     
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, watchOS 6.0, *)
     func format(relative to: Date) -> String {
         Date.relativeFormatter.localizedString(for: self, relativeTo: to)
     }

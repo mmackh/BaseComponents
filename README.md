@@ -200,7 +200,7 @@ button.addAction(for: .touchUpInside) { (button) in
 
 #### Conveniences
 <details>
-<summary>Chainable properties for popular <code>UIKit</code> or <code>Foundation</code> methods. Populate an <code>UIImageView</code> with remote images. Observe and emit state changes through blocks with NotificationCenter. Introduces many other conveniences.</summary>
+<summary>Chainable properties for popular <code>UIKit</code> methods. Populate an <code>UIImageView</code> with remote images. Introduces many other conveniences.</summary>
 
 ##### Code Sample
 ```swift
@@ -396,6 +396,51 @@ let sheetView = SheetView()
     SheetViewButton("Cancel", onTap: nil),
  ]
  sheetView.show(in: self.view)
+```
+</details>
+
+### Common
+
+#### Extensions: DispatchQueue
+<details>
+<summary>Reintroduces `dispatchOnce` with a twist. On subsequent an optional `else` closure can be called. Adds a conciser `asyncAfter` method.</summary>
+
+##### Code Sample
+```swift
+DispatchQueue.main.once {
+    print("Called only one time")
+} else: {
+    print("Called subsequently")
+}
+
+DispatchQueue.main.async(after: 1.0) {
+    print("1s later")
+}
+```
+</details>
+
+#### Extensions: Strings
+<details>
+<summary>Adds file path manipulation to Swift's `String`.</summary>
+
+##### Code Sample
+```swift
+"/Users/me/document.pdf".lastPathComponent
+"/Users/me/document.pdf".pathExtension
+```
+</details>
+
+#### Extensions: NotificationCenter
+<details>
+<summary>Receive a `Notification` by implementing `observe`, which either accepts a raw `String` or a   `Notification.Name` object. If you don't capture self strongly, the closure will deregister itself when the parent object is released. Post a `Notification` by calling emit().</summary>
+
+##### Code Sample
+```swift
+observe("hi") { (notification) in
+    print("Hi observed")
+}
+
+emit("hi")
 ```
 </details>
 
