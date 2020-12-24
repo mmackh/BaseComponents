@@ -399,9 +399,11 @@ let sheetView = SheetView()
 ```
 </details>
 
+---
+
 ### Common
 
-#### Extensions: DispatchQueue
+#### DispatchQueue Extension
 <details>
 <summary>Reintroduces `dispatchOnce` with a twist. On subsequent an optional `else` closure can be called. Adds a conciser `asyncAfter` method.</summary>
 
@@ -419,9 +421,9 @@ DispatchQueue.main.async(after: 1.0) {
 ```
 </details>
 
-#### Extensions: Strings
+#### String Extension
 <details>
-<summary>Adds file path manipulation to Swift's `String`.</summary>
+<summary>Adds file path conveniences to Swift's `String`.</summary>
 
 ##### Code Sample
 ```swift
@@ -430,7 +432,7 @@ DispatchQueue.main.async(after: 1.0) {
 ```
 </details>
 
-#### Extensions: NotificationCenter
+#### NotificationCenter Extension
 <details>
 <summary>Receive a `Notification` by implementing `observe`, which either accepts a raw `String` or a   `Notification.Name` object. If you don't capture self strongly, the closure will deregister itself when the parent object is released. Post a `Notification` by calling emit().</summary>
 
