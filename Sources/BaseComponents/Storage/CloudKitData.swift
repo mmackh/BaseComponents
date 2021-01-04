@@ -87,7 +87,7 @@ open class CloudKitRecord: Codable {
     }
 }
 
-open class CloudKitDataProvider {
+open class CloudKitDataProvider: NSObject {
     public enum ShouldUpdateReason {
         case triggeredByKeyValueStoreChange
         case triggeredExternally
@@ -123,20 +123,18 @@ open class CloudKitDataProvider {
         self.databaseScope = databaseScope
         self.zone = zone
         self.container = container
+        super.init()
         
         if CloudKitDataProvider.enabledKeyValueStoreUpdateTrigger {
-            NotificationCenter.default.addObserver(self, selector: #selector(onKeyValueChanged(_:)), name: NSUbiquitousKeyValueStore.didChangeExternallyNotification, object: NSUbiquitousKeyValueStore.default)
-            NSUbiquitousKeyValueStore.default.synchronize()
+            observe(NSUbiquitousKeyValueStore.didChangeExternallyNotification, NSUbiquitousKeyValueStore.default) { [weak self] (notification) in
+                let keyValueStore = NSUbiquitousKeyValueStore.default
+                if let storedDate = keyValueStore.object(forKey: "sync") as? Date {
+                    if storedDate <= CloudKitDataProvider.dateWrittenToKeyValueStore { return }
+                }
+                
+                self?.triggerOnShouldUpdateHandler(with: .triggeredByKeyValueStoreChange)
+            }
         }
-    }
-    
-    @objc func onKeyValueChanged(_ notification:Notification) {
-        let keyValueStore = NSUbiquitousKeyValueStore.default
-        if let storedDate = keyValueStore.object(forKey: "sync") as? Date {
-            if storedDate <= CloudKitDataProvider.dateWrittenToKeyValueStore { return }
-        }
-        
-        triggerOnShouldUpdateHandler(with: .triggeredByKeyValueStoreChange)
     }
     
     static func storeChangeInKeyValueCloud() {
@@ -148,12 +146,6 @@ open class CloudKitDataProvider {
             let keyValueStore = NSUbiquitousKeyValueStore.default
             keyValueStore.set(dateWrittenToKeyValueStore, forKey: "sync")
             keyValueStore.synchronize()
-        }
-    }
-    
-    deinit {
-        if CloudKitDataProvider.enabledKeyValueStoreUpdateTrigger {
-            NotificationCenter.default.removeObserver(self)
         }
     }
     

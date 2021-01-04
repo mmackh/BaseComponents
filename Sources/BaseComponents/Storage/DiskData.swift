@@ -13,7 +13,11 @@
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import Foundation
+
+#if os(iOS) || os(watchOS)
 import UIKit
+#endif
 
 public class DiskData: CustomDebugStringConvertible {
     public var debugDescription: String {
@@ -90,12 +94,16 @@ public class File: DiskData {
             if type == String.self {
                 return try String(contentsOfFile: path) as? T
             }
+            
             if type == Data.self {
                 return try Data(contentsOf: pathURL) as? T
             }
+            
+            #if os(iOS) || os(watchOS)
             if type == UIImage.self {
                 return UIImage(contentsOfFile: path) as? T
             }
+            #endif
             
             let data = try Data(contentsOf: pathURL)
             let model = try JSONDecoder().decode(type, from: data)
@@ -148,6 +156,7 @@ public class File: DiskData {
 }
 
 // Read & Write UIImages with File
+#if os(iOS) || os(watchOS)
 public extension File {
     enum Quality: Float {
         case png
@@ -166,6 +175,7 @@ public extension File {
         return UIImage(contentsOfFile: path)
     }
 }
+#endif
 
 public class Directory: DiskData {
     fileprivate init(enclosing filePathURL: URL) {

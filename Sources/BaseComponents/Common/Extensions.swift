@@ -71,9 +71,9 @@ public extension NSObject {
         }
     }
     
-    func observe<T>(file: String = #file, function: String = #function, line: Int = #line, _ notification: T, _ handler: @escaping (Notification)->()) {
+    func observe<T>(file: String = #file, function: String = #function, line: Int = #line, _ notification: T, _ object: Any? = nil, _ handler: @escaping (Notification)->()) {
         guard let notificationName = NSObject.notificationName(notification) else { return }
-        let token = NotificationCenter.default.addObserver(forName: notificationName, object: nil, queue: .main, using: handler)
+        let token = NotificationCenter.default.addObserver(forName: notificationName, object: object, queue: .main, using: handler)
         objc_setAssociatedObject(self, "bc_notf_\(file)\(function)\(line)", NotificationReference(token), objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 
