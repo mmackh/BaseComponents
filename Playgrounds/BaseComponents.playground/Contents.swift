@@ -63,8 +63,8 @@ class MainViewController : UIViewController {
     }
 }
 
-//let liveViewController = MainViewController().embedInNavigationController()
-let liveViewController = ScrollingViewController()
+let liveViewController = MainViewController().embedInNavigationController()
+//let liveViewController = ScrollingViewController()
 liveViewController.view.frame = .init(x: 0, y: 0, width: 320, height: 480)
 
 
