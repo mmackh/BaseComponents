@@ -145,6 +145,7 @@ open class DataRender: UIView {
             render.itemCellClassHandler { (layoutProperties) -> AnyClass in
                 dimensionRenderClasses[layoutProperties.indexPath.row]
             }
+            dimensionRenderClasses.append(self.configuration.cellClass)
             self.addSubview(render)
             return render
         }()
