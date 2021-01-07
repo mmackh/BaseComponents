@@ -118,6 +118,7 @@ open class DataRender: UIView {
     
     fileprivate var dimensionCache: Dictionary<Int, Dictionary<AnyHashable, CGSize>> = Dictionary()
     fileprivate var dimensionRender: DataRender?
+    fileprivate var dimensionRenderClasses: [AnyClass] = []
     fileprivate var dimensionPreviousWidth: Int = 0
     fileprivate var waitingForDimensionRenderToLayout: Bool = false
     
@@ -133,7 +134,7 @@ open class DataRender: UIView {
     public func itemAutomaticRowHeightCacheKeyHandler(_ cacheKeyHandler: @escaping (DataRenderItemLayoutProperties) -> AnyHashable) {
         self.itemAutomaticRowHeightCacheKeyHandler = cacheKeyHandler
         
-        self.dimensionRender = {
+        self.dimensionRender = { [unowned self] in
             let config = DataRenderConfiguration(cellClass: self.configuration.cellClass)
             config.renderClass = self.configuration.renderClass
             let render = DataRender(configuration: config)
@@ -141,6 +142,9 @@ open class DataRender: UIView {
             render.alpha = 0
             render.isHidden = true
             render.isUserInteractionEnabled = false
+            render.itemCellClassHandler { (layoutProperties) -> AnyClass in
+                dimensionRenderClasses[layoutProperties.indexPath.row]
+            }
             self.addSubview(render)
             return render
         }()
@@ -161,7 +165,7 @@ open class DataRender: UIView {
             }
             
             if self.dimensionPreviousWidth != width {
-                self.dimensionRender?.renderArray([itemLayoutProperties.object])
+                self.dimensionRender?.renderArray(dimensionRenderClasses)
                 self.waitingForDimensionRenderToLayout = true
                 DispatchQueue.main.async {
                     self.waitingForDimensionRenderToLayout = false
@@ -178,7 +182,14 @@ open class DataRender: UIView {
                 self.dimensionCache[width] = Dictionary()
             }
             
-            if let cell = self.dimensionRender?.tableView?.cellForRow(at: .init(row: 0, section: 0)) {
+            var targetIdxPath: IndexPath = .init(row: 0, section: 0)
+            if let classHandler = self.itemCellClassHandler {
+                let targetClass: AnyClass = classHandler(itemLayoutProperties)
+                let targetIdx = dimensionRenderClasses.firstIndex(where: { $0 === targetClass })  ?? 0
+                targetIdxPath = .init(row: targetIdx, section: 0)
+            }
+            
+            if let cell = self.dimensionRender?.tableView?.cellForRow(at: targetIdxPath) {
                 cell.contentView.tag = 2
                 if self.beforeBind != nil {
                     unowned let unownedCell = cell
@@ -566,6 +577,8 @@ open class DataRender: UIView {
     /// Optionally register additional cellClasses that can be retured via the classForCell closure
     public func registerCellClass(_ cellClass: AnyClass) {
         tableView?.register(cellClass, forCellReuseIdentifier: NSStringFromClass(cellClass))
+        dimensionRender?.registerCellClass(cellClass)
+        dimensionRenderClasses.append(cellClass)
     }
     
     // MARK: -
