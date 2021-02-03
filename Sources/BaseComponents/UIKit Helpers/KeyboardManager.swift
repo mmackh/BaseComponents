@@ -50,13 +50,18 @@ public class KeyboardManager: UIView {
     }
     
     private func observeAndResize() {
-        let notificationCenter = NotificationCenter.default
-        notificationCenter.addObserver(self, selector:#selector(showKeyboard), name: UIResponder.keyboardWillShowNotification, object: nil)
-        notificationCenter.addObserver(self, selector:#selector(showKeyboard), name: UIResponder.keyboardDidShowNotification, object: nil)
-        notificationCenter.addObserver(self, selector:#selector(showKeyboard), name: UIResponder.keyboardWillHideNotification, object: nil)
+        observe(UIResponder.keyboardWillShowNotification) { [weak self] (notification) in
+            self?.showKeyboard(notificationObject: notification)
+        }
+        observe(UIResponder.keyboardDidShowNotification) { [weak self] (notification) in
+            self?.showKeyboard(notificationObject: notification)
+        }
+        observe(UIResponder.keyboardWillHideNotification) { [weak self] (notification) in
+            self?.showKeyboard(notificationObject: notification)
+        }
     }
     
-    @objc private func showKeyboard(notificationObject: NSNotification) {
+    @objc private func showKeyboard(notificationObject: Notification) {
         let show = (notificationObject.name == UIResponder.keyboardDidShowNotification || notificationObject.name == UIResponder.keyboardWillShowNotification)
         
         KeyboardManager.visibility = show ? .visible : .hidden
@@ -78,13 +83,6 @@ public class KeyboardManager: UIView {
         UIView.animate(withDuration: animationDuration, delay: 0, options: UIView.AnimationOptions(rawValue: animationCurve), animations: {
             self.resizableChildSplitView?.invalidateLayout()
         }, completion: nil)
-    }
-    
-    deinit {
-        let notificationCenter = NotificationCenter.default
-        notificationCenter.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
-        notificationCenter.removeObserver(self, name: UIResponder.keyboardDidShowNotification, object: nil)
-        notificationCenter.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
     }
 }
 
