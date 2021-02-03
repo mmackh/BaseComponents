@@ -326,13 +326,16 @@ extension SplitView {
             
             if layoutHandler.layoutType == .automatic {
                 var additionalPadding: CGFloat = 0.0
-                if subview is UIButton {
-                    let button = subview as! UIButton
+                if let button = subview as? UIButton {
                     additionalPadding += horizontalLayout ? (button.titleEdgeInsets.left + button.titleEdgeInsets.right) : (button.titleEdgeInsets.bottom + button.titleEdgeInsets.top)
                 }
                 
                 let edgeInsets = instruction.edgeInsets
                 additionalPadding += horizontalLayout ? (edgeInsets.left + edgeInsets.right + subviewPadding * 2) : (edgeInsets.top + edgeInsets.bottom + subviewPadding * 2)
+                
+                if let scrollingView = subview as? ScrollingView {
+                    scrollingView.frame = .init(origin: .zero, size: CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : 100))
+                }
                 
                 let max = CGFloat.greatestFiniteMagnitude
                 let subviewDimensions = subview.sizeThatFits(CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : max))

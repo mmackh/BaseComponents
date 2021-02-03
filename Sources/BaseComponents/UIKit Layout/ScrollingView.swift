@@ -337,7 +337,6 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     public override func sizeThatFits(_ size: CGSize) -> CGSize {
         if size == .zero || size.height < 0 || size.width < 0 { return .zero }
         layoutPass = true
-        bounds = .init(origin: .zero, size: size)
         invalidateLayout()
         layoutPass = false
         return contentSize
