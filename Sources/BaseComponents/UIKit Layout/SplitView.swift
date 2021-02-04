@@ -101,6 +101,7 @@ public class SplitViewLayoutInstruction {
     var value: CGFloat = 0
     var layoutType: SplitViewLayoutType = .equal
     var edgeInsets: UIEdgeInsets = UIEdgeInsets.zero
+    weak var determineSizeBasedOnView: UIView?
     
     public convenience init(layoutType: SplitViewLayoutType, value: CGFloat) {
         self.init()
@@ -115,6 +116,14 @@ public class SplitViewLayoutInstruction {
         self.value = value
         self.edgeInsets = edgeInsets
         self.layoutType = layoutType
+    }
+    
+    public convenience init(automaticLayoutTypeDetermineSizeBasedOn view: UIView?, edgeInsets: UIEdgeInsets = .zero) {
+        self.init()
+        
+        self.layoutType = .automatic
+        self.determineSizeBasedOnView = view
+        self.edgeInsets = edgeInsets
     }
 }
 
@@ -325,23 +334,34 @@ extension SplitView {
             var fixedValueFloat = instruction.value
             
             if layoutHandler.layoutType == .automatic {
-                var additionalPadding: CGFloat = 0.0
-                if let button = subview as? UIButton {
-                    additionalPadding += horizontalLayout ? (button.titleEdgeInsets.left + button.titleEdgeInsets.right) : (button.titleEdgeInsets.bottom + button.titleEdgeInsets.top)
+                if let sizeView = instruction.determineSizeBasedOnView {
+                    var size = sizeView.sizeThatFits(.init(width: !horizontalLayout ? sizeView.bounds.size.width : .infinity, height: !horizontalLayout ? .infinity : sizeView.bounds.size.height))
+                    if !horizontalLayout {
+                        size.height += instruction.edgeInsets.top + instruction.edgeInsets.bottom;
+                    } else {
+                        size.width += instruction.edgeInsets.left + instruction.edgeInsets.right;
+                    }
+                    layoutHandler.staticValue = !horizontalLayout ? size.height : size.width
+                } else {
+                    var additionalPadding: CGFloat = 0.0
+                    if let button = subview as? UIButton {
+                        additionalPadding += horizontalLayout ? (button.titleEdgeInsets.left + button.titleEdgeInsets.right) : (button.titleEdgeInsets.bottom + button.titleEdgeInsets.top)
+                    }
+                    
+                    let edgeInsets = instruction.edgeInsets
+                    additionalPadding += horizontalLayout ? (edgeInsets.left + edgeInsets.right + subviewPadding * 2) : (edgeInsets.top + edgeInsets.bottom + subviewPadding * 2)
+                    
+                    if let scrollingView = subview as? ScrollingView {
+                        scrollingView.frame = .init(origin: .zero, size: CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : 100))
+                    }
+                    
+                    let max = CGFloat.greatestFiniteMagnitude
+                    let subviewDimensions = subview.sizeThatFits(CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : max))
+                    fixedValueFloat = horizontalLayout ? subviewDimensions.width : subviewDimensions.height
+                    fixedValueFloat += additionalPadding
+                    layoutHandler.staticValue = fixedValueFloat
                 }
                 
-                let edgeInsets = instruction.edgeInsets
-                additionalPadding += horizontalLayout ? (edgeInsets.left + edgeInsets.right + subviewPadding * 2) : (edgeInsets.top + edgeInsets.bottom + subviewPadding * 2)
-                
-                if let scrollingView = subview as? ScrollingView {
-                    scrollingView.frame = .init(origin: .zero, size: CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : 100))
-                }
-                
-                let max = CGFloat.greatestFiniteMagnitude
-                let subviewDimensions = subview.sizeThatFits(CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : max))
-                fixedValueFloat = horizontalLayout ? subviewDimensions.width : subviewDimensions.height
-                fixedValueFloat += additionalPadding
-                layoutHandler.staticValue = fixedValueFloat
             }
             
             if fixedValueFloat < 1.0 && fixedValueFloat > 0.0 {
