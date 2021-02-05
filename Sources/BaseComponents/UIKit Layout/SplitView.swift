@@ -338,7 +338,14 @@ extension SplitView {
                 }
                 
                 let max = CGFloat.greatestFiniteMagnitude
-                let subviewDimensions = subview.sizeThatFits(CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : max))
+                let availableSize = CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : max)
+                var subviewDimensions: CGSize
+                if let stackView = subview as? UIStackView {
+                    subviewDimensions = stackView.systemLayoutSizeFitting(availableSize)
+                } else {
+                    subviewDimensions = subview.sizeThatFits(availableSize)
+                }
+                
                 fixedValueFloat = horizontalLayout ? subviewDimensions.width : subviewDimensions.height
                 fixedValueFloat += additionalPadding
                 layoutHandler.staticValue = fixedValueFloat
