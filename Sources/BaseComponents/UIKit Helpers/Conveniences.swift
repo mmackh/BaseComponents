@@ -480,11 +480,10 @@ public extension UIImageView {
         static var ImageViewRequestKey = "fetchRequestImageViewKey"
         static let ImageViewQueue = DispatchQueue.init(label: "at.BaseComponents.UIImageView.Async")
         static let Cache: URLCache = {
-            #if targetEnvironment(macCatalyst)
-                return URLCache.shared
-            #else
-            return URLCache(memoryCapacity: 50 * (1024 * 1024), diskCapacity: 500 * (1024 * 1024), diskPath: Directory(searchPathDirectory: .cachesDirectory).newDirectory(name: "BaseComponents.Images", createIfNeeded: true).path)
-            #endif
+            let cache = URLCache.shared
+            cache.memoryCapacity = 50 * (1024 * 1024)
+            cache.diskCapacity = 500 * (1024 * 1024)
+            return cache
         }()
     }
     
@@ -523,7 +522,8 @@ public extension UIImageView {
             Static.ImageViewQueue.async {
                 if let data = response.data {
                     if let image = UIImage(data: data) {
-                        Static.Cache.storeCachedResponse(CachedURLResponse(response: response.urlResponse!, data: data), for: response.urlRequest!)
+                        print(response.urlRequest)
+                        Static.Cache.storeCachedResponse(CachedURLResponse(response: response.urlResponse!, data: data, storagePolicy: .allowed), for: response.urlRequest!)
                         DispatchQueue.main.async {
                             if (response.urlString == self?.currentFetchRequest()?.urlString) {
                                 switch animation {
