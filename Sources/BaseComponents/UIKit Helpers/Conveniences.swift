@@ -522,7 +522,6 @@ public extension UIImageView {
             Static.ImageViewQueue.async {
                 if let data = response.data {
                     if let image = UIImage(data: data) {
-                        print(response.urlRequest)
                         Static.Cache.storeCachedResponse(CachedURLResponse(response: response.urlResponse!, data: data, storagePolicy: .allowed), for: response.urlRequest!)
                         DispatchQueue.main.async {
                             if (response.urlString == self?.currentFetchRequest()?.urlString) {
