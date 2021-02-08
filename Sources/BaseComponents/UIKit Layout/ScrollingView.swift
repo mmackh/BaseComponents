@@ -271,8 +271,8 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
                     let mockFrame = CGRect(x: offsetTrackerX, y: offsetTrackerY, width: (vertical ? clampValue : 10), height: (vertical ? clampValue : 10))
                     
                     var size: CGSize = .zero
-                    if view.isKind(of: ScrollingSplitView.self) {
-                        let scrollingSplitView = view as! ScrollingSplitView
+                    if let scrollingSplitView = view as? ScrollingSplitView {
+                        
                         if !layoutPass {
                             scrollingSplitView.frame = mockFrame.inset(by: layout.edgeInsets)
                             scrollingSplitView.invalidateLayout()
@@ -288,7 +288,6 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
                         }
                         
                         layoutValue = vertical ? size.height : size.width
-                        
                     } else {
                         if !layoutPass {
                             view.frame = mockFrame
@@ -335,6 +334,10 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     }
     
     public override func sizeThatFits(_ size: CGSize) -> CGSize {
+        if size == .zero || size.height < 0 || size.width < 0 { return .zero }
+        layoutPass = true
+        invalidateLayout()
+        layoutPass = false
         return contentSize
     }
     

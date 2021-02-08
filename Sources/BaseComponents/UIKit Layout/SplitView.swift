@@ -29,7 +29,7 @@ public enum SplitViewLayoutType: Int {
     case percentage
 }
 
-public extension UIView {    
+public extension UIView {
     @discardableResult
     @objc func addSplitView(configurationHandler: (_ splitView: SplitView) -> Void) -> SplitView {
         return SplitView(superview: self, configurationHandler: configurationHandler)
@@ -326,16 +326,26 @@ extension SplitView {
             
             if layoutHandler.layoutType == .automatic {
                 var additionalPadding: CGFloat = 0.0
-                if subview is UIButton {
-                    let button = subview as! UIButton
+                if let button = subview as? UIButton {
                     additionalPadding += horizontalLayout ? (button.titleEdgeInsets.left + button.titleEdgeInsets.right) : (button.titleEdgeInsets.bottom + button.titleEdgeInsets.top)
                 }
                 
                 let edgeInsets = instruction.edgeInsets
                 additionalPadding += horizontalLayout ? (edgeInsets.left + edgeInsets.right + subviewPadding * 2) : (edgeInsets.top + edgeInsets.bottom + subviewPadding * 2)
                 
+                if let scrollingView = subview as? ScrollingView {
+                    scrollingView.frame = .init(origin: .zero, size: CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : 100))
+                }
+                
                 let max = CGFloat.greatestFiniteMagnitude
-                let subviewDimensions = subview.sizeThatFits(CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : max))
+                let availableSize = CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : max)
+                var subviewDimensions: CGSize
+                if let stackView = subview as? UIStackView {
+                    subviewDimensions = stackView.systemLayoutSizeFitting(availableSize)
+                } else {
+                    subviewDimensions = subview.sizeThatFits(availableSize)
+                }
+                
                 fixedValueFloat = horizontalLayout ? subviewDimensions.width : subviewDimensions.height
                 fixedValueFloat += additionalPadding
                 layoutHandler.staticValue = fixedValueFloat
