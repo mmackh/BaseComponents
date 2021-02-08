@@ -483,7 +483,7 @@ public extension UIImageView {
             #if targetEnvironment(macCatalyst)
                 return URLCache.shared
             #else
-                return URLCache(memoryCapacity: 20 * (1024 * 1024), diskCapacity: 200 * (1024 * 1024), diskPath: nil)
+            return URLCache(memoryCapacity: 50 * (1024 * 1024), diskCapacity: 500 * (1024 * 1024), diskPath: Directory(searchPathDirectory: .cachesDirectory).newDirectory(name: "BaseComponents.Images", createIfNeeded: true).path)
             #endif
         }()
     }
@@ -552,25 +552,14 @@ public extension UIImageView {
         request.ignoreQueue = true
         setCurrentFetchRequest(request)
         
-        if let urlRequest = request.urlRequest() {
-            Static.ImageViewQueue.async { [weak self] in
-                if let response = Static.Cache.cachedResponse(for: urlRequest) {
-                    if let image = UIImage(data: response.data) {
-                        DispatchQueue.main.async {
-                            if (urlRequest.url?.absoluteString == self?.currentFetchRequest()?.urlString) {
-                                self?.image = image
-                                loadingComplete(success: true)
-                            }
-                        }
-                    } else {
-                        loadingComplete(success: false)
-                    }
-                } else {
-                    NetFetch.fetch(request, priority: true)
-                }
+        if let urlRequest = request.urlRequest(), let response = Static.Cache.cachedResponse(for: urlRequest), let image = UIImage(data: response.data) {
+            if (urlRequest.url?.absoluteString == self.currentFetchRequest()?.urlString) {
+                self.image = image
+                loadingComplete(success: true)
             }
+        } else {
+            NetFetch.fetch(request, priority: true)
         }
-        
         
         return self
     }
