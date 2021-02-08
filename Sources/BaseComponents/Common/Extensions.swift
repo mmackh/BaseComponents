@@ -59,6 +59,8 @@ public extension String {
  NotificationCenter
  */
 public extension NSObject {
+    static var notificationObserverCounter: Int = 10
+    
     fileprivate class NotificationReference {
         let reference: Any
 
@@ -71,10 +73,11 @@ public extension NSObject {
         }
     }
     
-    func observe<T>(file: String = #file, function: String = #function, line: Int = #line, _ notification: T, _ object: Any? = nil, _ handler: @escaping (Notification)->()) {
+    func observe<T>(_ notification: T, _ object: Any? = nil, _ handler: @escaping (Notification)->()) {
         guard let notificationName = NSObject.notificationName(notification) else { return }
         let token = NotificationCenter.default.addObserver(forName: notificationName, object: object, queue: .main, using: handler)
-        objc_setAssociatedObject(self, "bc_notf_\(file)\(function)\(line)", NotificationReference(token), objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(self, "bc_notf_\(NSObject.notificationObserverCounter)", NotificationReference(token), objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        NSObject.notificationObserverCounter += 1
     }
 
     func emit<T>(_ notification: T, obj: Any? = nil) {
