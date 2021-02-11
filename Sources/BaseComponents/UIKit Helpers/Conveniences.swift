@@ -616,10 +616,6 @@ public extension UIViewController {
 }
 
 public extension UIAlertController {
-    private struct Static {
-        static var AlertWindowKey = "bc_alertWindow"
-    }
-    
     static func show(style: UIAlertController.Style, title: String?, message: String?, options: Array<String>, dismiss: String, viewController: UIViewController? = nil, closure: ((_ buttonIdx: Int)->())?) {
         let controller = UIAlertController(title: title, message: message, preferredStyle: style)
         for option in options {
@@ -631,17 +627,9 @@ public extension UIAlertController {
         }
         controller.addAction(UIAlertAction(title: dismiss, style: .cancel, handler: nil))
         
-        let targetViewController = viewController ?? {
-            let window = UIWindow(frame: UIScreen.main.bounds)
-            window.rootViewController = UIViewController()
-            window.rootViewController?.view.frame = window.bounds
-            window.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            window.isHidden = false
-            window.tintColor = UIApplication.shared.windows.first?.tintColor
-            objc_setAssociatedObject(controller, &Static.AlertWindowKey, window, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
-            return window.rootViewController!
-        }()
-        targetViewController.present(controller, animated: true, completion: nil)
+        if let targetViewController = viewController ?? { DebugController.currentViewController() }() {
+            targetViewController.present(controller, animated: true, completion: nil)
+        }
     }
 }
 
