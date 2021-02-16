@@ -23,6 +23,10 @@ public enum KeyboardVisibility: Int {
 }
 
 public class KeyboardManager: UIView {
+    public enum ObservationOptions {
+        case all
+        case excludeWillShow
+    }
  
     static var keyboardVisible : Bool = false
 
@@ -32,10 +36,10 @@ public class KeyboardManager: UIView {
     static public var visibility: KeyboardVisibility = .hidden
     
     @discardableResult
-    public static func manage(rootView: UIView, resizableChildSplitView: SplitView) -> KeyboardManager {
+    public static func manage(rootView: UIView, resizableChildSplitView: SplitView, observationOptions: ObservationOptions = .all) -> KeyboardManager {
         let manager = KeyboardManager(rootView: rootView, resizableChildSplitView: resizableChildSplitView)
         rootView.addSubview(manager)
-        manager.observeAndResize()
+        manager.observeAndResize(observationOptions: observationOptions)
         return manager
     }
     
@@ -49,9 +53,11 @@ public class KeyboardManager: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    private func observeAndResize() {
-        observe(UIResponder.keyboardWillShowNotification) { [weak self] (notification) in
-            self?.showKeyboard(notificationObject: notification)
+    private func observeAndResize(observationOptions: ObservationOptions) {
+        if observationOptions != .excludeWillShow {
+            observe(UIResponder.keyboardWillShowNotification) { [weak self] (notification) in
+                self?.showKeyboard(notificationObject: notification)
+            }
         }
         observe(UIResponder.keyboardDidShowNotification) { [weak self] (notification) in
             self?.showKeyboard(notificationObject: notification)
@@ -85,5 +91,6 @@ public class KeyboardManager: UIView {
         }, completion: nil)
     }
 }
+
 
 #endif
