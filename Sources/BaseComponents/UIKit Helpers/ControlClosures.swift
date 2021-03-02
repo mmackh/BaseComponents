@@ -298,6 +298,8 @@ fileprivate class TextFieldClosureContainer: ClosureContainer, UITextFieldDelega
     var shouldReturn: ((UITextField)->(Bool))?
     var shouldBegin: ((UITextField)->(Bool))?
     var shouldClear: ((UITextField)->(Bool))?
+    var didBegin: ((UITextField)->())?
+    var didEnd: ((UITextField)->())?
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if let closure = shouldReturn {
@@ -318,6 +320,14 @@ fileprivate class TextFieldClosureContainer: ClosureContainer, UITextFieldDelega
             return closure(textField)
         }
         return false
+    }
+    
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        didBegin?(textField)
+    }
+    
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        didEnd?(textField)
     }
 }
 
@@ -349,6 +359,19 @@ public extension UITextField {
         closureContainer().shouldBegin = closure
         return self
     }
+    
+    @discardableResult
+    func didBegin(_ closure: @escaping(_ control: UITextField)->()) -> Self {
+        closureContainer().didBegin = closure
+        return self
+    }
+    
+    @discardableResult
+    func didEnd(_ closure: @escaping(_ control: UITextField)->()) -> Self {
+        closureContainer().didEnd = closure
+        return self
+    }
+    
 }
 
 #endif
