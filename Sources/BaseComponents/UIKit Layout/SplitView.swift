@@ -141,8 +141,8 @@ open class SplitView: UIView {
     private var handlerContainer: Dictionary<AnyHashable, SplitViewHandler> = Dictionary()
     
     private var boundsCache: CGRect?
-    private var observingSuperviewSafeAreaInsets = false
-    private var observingSuperviewLayoutMargins = false
+    public var observingSuperviewSafeAreaInsets = false
+    public var observingSuperviewLayoutMargins = false
     
     @discardableResult
     fileprivate convenience init(superview: UIView, configurationHandler: (_ splitView: SplitView) -> Void) {
