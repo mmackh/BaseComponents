@@ -730,3 +730,31 @@ public class UILongPressPanGestureRecognizer: UIPanGestureRecognizer {
 }
 
 #endif
+
+public extension Optional where Wrapped == Data {
+    func bind<T: Codable>(_ model: T.Type, decoderHandler: ((JSONDecoder)->())? = nil, keyPath: String? = nil) -> T? {
+        guard let self = self else { return nil }
+        return self.bind(model, decoderHandler: decoderHandler, keyPath: keyPath)
+    }
+}
+
+public extension Data {
+    func bind<T: Codable>(_ model: T.Type, decoderHandler: ((JSONDecoder)->())? = nil, keyPath: String? = nil) -> T? {
+        do {
+            var data = self
+            
+            if let keyPath = keyPath, let dictionary = try JSONSerialization.jsonObject(with: self) as? NSDictionary, let result = (dictionary.value(forKeyPath: keyPath) as? NSArray)?.firstObject {
+                data = try JSONSerialization.data(withJSONObject: result, options: .init())
+            }
+            
+            let decoder = JSONDecoder()
+            if let decoderHandler = decoderHandler {
+                decoderHandler(decoder)
+            }
+            return try decoder.decode(model, from: data)
+        } catch let parsingError {
+            print("Binding error: ", parsingError)
+        }
+        return nil
+    }
+}
