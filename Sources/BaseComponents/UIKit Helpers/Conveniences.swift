@@ -743,7 +743,7 @@ public extension Data {
         do {
             var data = self
             
-            if let keyPath = keyPath, let dictionary = try JSONSerialization.jsonObject(with: self) as? NSDictionary, let result = (dictionary.value(forKeyPath: keyPath) as? NSArray)?.firstObject {
+            if let keyPath = keyPath, let dictionary = try JSONSerialization.jsonObject(with: self) as? NSDictionary, let result = dictionary.value(forKeyPath: keyPath) {
                 data = try JSONSerialization.data(withJSONObject: result, options: .init())
             }
             
