@@ -232,7 +232,7 @@ open class NetFetch {
                     return
                 }
             }
-            respond();
+            respond()
         }
         request.dataTask!.resume()
     }
