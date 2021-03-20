@@ -31,20 +31,20 @@ open class NetFetchResponse {
         return ""
     }
     
-    public func bind<T: Codable>(_ modelStruct: T.Type, decoderHandler: ((JSONDecoder)->())? = nil) -> T? {
-        guard let data = data else {
-            return nil
-        }
+    public func dictionary() -> [String:AnyObject] {
+        guard let data = data else { return [:] }
         do {
-            let decoder = JSONDecoder()
-            if let decoderHandler = decoderHandler {
-                decoderHandler(decoder)
-            }
-            return try decoder.decode(modelStruct, from: data)
-        } catch let parsingError {
-            print("Binding error: ", parsingError)
+            return try JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? [String:AnyObject] ?? [:]
+        } catch {
+            return [:]
         }
-        return nil;
+    }
+    
+    public func bind<T: Codable>(_ model: T.Type, decoderHandler: ((JSONDecoder)->())? = nil, keyPath: String? = nil) -> T? {
+        if let data = data {
+            return data.bind(model, decoderHandler: decoderHandler, keyPath: keyPath)
+        }
+        return nil
     }
 }
 
@@ -241,7 +241,7 @@ open class NetFetch {
                     return
                 }
             }
-            respond();
+            respond()
         }
         request.dataTask!.resume()
     }

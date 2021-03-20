@@ -141,8 +141,8 @@ open class SplitView: UIView {
     private var handlerContainer: Dictionary<AnyHashable, SplitViewHandler> = Dictionary()
     
     private var boundsCache: CGRect?
-    private var observingSuperviewSafeAreaInsets = false
-    private var observingSuperviewLayoutMargins = false
+    public var observingSuperviewSafeAreaInsets = false
+    public var observingSuperviewLayoutMargins = false
     
     @discardableResult
     fileprivate convenience init(superview: UIView, configurationHandler: (_ splitView: SplitView) -> Void) {
@@ -432,7 +432,7 @@ public enum SplitViewPaddingDirection: Int {
 public extension SplitView {
     
     @discardableResult
-    func insertSafeAreaInsetsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection) -> UIView {
+    func insertSafeAreaInsetsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection, adjustment: CGFloat = 0) -> UIView {
         observingSuperviewSafeAreaInsets = true
         
         unowned let weakParentView = parentView
@@ -452,7 +452,7 @@ public extension SplitView {
                     insetValue = insets.right
                 }
             }
-            return SplitViewLayoutInstruction(layoutType: .fixed, value: insetValue)
+            return SplitViewLayoutInstruction(layoutType: .fixed, value: insetValue + adjustment)
         }
         return padding
     }
@@ -464,7 +464,7 @@ public extension SplitView {
     }
     
     @discardableResult
-    func insertLayoutMarginsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection) -> UIView {
+    func insertLayoutMarginsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection, adjustment: CGFloat = 0) -> UIView {
         observingSuperviewLayoutMargins = true
         
         unowned let weakParentView = parentView
@@ -484,7 +484,7 @@ public extension SplitView {
                     insetValue = insets.right
                 }
             }
-            return SplitViewLayoutInstruction(layoutType: .fixed, value: insetValue)
+            return SplitViewLayoutInstruction(layoutType: .fixed, value: insetValue + adjustment)
         }
         return padding
     }
