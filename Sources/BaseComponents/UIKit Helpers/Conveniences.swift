@@ -333,14 +333,14 @@ public extension UIView {
 }
 
 public extension UIImage {
-    static func imageFormColor(_ color: UIColor?) -> UIImage? {
+    static func imageFormColor(_ color: UIColor?, size: CGSize = .init(width: 1, height: 1)) -> UIImage? {
         guard color != nil else {
             return nil
         }
-        UIGraphicsBeginImageContext(CGSize(width: 1, height: 1))
+        UIGraphicsBeginImageContext(size)
         let ctx = UIGraphicsGetCurrentContext()!
         ctx.setFillColor(color!.cgColor)
-        ctx.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
+        ctx.fill(.init(origin: .zero, size: size))
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         return image
