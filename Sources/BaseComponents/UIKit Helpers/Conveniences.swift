@@ -616,6 +616,8 @@ public extension UIViewController {
 }
 
 public extension UIAlertController {
+    static let dismissButtonIndex: Int = -1
+    
     static func show(style: UIAlertController.Style, title: String?, message: String?, options: Array<String>, dismiss: String, viewController: UIViewController? = nil, closure: ((_ buttonIdx: Int)->())?) {
         let controller = UIAlertController(title: title, message: message, preferredStyle: style)
         for (idx, option) in options.enumerated() {
@@ -624,7 +626,7 @@ public extension UIAlertController {
             }))
         }
         controller.addAction(UIAlertAction(title: dismiss, style: .cancel, handler: { (action) in
-            closure?(-1)
+            closure?(UIAlertController.dismissButtonIndex)
         }))
         
         if let targetViewController = viewController ?? DebugController.currentViewController() {
