@@ -618,16 +618,16 @@ public extension UIViewController {
 public extension UIAlertController {
     static func show(style: UIAlertController.Style, title: String?, message: String?, options: Array<String>, dismiss: String, viewController: UIViewController? = nil, closure: ((_ buttonIdx: Int)->())?) {
         let controller = UIAlertController(title: title, message: message, preferredStyle: style)
-        for option in options {
+        for (idx, option) in options.enumerated() {
             controller.addAction(UIAlertAction(title: option, style: .default , handler: { (action) in
-                if let closure = closure {
-                    closure(options.firstIndex(of: option)!)
-                }
+                closure?(idx)
             }))
         }
-        controller.addAction(UIAlertAction(title: dismiss, style: .cancel, handler: nil))
+        controller.addAction(UIAlertAction(title: dismiss, style: .cancel, handler: { (action) in
+            closure?(-1)
+        }))
         
-        if let targetViewController = viewController ?? { DebugController.currentViewController() }() {
+        if let targetViewController = viewController ?? DebugController.currentViewController() {
             targetViewController.present(controller, animated: true, completion: nil)
         }
     }
