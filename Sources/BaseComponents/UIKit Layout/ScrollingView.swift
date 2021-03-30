@@ -333,6 +333,14 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         return target
     }
     
+    public override func layoutMarginsDidChange() {
+        super.layoutMarginsDidChange()
+        
+        if automaticallyAdjustsLayoutMarginInsets {
+            invalidateLayout()
+        }
+    }
+    
     public override func sizeThatFits(_ size: CGSize) -> CGSize {
         if size == .zero || size.height < 0 || size.width < 0 { return .zero }
         layoutPass = true
