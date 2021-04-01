@@ -176,10 +176,9 @@ extension PerformLabel {
     override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         if #available(iOS 10.0, *) {
             if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
-                DispatchQueue.main.async {
-                    self.frameCache = .zero
-                    self.setNeedsDisplay()
-                }
+                self.frameCache = .zero
+                self.attributedString = nil
+                self.sizeCache = nil
             }
         }
     }
