@@ -12,6 +12,7 @@
 
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
 #if os(iOS)
 
 import UIKit
@@ -123,10 +124,12 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     
     private var frameCache = CGRect.zero
     private var layoutHandlers: Dictionary<UIView,ScrollingViewHandler> = Dictionary()
+    private var superviewManagesLayout: Bool = false
     
     public var enclosedInRender = false
     
     public var layoutPass = false
+    public var layoutPassOptimisationAvailable = true
     
     public var edgeInsets: UIEdgeInsets = .zero
     
@@ -143,15 +146,22 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
         unowned let weakSelf = self
         configurationHandler(weakSelf)
         
-        if (superview.isKind(of: SplitView.self)) {
-            let superSplitView = superview as! SplitView
-            superSplitView.addSubview(self, layoutType: .percentage, value: 100)
+        if let splitView = superview as? SplitView {
+            superviewManagesLayout = true
+            splitView.addSubview(self, layoutType: .percentage, value: 100)
+        } else if let scrollingView = superview as? ScrollingView {
+            superviewManagesLayout = true
+            layoutPassOptimisationAvailable = false
+            scrollingView.addSubview(self)
         } else {
             superview.addSubview(self)
         }
     }
     
     public override func didMoveToSuperview() {
+        if superviewManagesLayout {
+            return
+        }
         frame = superview?.bounds ?? .zero
         autoresizingMask = [.flexibleWidth,.flexibleHeight]
     }
@@ -343,17 +353,17 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     
     public override func sizeThatFits(_ size: CGSize) -> CGSize {
         if size == .zero || size.height < 0 || size.width < 0 { return .zero }
-        layoutPass = true
+        if layoutPassOptimisationAvailable { layoutPass = true }
         invalidateLayout()
-        layoutPass = false
+        if layoutPassOptimisationAvailable { layoutPass = false }
         return contentSize
     }
     
     public func calculateContentSize(_ layoutPassMode: Bool = true) -> CGSize {
-        if layoutPassMode { layoutPass = true }
+        if layoutPassMode && layoutPassOptimisationAvailable { layoutPass = true }
         invalidateLayout()
         let size = contentSize
-        if layoutPassMode { layoutPass = false }
+        if layoutPassMode && layoutPassOptimisationAvailable { layoutPass = false }
         return size
     }
 }

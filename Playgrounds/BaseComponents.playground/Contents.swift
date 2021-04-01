@@ -63,7 +63,7 @@ class MainViewController : UIViewController {
     }
 }
 
-//let liveViewController = MainViewController().embedInNavigationController()
+// let liveViewController = ScrollingViewController().embedInNavigationController()
 let liveViewController = MainViewController().embedInNavigationController()
 liveViewController.view.frame = .init(x: 0, y: 0, width: 320, height: 480)
 PlaygroundPage.current.liveView = liveViewController
