@@ -169,4 +169,20 @@ public class PerformLabel: UIView {
     }
 }
 
+/*
+ Dynamic Type Support
+ */
+extension PerformLabel {
+    override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        if #available(iOS 10.0, *) {
+            if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
+                DispatchQueue.main.async {
+                    self.frameCache = .zero
+                    self.setNeedsDisplay()
+                }
+            }
+        }
+    }
+}
+
 #endif
