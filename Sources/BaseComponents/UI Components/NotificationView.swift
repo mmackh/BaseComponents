@@ -47,6 +47,7 @@ open class NotificationView: UIView {
     public var position: Position = .top
     public let messageLabel: UILabel = UILabel().lines(0)
     public var iconImageView: UIImageView?
+    public var additionalYDistance: CGFloat = 0.0
     
     public var dismissed: Bool = false
     
@@ -61,7 +62,7 @@ open class NotificationView: UIView {
         notificationView.messageLabel.text = message
         notificationView.messageLabel.font = font
         notificationView.addSubview(notificationView.messageLabel)
-        notificationView.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin];
+        notificationView.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin]
         view.addSubview(notificationView)
         
         if #available(iOS 13.0, *) {
@@ -211,9 +212,9 @@ open class NotificationView: UIView {
         
         var y: CGFloat = 0
         if position == .top {
-            y = NotificationView.bannerAdheresToSafeAreaInsets ? superview.safeAreaInsets.top + NotificationView.bannerAdditionalYDistance : NotificationView.bannerAdditionalYDistance
+            y = NotificationView.bannerAdheresToSafeAreaInsets ? superview.safeAreaInsets.top + NotificationView.bannerAdditionalYDistance + additionalYDistance : NotificationView.bannerAdditionalYDistance + additionalYDistance
         } else {
-            y = superview.bounds.size.height - ((NotificationView.bannerAdheresToSafeAreaInsets ? (superview.safeAreaInsets.bottom + NotificationView.bannerAdditionalYDistance + notificationViewFrame.height) :  NotificationView.bannerAdditionalYDistance + notificationViewFrame.height))
+            y = superview.bounds.size.height - ((NotificationView.bannerAdheresToSafeAreaInsets ? (superview.safeAreaInsets.bottom + NotificationView.bannerAdditionalYDistance + additionalYDistance + notificationViewFrame.height) :  NotificationView.bannerAdditionalYDistance + additionalYDistance + notificationViewFrame.height))
         }
         notificationViewFrame.origin.y = y
         
