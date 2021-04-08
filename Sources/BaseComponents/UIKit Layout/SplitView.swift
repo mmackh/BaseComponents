@@ -237,8 +237,8 @@ open class SplitView: UIView {
     }
     
     private func snapToSuperview() {
-        if superview != nil {
-            frame = superview!.frame
+        if let superview = superview {
+            frame = superview.bounds
         }
         autoresizingMask = [.flexibleWidth, .flexibleHeight]
     }
