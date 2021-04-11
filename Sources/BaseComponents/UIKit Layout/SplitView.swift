@@ -128,6 +128,11 @@ open class SplitView: UIView {
     public var preventAnimations: Bool = false
     public var clipsAllSubviews: Bool = false
     
+    private var couldLayoutSubviews: (() -> Void)?
+    public func couldLayoutSubviews(_ couldLayoutSubviews: @escaping () -> Void) {
+        self.couldLayoutSubviews = couldLayoutSubviews
+    }
+    
     private var willLayoutSubviews: (() -> Void)?
     public func willLayoutSubviews(_ willLayoutSubviews: @escaping () -> Void) {
         self.willLayoutSubviews = willLayoutSubviews
@@ -280,7 +285,7 @@ extension SplitView {
     }
     
     public override func layoutSubviews() {
-        willLayoutSubviews?()
+        couldLayoutSubviews?()
         
         if preventAnimations {
             CATransaction.begin()
@@ -298,6 +303,8 @@ extension SplitView {
         if subviews.count == 0 {
             return
         }
+        
+        willLayoutSubviews?()
         
         let horizontalLayout = (direction == .horizontal)
         
