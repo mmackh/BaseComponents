@@ -319,7 +319,7 @@ fileprivate class TextFieldClosureContainer: ClosureContainer, UITextFieldDelega
         if let closure = shouldClear {
             return closure(textField)
         }
-        return false
+        return true
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
