@@ -449,7 +449,6 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
                     }
                     componentView.frame = .init(x: 0, y: internalComponentHeightTracker, width: width, height: height)
                     componentView.clipsToBounds = component.clipsToBounds
-                    print(componentView)
                     internalComponentHeightTracker += height
                     if initialLayout {
                         subComponentView.contentView.addSubview(componentView)
