@@ -167,6 +167,11 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
     public var automaticKeyboardRepositioning: Bool = true
     
     /**
+     Override the default translucent background color
+     */
+    public var customBackgroundColor: UIColor?
+    
+    /**
      Define custom backgrounds for sections created by adding `SheetViewSpace` inbetween other components
      
      In order mimic the style of `UIAlertController.Style.actionSheet`, an instance of `UIVisualEffectView` has to be returned. If desired, the background can be colored using e.g., `.color(.background, UIColor.blue.alpha(0.5))`. Determine the transparency by tweaking the alpha value.
@@ -316,7 +321,14 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
         
         self.color(.background, .clear)
         UIView.animate(withDuration: 0.3) {
-            self.color(.background, self.backgroundColor != nil ? self.backgroundColor! : .dynamic(light: .init(white: 0, alpha: 0.2), dark: .init(white: 0, alpha: 0.6)))
+            let backgroundColor: UIColor = {
+                if let customBackgroundColor = self.customBackgroundColor {
+                    return customBackgroundColor
+                }
+                return .dynamic(light: .init(white: 0, alpha: 0.2), dark: .init(white: 0, alpha: 0.6))
+            }()
+            
+            self.color(.background, backgroundColor)
         }
         
         let dismissTap = UITapGestureRecognizer { [weak self] (tap) in
@@ -418,7 +430,12 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
         var overallHeightTracker: CGFloat = 0.0
         for (idx, internalComponent) in internalSectionComponents.enumerated() {
             var internalComponentHeightTracker: CGFloat = 0.0
-            let subComponentView = internalComponent.containerView != nil ? internalComponent.containerView! : sectionBackgroundViewFactory(idx)
+            let subComponentView: UIVisualEffectView = {
+                if let containerView = internalComponent.containerView {
+                    return containerView
+                }
+                return sectionBackgroundViewFactory(idx)
+            }()
             subComponentView.frame = .init(x: 0, y: 0, width: width, height: 0)
             if initialLayout {
                 internalComponent.containerView = subComponentView
@@ -432,6 +449,7 @@ public class SheetView: UIView, UIGestureRecognizerDelegate {
                     }
                     componentView.frame = .init(x: 0, y: internalComponentHeightTracker, width: width, height: height)
                     componentView.clipsToBounds = component.clipsToBounds
+                    print(componentView)
                     internalComponentHeightTracker += height
                     if initialLayout {
                         subComponentView.contentView.addSubview(componentView)
@@ -712,6 +730,16 @@ open class SheetViewCustomView: SheetViewComponent {
         
         self.contentView = view
         self.height = height
+    }
+    
+    public init(splitView configurationHandler: (SplitView)->(), dynamicHeightHandler: @escaping((_ superviewBounds: CGRect)->(CGFloat))) {
+        super.init()
+        
+        let splitView = SplitView()
+        configurationHandler(splitView)
+        self.contentView = splitView
+        
+        self.dynamicHeightHandler = dynamicHeightHandler
     }
 }
 
