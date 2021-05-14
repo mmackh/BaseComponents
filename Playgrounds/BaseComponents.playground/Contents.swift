@@ -2,7 +2,7 @@ import UIKit
 import PlaygroundSupport
 import BaseComponents
 
-
+/*
 class MainViewController : UIViewController {
     enum Component: String, CaseIterable {
         case SplitView
@@ -62,6 +62,28 @@ class MainViewController : UIViewController {
         }
     }
 }
+ */
+
+class MainViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        title = "Advanced Layout"
+        
+        view.addSplitView { [unowned self] splitView in
+            splitView.direction = .vertical
+            
+            splitView.insertSafeAreaInsetsPadding(form: self.view, paddingDirection: .top)
+            
+            splitView.addPadding(layoutType: .equal)
+            
+            splitView.addSubview(UILabel("Hello from BaseComponents. \nI'm SplitView").align(.center), layoutType: .automatic, edgeInsets: .init(horizontal: self.view.layoutMargins.left))
+            
+            splitView.addPadding(layoutType: .equal)
+        }
+    }
+}
+
 
 // let liveViewController = ScrollingViewController().embedInNavigationController()
 let liveViewController = MainViewController().embedInNavigationController()
