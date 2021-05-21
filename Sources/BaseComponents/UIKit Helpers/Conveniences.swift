@@ -261,6 +261,12 @@ public extension UITextField {
     }
     
     @discardableResult
+    func border(_ style: UITextField.BorderStyle) -> Self {
+        self.borderStyle = style
+        return self
+    }
+    
+    @discardableResult
     override func align(_ textAlignment: NSTextAlignment) -> Self {
         self.textAlignment = textAlignment
         return self
