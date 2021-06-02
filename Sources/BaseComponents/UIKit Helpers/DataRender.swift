@@ -259,9 +259,9 @@ open class DataRender: UIView {
     private var onRefresh: ((_ dataRender: DataRender) -> Void)? {
         didSet {
             if mode == .table {
-                tableView?.insertSubview(refreshControl, at: 0)
+                tableView?.refreshControl = refreshControl
             } else {
-                collectionView?.insertSubview(refreshControl, at: 0)
+                collectionView?.refreshControl = refreshControl
             }
         }
     }
