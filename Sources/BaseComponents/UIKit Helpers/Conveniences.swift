@@ -737,6 +737,18 @@ public class UILongPressPanGestureRecognizer: UIPanGestureRecognizer {
     }
 }
 
+extension UIScrollView {
+    func scrollToTop(animated: Bool) {
+        setContentOffset(.init(x: 0, y: safeAreaInsets.top > 0 ? -safeAreaInsets.top : 0), animated: animated)
+    }
+    
+    func scrollToBottom(animated: Bool) {
+        if contentSize.height < height { return }
+        let offsetY = (contentSize.height - height + contentInset.bottom + contentInset.top)
+        setContentOffset(.init(x: 0, y: offsetY), animated: animated)
+    }
+}
+
 #endif
 
 public extension Optional where Wrapped == Data {
