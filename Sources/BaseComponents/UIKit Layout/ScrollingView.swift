@@ -229,7 +229,7 @@ public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     @discardableResult
     public func addPadding(_ value: CGFloat) -> UIView {
         let padding = UIView()
-        addSubview(padding, layoutType: .fixed, value: value)
+        addSubview(padding.userInteractionEnabled(false), layoutType: .fixed, value: value)
         return padding
     }
     
