@@ -32,12 +32,12 @@ open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType:
     public class SnapshotBuilder {
         fileprivate var sections: [Section] = []
         
-        var animated: Bool = false
-        var completionHandler: (()->())? = nil
+        public var animated: Bool = false
+        public var completionHandler: (()->())? = nil
         
         init() { }
         
-        func appendSection(using cellClass: UICollectionViewCell.Type, items: [ItemIdentifierType]) {
+        public func appendSection(using cellClass: UICollectionViewCell.Type, items: [ItemIdentifierType]) {
             sections.append(Section(cellClass, items: items))
         }
     }
