@@ -64,7 +64,7 @@ open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType:
         return collectionView
     }()
     
-    var collectionViewLayout: UICollectionViewLayout {
+    public var collectionViewLayout: UICollectionViewLayout {
         switch layout {
         case .list(let appearance, let configurationHandler):
             var configuration: UICollectionLayoutListConfiguration = .init(appearance: appearance)
@@ -75,7 +75,7 @@ open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType:
         }
     }
     
-    lazy var dataSource = UICollectionViewDiffableDataSource<Int, ItemIdentifierType>(collectionView: collectionView) { [unowned self] collectionView, indexPath, object in
+    public lazy var dataSource = UICollectionViewDiffableDataSource<Int, ItemIdentifierType>(collectionView: collectionView) { [unowned self] collectionView, indexPath, object in
     
         let cell: UICollectionViewCell = {
             if let reuseIdentifier = sections[indexPath.section] {
@@ -130,7 +130,7 @@ open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType:
         registrations.insert(reuseIdentifier)
     }
     
-    func updateSnapshot(_ builder: (SnapshotBuilder)->(), animated: Bool = false, completionHandler: (()->())? = nil) {
+    public func updateSnapshot(_ builder: (SnapshotBuilder)->(), animated: Bool = false, completionHandler: (()->())? = nil) {
         var snapshot = NSDiffableDataSourceSnapshot<Int, ItemIdentifierType>()
         
         sections.removeAll()

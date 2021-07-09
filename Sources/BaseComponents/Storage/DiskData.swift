@@ -177,7 +177,7 @@ public extension File {
 }
 #endif
 
-extension File {
+public extension File {
     convenience init(bundleResource name: String, extension: String?, bundle: Bundle = .main) {
         if let url = bundle.url(forResource: name, withExtension: `extension`) {
             self.init(pathURL: url)

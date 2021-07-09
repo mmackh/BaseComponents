@@ -16,20 +16,20 @@
 import Foundation
 
 @propertyWrapper
-class UserDefaultsData<T> {
+open class UserDefaultsData<T> {
     let key: String
     let defaultValue: T
     
     var cacheValue: T? = nil
     var cache: Bool
 
-    init(_ key: String, defaultValue: T, cache: Bool = false) {
+    public init(_ key: String, defaultValue: T, cache: Bool = false) {
         self.key = key
         self.defaultValue = defaultValue
         self.cache = cache
     }
 
-    var wrappedValue: T {
+    public var wrappedValue: T {
         get {
             if cache, let cacheValue = cacheValue { return cacheValue }
             let diskValue = UserDefaults.standard.object(forKey: key) as? T ?? defaultValue
