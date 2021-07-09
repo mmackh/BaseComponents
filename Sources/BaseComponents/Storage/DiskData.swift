@@ -177,6 +177,17 @@ public extension File {
 }
 #endif
 
+extension File {
+    convenience init(bundleResource name: String, extension: String?, bundle: Bundle = .main) {
+        if let url = bundle.url(forResource: name, withExtension: `extension`) {
+            self.init(pathURL: url)
+            return
+        }
+        
+        fatalError("Couldn't init File with bundleResource")
+    }
+}
+
 public class Directory: DiskData {
     fileprivate init(enclosing filePathURL: URL) {
         super.init(pathURL: filePathURL.deletingLastPathComponent())
