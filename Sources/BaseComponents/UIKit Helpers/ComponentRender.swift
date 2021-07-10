@@ -26,7 +26,7 @@ open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType:
     
     public enum Layout {
         case list(style: UICollectionLayoutListConfiguration.Appearance, configuration: ((inout UICollectionLayoutListConfiguration)->())? = nil)
-        case compositional(builder: ()->(UICollectionViewCompositionalLayout))
+        case compositional(builder: ()->(UICollectionViewLayout))
     }
     
     public class SnapshotBuilder {
