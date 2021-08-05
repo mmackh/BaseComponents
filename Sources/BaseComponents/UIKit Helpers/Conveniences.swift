@@ -621,6 +621,7 @@ public extension UIViewController {
     }
 }
 
+@available(iOSApplicationExtension, unavailable)
 public extension UIAlertController {
     static let dismissButtonIndex: Int = -1
     
