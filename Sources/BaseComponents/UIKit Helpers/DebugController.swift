@@ -17,6 +17,7 @@
 
 import UIKit
 
+@available(iOSApplicationExtension, unavailable)
 open class DebugController: UIViewController {    
     public class Store {
         fileprivate class Item {

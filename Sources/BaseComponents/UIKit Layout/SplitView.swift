@@ -181,6 +181,7 @@ open class SplitView: UIView {
         super.addSubview(view)
     }
     
+    @available(iOSApplicationExtension, unavailable)
     public static func suggestedSuperviewInsets() -> UIEdgeInsets {
         let defaultInset: CGFloat = 15.0
         var suggestedInsets = UIEdgeInsets(top: defaultInset, left: defaultInset, bottom: defaultInset, right: defaultInset)
