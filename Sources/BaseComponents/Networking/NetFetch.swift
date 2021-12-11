@@ -151,6 +151,7 @@ open class NetFetchRequest: Codable {
     }
     
     public func fetch() {
+        self.ignoreQueue = true
         NetFetch.fetch(self)
     }
 }
