@@ -357,7 +357,7 @@ open class CloudKitDataProvider: NSObject {
  Manage assets for `CloudKitCodable` objects
  */
 public extension CloudKitDataProvider {
-    func add<T: CloudKitDataCodable>(asset: CloudKitAsset, to object: T, action: CKRecord_Reference_Action = .deleteSelf,completionHandler: @escaping(CloudKitAsset?, Error?)->()) {
+    func add<T: CloudKitDataCodable>(asset: CloudKitAsset, to object: T, action: CKRecord.ReferenceAction = .deleteSelf,completionHandler: @escaping(CloudKitAsset?, Error?)->()) {
         func signal(_ asset: CloudKitAsset?,_ error: Error?) {
             DispatchQueue.main.async {
                 completionHandler(asset, error)

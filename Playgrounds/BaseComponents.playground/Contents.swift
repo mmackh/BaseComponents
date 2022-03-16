@@ -105,13 +105,22 @@ class ComponentRenderViewController: UIViewController, UICollectionViewDelegate 
     }
     
     lazy var componentRender: ComponentRender<String> = {
-        let componentRender: ComponentRender<String> = .init(layout: .list(style: .grouped, configuration: { config in
+        let componentRender: ComponentRender<String> = .init(layout: .list(style: self.tableViewStyle, configuration: { config in
             
             
         }))
         componentRender.collectionView.delegate = self
         return componentRender
     }()
+    
+    lazy var tableViewStyle: UICollectionLayoutListConfiguration.Appearance = .grouped {
+        didSet {
+            componentRender.layoutUpdateSettings = .init(animate: true, completionHandler: nil)
+            componentRender.layout = .list(style: tableViewStyle, configuration: { listConfiguration in
+                
+            })
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -133,7 +142,10 @@ class ComponentRenderViewController: UIViewController, UICollectionViewDelegate 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: false)
         
-        print(componentRender.dataSource.itemIdentifier(for: indexPath))
+        print("Selected:", componentRender.item(for: indexPath) ?? "Nothing")
+        
+        tableViewStyle = tableViewStyle == .grouped ? .sidebar : .grouped
+        print("switching styles")
     }
 }
 

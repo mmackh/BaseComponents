@@ -95,3 +95,32 @@ public extension NSObject {
         return nil
     }
 }
+
+public extension Array where Element: Equatable {
+    enum `Type` {
+        case first
+        case last
+        case all
+    }
+    
+    @discardableResult
+    mutating func remove(_ item: Element, type: `Type` = .first) -> Bool {
+        switch type {
+        case .first:
+            if let idx = firstIndex(of: item) {
+                remove(at: idx)
+                return true
+            }
+        case .last:
+            if let idx = lastIndex(of: item) {
+                remove(at: idx)
+                return true
+            }
+        case .all:
+            removeAll { element in
+                element == item
+            }
+        }
+        return false
+    }
+}

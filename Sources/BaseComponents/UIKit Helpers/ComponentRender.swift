@@ -16,6 +16,8 @@
 #if os(iOS)
 
 import UIKit
+import Foundation
+import AppKit
 
 @available(iOS 14, *)
 open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType: Hashable {
@@ -25,7 +27,7 @@ open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType:
     private var snapshot: NSDiffableDataSourceSnapshot<Int, ItemIdentifierType>?
     
     public enum Layout {
-        case list(style: UICollectionLayoutListConfiguration.Appearance, configuration: ((inout UICollectionLayoutListConfiguration)->())? = nil)
+        case list(style: UICollectionLayoutListConfiguration.Appearance, configuration: ((_ listConfiguration: inout UICollectionLayoutListConfiguration)->())? = nil)
         case compositional(builder: ()->(UICollectionViewLayout))
     }
     
@@ -42,6 +44,16 @@ open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType:
         }
     }
     
+    public struct LayoutUpdateSettings {
+        public let animate: Bool
+        public let completionHandler: ((Bool)->())?
+        
+        public init(animate: Bool, completionHandler: ((Bool)->())?) {
+            self.animate = animate
+            self.completionHandler = completionHandler
+        }
+    }
+    
     fileprivate class Section: NSObject {
         let cellClass: UICollectionViewCell.Type
         let items: [ItemIdentifierType]
@@ -55,8 +67,14 @@ open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType:
             NSStringFromClass(cellClass).hash
         }
     }
-    
-    public var layout: Layout
+    public var layoutUpdateSettings: LayoutUpdateSettings = .init(animate: false, completionHandler: nil)
+    public var layout: Layout {
+        didSet {
+            self.collectionView.setCollectionViewLayout(self.collectionViewLayout, animated: layoutUpdateSettings.animate) { [weak self] Bool in
+                self?.layoutUpdateSettings.completionHandler?(Bool)
+            }
+        }
+    }
     
     public lazy var collectionView: UICollectionView = {
         let collectionView = UICollectionView(frame: bounds, collectionViewLayout: self.collectionViewLayout)
@@ -87,7 +105,6 @@ open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType:
         cell.bindObject(object as AnyObject)
         
         return cell
-        
     }
     
     @available(*, unavailable)
@@ -130,7 +147,7 @@ open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType:
         registrations.insert(reuseIdentifier)
     }
     
-    public func updateSnapshot(_ builder: (SnapshotBuilder)->(), animated: Bool = false, completionHandler: (()->())? = nil) {
+    public func updateSnapshot(_ builder: (_ builder: SnapshotBuilder)->(), animated: Bool = false, completionHandler: (()->())? = nil) {
         var snapshot = NSDiffableDataSourceSnapshot<Int, ItemIdentifierType>()
         
         sections.removeAll()
@@ -151,6 +168,10 @@ open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType:
                 completionHandler()
             }
         }
+    }
+    
+    public func item(for indexPath: IndexPath) -> ItemIdentifierType? {
+        dataSource.itemIdentifier(for: indexPath)
     }
     
     public func reloadData() {
