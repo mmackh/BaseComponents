@@ -17,7 +17,6 @@
 
 import UIKit
 import Foundation
-import AppKit
 
 @available(iOS 14, *)
 open class ComponentRender<ItemIdentifierType>: UIView where ItemIdentifierType: Hashable {
