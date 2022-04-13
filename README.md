@@ -268,11 +268,14 @@ override func viewDidLoad() {
     dataRender.renderArray(["Hello","World"])
 }
 ```
+  
 ---
+  
 </details>
 
 #### KeyboardManager
 <details>
+  
 <summary>Repositions and resizes a <code>SplitView</code> instance to avoid overlapping issues caused by the keyboard.</summary>
 
 ##### Code Sample
@@ -282,16 +285,18 @@ KeyboardManager.manage(rootView: view, resizableChildSplitView: splitView)
 </details>
 
 ---
+
 </details>
 
 #### DebugController
 <details>
-<summary>Test ViewControllers by implementing `register` once and calling `open()` on `DebugController`. To quickly jump to a registered ViewController call `debugRegisteredViewController` in the completionHandler of `open()` - a shortcut that can be used when the app is launched.</summary>
+  
+<summary>Test ViewControllers by implementing <code>register</code> once and calling <code>open()</code> on <code>DebugController</code>. To quickly jump to a registered ViewController call <code>debugRegisteredViewController</code> in the completionHandler of <code>open()</code> - a shortcut that can be used when the app is launched.</summary>
 
 ##### Code Sample
 ```swift
 DebugController.register(name: "ScrollingView") { (coordinator) in
-    parentViewController.present(ScrollingViewController())
+    coordinator.present(ScrollingViewController())
 }
 
 DebugController.open(completionHandler: nil)
@@ -303,7 +308,7 @@ DebugController.open(completionHandler: nil)
 ### UIKit Reimplementations
 #### PerformLabel
 <details>
-<summary>A faster label useful for auto sizing cells. Animates smoothly by streching. Even though a `numberOfLines`  API is defined, the current implementation will disregard this setting.</summary>
+<summary>A faster label useful for auto sizing cells. Animates smoothly by streching. Even though a <code>numberOfLines</code> API is defined, the current implementation will disregard this setting.</summary>
 
 ##### Code Sample
 ```swift
@@ -371,7 +376,7 @@ DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
 
 #### SheetView
 <details>
-<summary>Display a customisable sheet similar to `UIAlertController.Style.actionSheet`, that is both more flexible and easier to use.</summary>
+<summary>Display a customisable sheet similar to <code>UIAlertController.Style.actionSheet</code>, that is both more flexible and easier to use.</summary>
 
 ##### Structure
  A `SheetView` instance can be constructed using `components`. A component provides a contentView and a given height (height can either be static or dynamic, use `invalidateLayout()` to recalculate). Premade `SheetViewComponent` include:
@@ -405,7 +410,7 @@ let sheetView = SheetView()
 
 #### DispatchQueue Extension
 <details>
-<summary>Reintroduces `dispatchOnce` with a twist. On subsequent an optional `else` closure can be called. Adds a conciser `asyncAfter` method.</summary>
+<summary>Reintroduces <code>dispatchOnce</code> with a twist. On subsequent invokations an optional <code>else</code> closure can be called. Adds a concise <code>asyncAfter</code> method.</summary>
 
 ##### Code Sample
 ```swift
@@ -423,7 +428,7 @@ DispatchQueue.main.async(after: 1.0) {
 
 #### String Extension
 <details>
-<summary>Adds file path conveniences to Swift's `String`.</summary>
+<summary>Adds file path conveniences to Swift's <code>String</code>.</summary>
 
 ##### Code Sample
 ```swift
@@ -434,7 +439,7 @@ DispatchQueue.main.async(after: 1.0) {
 
 #### NotificationCenter Extension
 <details>
-<summary>Receive a `Notification` by implementing `observe`, which either accepts a raw `String` or a   `Notification.Name` object. If you don't capture self strongly, the closure will deregister itself when the parent object is released. Post a `Notification` by calling emit().</summary>
+<summary>Receive a <code>Notification</code> by adding <code>observe</code> to a subclass of <code>NSObject</code>, which either accepts a raw <code>String</code> or a <code>Notification.Name</code> object. If you don't capture self strongly, the closure will deregister itself when the parent object is released. Post a <code>Notification</code> by calling <code>emit()</code>.</summary>
 
 ##### Code Sample
 ```swift
