@@ -268,6 +268,72 @@ open class SplitView: UIView {
 
 /// UIView functions that have to be overwritten
 extension SplitView {
+    open class InternalLayoutCalculation {
+        public var fixedValuesSum: CGFloat = 0.0
+        public var percentageLossSum: CGFloat = 0.0
+        public var numberOfLayoutTypeEqualSubviews: CGFloat = 0.0
+        
+        public static func calculate(for splitView: SplitView) -> InternalLayoutCalculation {
+            let layoutCalculation = InternalLayoutCalculation()
+            let horizontalLayout = (splitView.direction == .horizontal)
+            let padding = splitView.subviewPadding
+            let bounds: CGRect = splitView.bounds
+            
+            for subview in splitView.subviews {
+                let layoutHandler = splitView.handlerContainer[subview]!
+                let instruction = layoutHandler.getLayoutInstruction(bounds)
+                
+                if instruction.layoutType == .percentage {
+                    layoutCalculation.percentageLossSum += (instruction.value / 100)
+                    continue
+                }
+                
+                if instruction.layoutType == .equal {
+                    layoutCalculation.numberOfLayoutTypeEqualSubviews += 1
+                    continue
+                }
+                
+                var fixedValueFloat = instruction.value
+                
+                if layoutHandler.layoutType == .automatic {
+                    var additionalPadding: CGFloat = 0.0
+                    if let button = subview as? UIButton {
+                        additionalPadding += horizontalLayout ? (button.titleEdgeInsets.left + button.titleEdgeInsets.right) : (button.titleEdgeInsets.bottom + button.titleEdgeInsets.top)
+                    }
+                    
+                    let edgeInsets = instruction.edgeInsets
+                    additionalPadding += horizontalLayout ? (edgeInsets.left + edgeInsets.right + padding * 2) : (edgeInsets.top + edgeInsets.bottom + padding * 2)
+                    
+                    if let scrollingView = subview as? ScrollingView {
+                        scrollingView.frame = .init(origin: .zero, size: CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + padding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + padding*2) : 100))
+                    }
+                    
+                    let max = CGFloat.greatestFiniteMagnitude
+                    let availableSize = CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + padding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + padding*2) : max)
+                    var subviewDimensions: CGSize
+                    if let stackView = subview as? UIStackView {
+                        subviewDimensions = stackView.systemLayoutSizeFitting(availableSize)
+                    } else {
+                        subviewDimensions = subview.sizeThatFits(availableSize)
+                    }
+                    
+                    fixedValueFloat = horizontalLayout ? subviewDimensions.width : subviewDimensions.height
+                    fixedValueFloat += additionalPadding
+                    layoutHandler.staticValue = fixedValueFloat
+                }
+                
+                if fixedValueFloat < 1.0 && fixedValueFloat > 0.0 {
+                    fixedValueFloat = .onePixel
+                    instruction.value = fixedValueFloat
+                }
+                
+                layoutCalculation.fixedValuesSum += fixedValueFloat
+            }
+            
+            return layoutCalculation
+        }
+    }
+    
     public override func willRemoveSubview(_ subview: UIView) {
         handlerContainer.removeValue(forKey: subview)
     }
@@ -307,68 +373,13 @@ extension SplitView {
         
         willLayoutSubviews?()
         
-        let horizontalLayout = (direction == .horizontal)
-        
-        let padding = subviewPadding
-        
+        let layoutCalculation = InternalLayoutCalculation.calculate(for: self)
+        let horizontalLayout = direction == .horizontal
+        let padding: CGFloat = subviewPadding
         var offsetTracker: CGFloat = 0.0
-        var fixedValuesSum: CGFloat = 0.0
-        var percentageLossSum: CGFloat = 0.0
-        var numberOfLayoutTypeEqualSubviews: CGFloat = 0.0
         
-        for subview in subviews {
-            let layoutHandler = handlerContainer[subview]!
-            let instruction = layoutHandler.getLayoutInstruction(bounds)
-            
-            if instruction.layoutType == .percentage {
-                percentageLossSum += (instruction.value / 100)
-                continue
-            }
-            
-            if instruction.layoutType == .equal {
-                numberOfLayoutTypeEqualSubviews += 1
-                continue
-            }
-            
-            var fixedValueFloat = instruction.value
-            
-            if layoutHandler.layoutType == .automatic {
-                var additionalPadding: CGFloat = 0.0
-                if let button = subview as? UIButton {
-                    additionalPadding += horizontalLayout ? (button.titleEdgeInsets.left + button.titleEdgeInsets.right) : (button.titleEdgeInsets.bottom + button.titleEdgeInsets.top)
-                }
-                
-                let edgeInsets = instruction.edgeInsets
-                additionalPadding += horizontalLayout ? (edgeInsets.left + edgeInsets.right + subviewPadding * 2) : (edgeInsets.top + edgeInsets.bottom + subviewPadding * 2)
-                
-                if let scrollingView = subview as? ScrollingView {
-                    scrollingView.frame = .init(origin: .zero, size: CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : 100))
-                }
-                
-                let max = CGFloat.greatestFiniteMagnitude
-                let availableSize = CGSize(width: bounds.size.width - (edgeInsets.left + edgeInsets.right + subviewPadding*2), height: horizontalLayout ? bounds.size.height - (edgeInsets.top + edgeInsets.bottom + subviewPadding*2) : max)
-                var subviewDimensions: CGSize
-                if let stackView = subview as? UIStackView {
-                    subviewDimensions = stackView.systemLayoutSizeFitting(availableSize)
-                } else {
-                    subviewDimensions = subview.sizeThatFits(availableSize)
-                }
-                
-                fixedValueFloat = horizontalLayout ? subviewDimensions.width : subviewDimensions.height
-                fixedValueFloat += additionalPadding
-                layoutHandler.staticValue = fixedValueFloat
-            }
-            
-            if fixedValueFloat < 1.0 && fixedValueFloat > 0.0 {
-                fixedValueFloat = .onePixel
-                instruction.value = fixedValueFloat
-            }
-            
-            fixedValuesSum += fixedValueFloat
-        }
-        
-        let width = bounds.size.width - (horizontalLayout ? fixedValuesSum : 0.0)
-        let height = bounds.size.height - (horizontalLayout ? 0.0 : fixedValuesSum)
+        let width = bounds.size.width - (horizontalLayout ? layoutCalculation.fixedValuesSum : 0.0)
+        let height = bounds.size.height - (horizontalLayout ? 0.0 : layoutCalculation.fixedValuesSum)
         
         for childView in subviews {
             let layoutHandler = handlerContainer[childView]!
@@ -384,7 +395,7 @@ extension SplitView {
             }
             
             if instruction.layoutType == .equal {
-                ratio = (1.0 - percentageLossSum) / numberOfLayoutTypeEqualSubviews
+                ratio = (1.0 - layoutCalculation.percentageLossSum) / layoutCalculation.numberOfLayoutTypeEqualSubviews
             }
             
             if instruction.layoutType == .fixed {
@@ -438,7 +449,6 @@ public enum SplitViewPaddingDirection: Int {
 }
 
 public extension SplitView {
-    
     @discardableResult
     func insertSafeAreaInsetsPadding(form parentView: UIView, paddingDirection: SplitViewPaddingDirection, adjustment: CGFloat = 0) -> UIView {
         observingSuperviewSafeAreaInsets = true
