@@ -143,6 +143,11 @@ open class SplitView: UIView {
         self.didLayoutSubviews = didLayoutSubviews
     }
     
+    private var didChangeTraitCollection: ((_ traitCollection: UITraitCollection) -> Void)?
+    public func didChangeTraitCollection(_ didChangeTraitCollection: @escaping (_ traitCollection: UITraitCollection) -> Void) {
+        self.didChangeTraitCollection = didChangeTraitCollection
+    }
+    
     private var handlerContainer: Dictionary<AnyHashable, SplitViewHandler> = Dictionary()
     
     private var boundsCache: CGRect?
@@ -521,6 +526,8 @@ public extension SplitView {
                 }
             }
         }
+        
+        self.didChangeTraitCollection?(traitCollection)
     }
 }
 
