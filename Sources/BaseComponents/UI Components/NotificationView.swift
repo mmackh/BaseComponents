@@ -178,9 +178,6 @@ open class NotificationView: UIView {
         UIView.animate(withDuration: 0.3, delay: 0, options: .allowUserInteraction, animations: {
             self.transform = self.hiddenTransform()
          }) { (complete) in
-             if !complete {
-                 return
-             }
             self.removeFromSuperview()
          }
     }
