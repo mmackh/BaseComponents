@@ -624,11 +624,14 @@ public extension UIViewController {
 @available(iOSApplicationExtension, unavailable)
 public extension UIAlertController {
     static let dismissButtonIndex: Int = -1
+    private static let destructiveOptionPrefix = "destructive://"
     
     static func show(style: UIAlertController.Style, title: String?, message: String?, options: Array<String>, dismiss: String, viewController: UIViewController? = nil, closure: ((_ buttonIdx: Int)->())?) {
         let controller = UIAlertController(title: title, message: message, preferredStyle: style)
         for (idx, option) in options.enumerated() {
-            controller.addAction(UIAlertAction(title: option, style: .default , handler: { (action) in
+            let isDestructive = option.hasPrefix(UIAlertController.destructiveOptionPrefix)
+            
+            controller.addAction(UIAlertAction(title: isDestructive ? option.replacingOccurrences(of: UIAlertController.destructiveOptionPrefix, with: "") : option, style: isDestructive ? .destructive : .default , handler: { (action) in
                 closure?(idx)
             }))
         }
@@ -639,6 +642,16 @@ public extension UIAlertController {
         if let targetViewController = viewController ?? DebugController.currentViewController() {
             targetViewController.present(controller, animated: true, completion: nil)
         }
+    }
+    
+    static func destructiveOption(_ value: String) -> String {
+        UIAlertController.destructiveOptionPrefix + value
+    }
+}
+
+public extension String {
+    var destructiveOption: String {
+        UIAlertController.destructiveOption(self)
     }
 }
 
