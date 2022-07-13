@@ -27,20 +27,18 @@ extension UIView {
             if let scrollComponent = component as? Scroll {
                 let direction = scrollComponent.directionHandler().scrollingViewDirection
                 return self.addScrollingView { scrollingView in
+                    scrollComponent.modifierHandler?(scrollingView)
                     scrollingView.direction = direction
-                    if direction == .vertical {
-                        scrollingView.alwaysBounceVertical = true
-                    } else {
-                        scrollingView.alwaysBounceHorizontal = true
-                    }
                 }
             }
             
-            let direction = (component as? Split)?.directionHandler().splitViewDirection ?? .vertical
+            let splitComponent: Split? = (component as? Split)
+            let direction = splitComponent?.directionHandler().splitViewDirection ?? .vertical
             return self.addSplitView { splitView in
                 splitView.direction = direction
                 splitView.observingSuperviewLayoutMargins = true
                 splitView.observingSuperviewSafeAreaInsets = true
+                splitComponent?.modifierHandler?(splitView)
             }
         }() else { return nil }
         
@@ -120,7 +118,6 @@ public class InterfaceBuilder {
     
     public class Tree {
         weak var superview: UIView?
-        var components: [InterfaceBuilderComponent] = []
         
         init(superview: UIView) {
             self.superview = superview
@@ -141,13 +138,21 @@ public class InterfaceBuilder {
         let parentScrollingView: ScrollingView? = view as? ScrollingView
         
         for component in components {
-            tree.components.append(component)
+            if component is Modifier<SplitView> || component is Modifier<ScrollingView> {
+                if let splitModifier = component as? Modifier<SplitView>, let splitView = parentSplitView {
+                    splitModifier.modifierHandler(splitView)
+                } else if let scrollingModifier = component as? Modifier<ScrollingView>, let scrollingView = parentScrollingView {
+                    scrollingModifier.modifierHandler(scrollingView)
+                }
+                continue
+            }
             
             let view: UIView = component.viewBuilder?() ?? UIView()
             
             if let splitComponent = component as? Split {
                 if let splitView = parentSplitView {
                     splitView.addSplitView { splitView in
+                        splitComponent.modifierHandler?(splitView)
                         splitView.direction = splitComponent.directionHandler().splitViewDirection
                         InterfaceBuilder.layout(on: splitView, components: splitComponent.subComponents, tree: tree)
                     } valueHandler: { superviewBounds in
@@ -170,6 +175,7 @@ public class InterfaceBuilder {
             if let scrollComponent = component as? Scroll {
                 if let splitView = parentSplitView {
                     splitView.addScrollingView { scrollingView in
+                        scrollComponent.modifierHandler?(scrollingView)
                         splitView.direction = scrollComponent.directionHandler().splitViewDirection
                         InterfaceBuilder.layout(on: scrollingView, components: scrollComponent.subComponents, tree: tree)
                     } valueHandler: { superviewBounds in
@@ -275,6 +281,15 @@ public class Padding: InterfaceBuilderComponent {
     
 }
 
+public class Modifier<T>: InterfaceBuilderComponent {
+    let modifierHandler: (_ view: T)->()
+    
+    public init(_ modifierHandler: @escaping (_ view: T)->()) {
+        self.modifierHandler = modifierHandler
+        super.init({ .init(.fixed, 0) }, viewBuilder: nil)
+    }
+}
+
 public class Separator: InterfaceBuilderComponent {
     public init(insets: (()->(UIEdgeInsets))? = nil) {
         super.init({ .init(.fixed, .onePixel, insets: insets?() ?? .zero) }, viewBuilder: { UIView().color(.background, .hairline) })
@@ -313,9 +328,12 @@ public class Dynamic: InterfaceBuilderComponent {
 
 public class Split: InterfaceBuilderComponent {
     let directionHandler: ()->(InterfaceBuilder.Direction)
+    let modifierHandler: ((SplitView)->())?
     
-    public init(directionHandler: @escaping ()->(InterfaceBuilder.Direction), @InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
+    public init(directionHandler: @escaping ()->(InterfaceBuilder.Direction), @InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil, modifier: ((_ scrollingView: SplitView)->())? = nil) {
         self.directionHandler = directionHandler
+        self.modifierHandler = modifier
+        
         super.init({ size?() ?? .init(.equal, 0) }, viewBuilder: { UIView() })
         
         self.subComponents = builder()
@@ -323,22 +341,25 @@ public class Split: InterfaceBuilderComponent {
 }
 
 public class VSplit: Split {
-    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
-        super.init(directionHandler: { .vertical }, builder: builder, size: size)
+    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil, modifier: ((_ scrollingView: SplitView)->())? = nil) {
+        super.init(directionHandler: { .vertical }, builder: builder, size: size, modifier: modifier)
     }
 }
 
 public class HSplit: Split {
-    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
-        super.init(directionHandler: { .horizontal }, builder: builder, size: size)
+    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil, modifier: ((_ scrollingView: SplitView)->())? = nil) {
+        super.init(directionHandler: { .horizontal }, builder: builder, size: size, modifier: modifier)
     }
 }
 
 public class Scroll: InterfaceBuilderComponent {
     let directionHandler: ()->(InterfaceBuilder.Direction)
+    let modifierHandler: ((ScrollingView)->())?
     
-    public init(directionHandler: @escaping ()->(InterfaceBuilder.Direction), @InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
+    public init(directionHandler: @escaping ()->(InterfaceBuilder.Direction), @InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil, modifier: ((_ scrollingView: ScrollingView)->())? = nil) {
         self.directionHandler = directionHandler
+        self.modifierHandler = modifier
+        
         super.init({ size?() ?? .init(.equal, 0) }, viewBuilder: { UIView() })
         
         self.subComponents = builder()
@@ -346,14 +367,14 @@ public class Scroll: InterfaceBuilderComponent {
 }
 
 public class VScroll: Scroll {
-    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
-        super.init(directionHandler: { .vertical }, builder: builder, size: size)
+    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil, modifier: ((_ scrollingView: ScrollingView)->())? = nil) {
+        super.init(directionHandler: { .vertical }, builder: builder, size: size, modifier: modifier)
     }
 }
 
 public class HScroll: Scroll {
-    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
-        super.init(directionHandler: { .horizontal }, builder: builder, size: size)
+    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil, modifier: ((_ scrollingView: ScrollingView)->())? = nil) {
+        super.init(directionHandler: { .horizontal }, builder: builder, size: size, modifier: modifier)
     }
 }
 
