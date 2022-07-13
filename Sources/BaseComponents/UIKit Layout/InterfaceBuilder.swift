@@ -21,20 +21,35 @@ extension UIView {
     @discardableResult
     public func build(@InterfaceBuilder.Builder _ builder: ()->[InterfaceBuilderComponent]) -> InterfaceBuilder.Tree? {
         let components = builder()
+        guard let component = components.first else { return nil }
         
         guard let parentView: UIView = {
-            if components.first is Scroll {
-                return self.addScrollingView { scrollingView in }
+            if let scrollComponent = component as? Scroll {
+                let direction = scrollComponent.directionHandler().scrollingViewDirection
+                return self.addScrollingView { scrollingView in
+                    scrollingView.direction = direction
+                    if direction == .vertical {
+                        scrollingView.alwaysBounceVertical = true
+                    } else {
+                        scrollingView.alwaysBounceHorizontal = true
+                    }
+                }
             }
             
+            let direction = (component as? Split)?.directionHandler().splitViewDirection ?? .vertical
             return self.addSplitView { splitView in
+                splitView.direction = direction
                 splitView.observingSuperviewLayoutMargins = true
                 splitView.observingSuperviewSafeAreaInsets = true
             }
         }() else { return nil }
         
         let tree: InterfaceBuilder.Tree = InterfaceBuilder.Tree(superview: self)
-        InterfaceBuilder.layout(on: parentView, components: components, tree: tree)
+        if components.count == 1 {
+            InterfaceBuilder.layout(on: parentView, components: component.subComponents, tree: tree)
+        } else {
+            InterfaceBuilder.layout(on: parentView, components: components, tree: tree)
+        }
         return tree
     }
 }
@@ -52,6 +67,10 @@ public class InterfaceBuilder {
         case horizontal
         
         var splitViewDirection: SplitViewDirection {
+            self == .vertical ? .vertical : .horizontal
+        }
+        
+        var scrollingViewDirection: ScrollingViewDirection {
             self == .vertical ? .vertical : .horizontal
         }
     }
@@ -190,7 +209,6 @@ public class InterfaceBuilderComponent {
     public var subComponents: [InterfaceBuilderComponent] = []
     public let layoutInstruction: ()->(InterfaceBuilder.LayoutInstruction)
     public let viewBuilder: (()->(UIView))?
-    public var isProcessed: Bool = false
     
     init(_ layoutInstruction: @escaping ()->(InterfaceBuilder.LayoutInstruction), viewBuilder: (()->(UIView))?) {
         self.layoutInstruction = layoutInstruction
