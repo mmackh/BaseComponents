@@ -258,6 +258,11 @@ public class Padding: InterfaceBuilderComponent {
         super.init({ .init(.fixed, value) }, viewBuilder: nil)
     }
     
+    public init(_ size: @escaping ()->(InterfaceBuilder.LayoutInstruction)) {
+        self.observingEdgeInsetsType = nil
+        super.init(size, viewBuilder: nil)
+    }
+    
     public init(observe view: UIView, _ type: EdgeInsetsType) {
         self.observingEdgeInsetsType = type
         super.init({ [weak view] in
