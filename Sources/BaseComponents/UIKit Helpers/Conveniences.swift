@@ -582,10 +582,18 @@ public extension UIImageView {
     }
     
     @available(iOS 13.0, *)
-    convenience init(symbol: String) {
+    convenience init(symbol: String, weight: UIImage.SymbolWeight = .regular, pointSize: CGFloat? = nil) {
         self.init()
         
-        self.image = UIImage(systemName: symbol)
+        let configuration: UIImage.SymbolConfiguration = {
+            if let pointSize = pointSize {
+                return UIImage.SymbolConfiguration(pointSize: pointSize, weight: weight)
+            }
+            return  UIImage.SymbolConfiguration(weight: weight)
+        }()
+        
+        self.image = UIImage(systemName: symbol, withConfiguration: configuration)
+        
         self.contentMode = .scaleAspectFit
     }
 }

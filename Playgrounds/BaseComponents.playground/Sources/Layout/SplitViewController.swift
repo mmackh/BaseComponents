@@ -29,7 +29,7 @@ public class SplitViewController: UIViewController {
                 splitView.direction = .horizontal
                 
                 splitView.addSubview(UIButton(symbol: "plus").addAction(for: .touchUpInside, { (button) in
-                    var targetColor = currentColor.rawValue + 1
+                    var targetColor = self.currentColor.rawValue + 1
                     if (targetColor > 2) {
                         targetColor = 0
                     }

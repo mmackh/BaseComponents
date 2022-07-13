@@ -109,6 +109,7 @@ class ComponentRenderViewController: UIViewController, UICollectionViewDelegate 
             
             
         }))
+        componentRender.collectionView.contentInsetAdjustmentBehavior = .never
         componentRender.collectionView.delegate = self
         return componentRender
     }()
@@ -122,6 +123,10 @@ class ComponentRenderViewController: UIViewController, UICollectionViewDelegate 
         }
     }
     
+    let selectedTableRowLabel: UILabel =  UILabel("Nothing Selected")
+    
+    var interfaceBuilderTree: InterfaceBuilder.Tree?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -129,9 +134,55 @@ class ComponentRenderViewController: UIViewController, UICollectionViewDelegate 
         
         view.color(.background, .systemBackground)
         
-        view.addSplitView { [unowned self] splitView in
-            splitView.addSubview(self.componentRender, layoutType: .percentage, value: 100)
+        view.addSplitView { splitView in
+            splitView.insertSafeAreaInsetsPadding(form: self.view, paddingDirection: .top)
+
+            splitView.addSubview(self.componentRender) { superviewBounds in
+                .init(layoutType: .equal, value: 0)
+            }
+
+            splitView.addPadding(.onePixel).color(.background, .hairline)
+            
+            splitView.addSplitView (configurationHandler: { splitView in
+                splitView.insertLayoutMarginsPadding(form: self.view, paddingDirection: .left)
+                
+                splitView.addSubview(UILabel("LABEL"), layoutType: .equal)
+                
+            }, layoutType: .fixed, value: 44)
         }
+        
+//        interfaceBuilderTree = view.build { [unowned self] in
+//                VSplit {
+//
+//                    Padding(observe: self.view, .safeAreaInsets(direction: .top))
+//
+//                    Separator()
+//
+//                    Equal {
+//                        self.componentRender
+//                    }
+//
+//                    Separator()
+//
+//                    HSplit {
+//                        Padding(observe: self.view, .layoutMargins(direction: .left))
+//
+//                        Fixed(20) {
+//                            UIImageView(symbol: "chevron.right", pointSize: 20).mode(.center)
+//                        }
+//
+//                        Padding(10)
+//
+//                        Equal {
+//                            self.selectedTableRowLabel
+//                        }
+//
+//                        //Padding(observe: self.view, .layoutMargins, .right)
+//                    } size: {
+//                        .init(.fixed, 44)
+//                    }
+//                }
+//        }
         
         componentRender.updateSnapshot { builder in
             builder.animated = false
@@ -142,10 +193,17 @@ class ComponentRenderViewController: UIViewController, UICollectionViewDelegate 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: false)
         
-        print("Selected:", componentRender.item(for: indexPath) ?? "Nothing")
+        self.selectedTableRowLabel.text = "Selected: \(componentRender.item(for: indexPath) ?? "Nothing")"
         
         tableViewStyle = tableViewStyle == .grouped ? .sidebar : .grouped
         print("switching styles")
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        print(self.view.layoutMargins)
+        //interfaceBuilderTree?.invalidateLayout()
     }
 }
 

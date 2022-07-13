@@ -1,0 +1,352 @@
+
+//  InterfaceBuilder.swift
+//  BaseComponents
+//
+//  Created by mmackh on 10.07.22.
+//  Copyright © 2022 Maximilian Mackh. All rights reserved.
+
+/*
+ Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+#if os(iOS)
+
+import UIKit
+
+extension UIView {
+    @discardableResult
+    public func build(@InterfaceBuilder.Builder _ builder: ()->[InterfaceBuilderComponent]) -> InterfaceBuilder.Tree? {
+        let components = builder()
+        
+        guard let parentView: UIView = {
+            if components.first is Scroll {
+                return self.addScrollingView { scrollingView in }
+            }
+            
+            return self.addSplitView { splitView in
+                splitView.observingSuperviewLayoutMargins = true
+                splitView.observingSuperviewSafeAreaInsets = true
+            }
+        }() else { return nil }
+        
+        let tree: InterfaceBuilder.Tree = InterfaceBuilder.Tree(superview: self)
+        InterfaceBuilder.layout(on: parentView, components: components, tree: tree)
+        return tree
+    }
+}
+
+public class InterfaceBuilder {
+    @resultBuilder
+    public struct Builder {
+        public static func buildBlock(_ components: InterfaceBuilderComponent...) -> [InterfaceBuilderComponent] {
+            components
+        }
+    }
+    
+    public enum Direction {
+        case vertical
+        case horizontal
+        
+        var splitViewDirection: SplitViewDirection {
+            self == .vertical ? .vertical : .horizontal
+        }
+    }
+
+    public enum LayoutType {
+        // Split & Scroll
+        case fixed
+        case automatic
+        
+        // Split only
+        case percentage
+        case equal
+        case dynamic
+        
+        var splitViewLayoutType: SplitViewLayoutType {
+            if self == .fixed { return .fixed }
+            if self == .percentage { return .percentage }
+            if self == .equal { return .equal }
+            return .automatic
+        }
+        
+        var scrollingViewLayoutType: ScrollingViewLayoutType {
+            if self == .fixed { return .fixed }
+            return .automatic
+        }
+    }
+    
+    public class LayoutInstruction {
+        let `type`: InterfaceBuilder.LayoutType
+        let value: CGFloat
+        let insets: UIEdgeInsets
+        
+        public init(_ type: InterfaceBuilder.LayoutType, _ value: CGFloat, insets: UIEdgeInsets = .zero) {
+            self.type = type
+            self.value = value
+            self.insets = insets
+        }
+        
+        var splitViewLayoutInstruction: SplitViewLayoutInstruction {
+            .init(layoutType: type.splitViewLayoutType, value: value, edgeInsets: insets)
+        }
+        
+        var scrollingViewLayoutInstruction: ScrollingViewLayoutInstruction {
+            .init(layoutType: type.scrollingViewLayoutType, value: value, edgeInsets: insets)
+        }
+    }
+    
+    public class Tree {
+        weak var superview: UIView?
+        var components: [InterfaceBuilderComponent] = []
+        
+        init(superview: UIView) {
+            self.superview = superview
+        }
+        
+        public func invalidateLayout() {
+            superview?.subviews(of: SplitView.self).forEach({ splitView in
+                splitView.invalidateLayout()
+            })
+            superview?.subviews(of: ScrollingView.self).forEach({ scrollingView in
+                scrollingView.invalidateLayout()
+            })
+        }
+    }
+    
+    static func layout(on view: UIView, components: [InterfaceBuilderComponent], tree: InterfaceBuilder.Tree) {
+        let parentSplitView: SplitView? = view as? SplitView
+        let parentScrollingView: ScrollingView? = view as? ScrollingView
+        
+        for component in components {
+            tree.components.append(component)
+            
+            let view: UIView = component.viewBuilder?() ?? UIView()
+            
+            if let splitComponent = component as? Split {
+                if let splitView = parentSplitView {
+                    splitView.addSplitView { splitView in
+                        splitView.direction = splitComponent.directionHandler().splitViewDirection
+                        InterfaceBuilder.layout(on: splitView, components: splitComponent.subComponents, tree: tree)
+                    } valueHandler: { superviewBounds in
+                        return component.layoutInstruction().splitViewLayoutInstruction
+                    }
+                } else if let scrollingView = parentScrollingView {
+                    scrollingView.addScrollingSplitView { splitView in
+                        splitView.direction = splitComponent.directionHandler().splitViewDirection
+                        InterfaceBuilder.layout(on: splitView, components: splitComponent.subComponents, tree: tree)
+                    } valueHandler: { superviewBounds in
+                        let layoutInstruction = splitComponent.layoutInstruction()
+                        return .init(fixedLayoutTypeValue: layoutInstruction.value, edgeInsets: layoutInstruction.insets)
+                    }
+
+                }
+
+                continue
+            }
+
+            if let scrollComponent = component as? Scroll {
+                if let splitView = parentSplitView {
+                    splitView.addScrollingView { scrollingView in
+                        splitView.direction = scrollComponent.directionHandler().splitViewDirection
+                        InterfaceBuilder.layout(on: scrollingView, components: scrollComponent.subComponents, tree: tree)
+                    } valueHandler: { superviewBounds in
+                        return component.layoutInstruction().splitViewLayoutInstruction
+                    }
+                }
+                continue
+            }
+            
+            if let splitView = parentSplitView {
+                splitView.addSubview(view) { superviewBounds in
+                    let layoutInstruction = component.layoutInstruction()
+                    return layoutInstruction.splitViewLayoutInstruction
+                }
+            } else if let scrollingView = parentScrollingView {
+                scrollingView.addSubview(view) { superviewBounds in
+                    let layoutInstruction = component.layoutInstruction()
+                    return layoutInstruction.scrollingViewLayoutInstruction
+                }
+            }
+            
+            if component is Padding, let paddingComponent = component as? Padding, let splitView = parentSplitView {
+                switch paddingComponent.observingEdgeInsetsType {
+                case .safeAreaInsets:
+                    splitView.observingSuperviewSafeAreaInsets = true
+                case .layoutMargins:
+                    splitView.observingSuperviewLayoutMargins = true
+                case .none:
+                    break
+                }
+            }
+        }
+    }
+}
+
+public class InterfaceBuilderComponent {
+    public var subComponents: [InterfaceBuilderComponent] = []
+    public let layoutInstruction: ()->(InterfaceBuilder.LayoutInstruction)
+    public let viewBuilder: (()->(UIView))?
+    public var isProcessed: Bool = false
+    
+    init(_ layoutInstruction: @escaping ()->(InterfaceBuilder.LayoutInstruction), viewBuilder: (()->(UIView))?) {
+        self.layoutInstruction = layoutInstruction
+        self.viewBuilder = viewBuilder
+    }
+}
+
+public class Padding: InterfaceBuilderComponent {
+    let observingEdgeInsetsType: Padding.EdgeInsetsType?
+    
+    public enum EdgeInsetsType {
+        case safeAreaInsets(direction: Direction)
+        case layoutMargins(direction: Direction)
+        
+        var direction: Direction {
+            switch self {
+            case .safeAreaInsets(let direction):
+                return direction
+            case .layoutMargins(let direction):
+                return direction
+            }
+        }
+        
+        var isSafeAreaInsetsType: Bool {
+            if case .safeAreaInsets = self {
+                return true
+            }
+            return false
+        }
+    }
+    
+    public enum Direction {
+        case top
+        case left
+        case bottom
+        case right
+    }
+    
+    public init(_ value: CGFloat) {
+        self.observingEdgeInsetsType = nil
+        super.init({ .init(.fixed, value) }, viewBuilder: nil)
+    }
+    
+    public init(observe view: UIView, _ type: EdgeInsetsType) {
+        self.observingEdgeInsetsType = type
+        super.init({ [weak view] in
+            let direction = type.direction
+            let insets: UIEdgeInsets = (type.isSafeAreaInsetsType ? view?.safeAreaInsets : view?.layoutMargins) ?? .zero
+            let value: CGFloat = {
+                switch direction {
+                case .top:
+                    return insets.top
+                case .left:
+                    return insets.left
+                case .bottom:
+                    return insets.bottom
+                case .right:
+                    return insets.right
+                }
+            }()
+            return .init(.fixed, value)
+        }, viewBuilder: { UIView() })
+    }
+    
+}
+
+public class Separator: InterfaceBuilderComponent {
+    public init(insets: (()->(UIEdgeInsets))? = nil) {
+        super.init({ .init(.fixed, .onePixel, insets: insets?() ?? .zero) }, viewBuilder: { UIView().color(.background, .hairline) })
+    }
+}
+
+public class Fixed: InterfaceBuilderComponent {
+    public init(_ value: CGFloat, _ viewBuilder: @escaping ()->(UIView), insets: (()->(UIEdgeInsets))? = nil) {
+        super.init({ .init(.fixed, value, insets: insets?() ?? .zero) }, viewBuilder: viewBuilder)
+    }
+}
+
+public class Percentage: InterfaceBuilderComponent {
+    public init(_ value: CGFloat, _ viewBuilder: @escaping ()->(UIView), insets: (()->(UIEdgeInsets))? = nil) {
+        super.init({ .init(.percentage, value, insets: insets?() ?? .zero) }, viewBuilder: viewBuilder)
+    }
+}
+
+public class Automatic: InterfaceBuilderComponent {
+    public init(viewBuilder: @escaping () -> (UIView), insets: (()->(UIEdgeInsets))? = nil) {
+        super.init({ .init(.automatic, 0, insets: insets?() ?? .zero) }, viewBuilder: viewBuilder)
+    }
+}
+
+public class Equal: InterfaceBuilderComponent {
+    public init(viewBuilder: @escaping () -> (UIView), insets: (()->(UIEdgeInsets))? = nil) {
+        super.init({ .init(.equal, 0, insets: insets?() ?? .zero) }, viewBuilder: viewBuilder)
+    }
+}
+
+public class Dynamic: InterfaceBuilderComponent {
+    public init(_ viewBuilder: @escaping () -> (UIView), size: @escaping ()->(InterfaceBuilder.LayoutInstruction)) {
+        super.init(size, viewBuilder: viewBuilder)
+    }
+}
+
+public class Split: InterfaceBuilderComponent {
+    let directionHandler: ()->(InterfaceBuilder.Direction)
+    
+    public init(directionHandler: @escaping ()->(InterfaceBuilder.Direction), @InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
+        self.directionHandler = directionHandler
+        super.init({ size?() ?? .init(.equal, 0) }, viewBuilder: { UIView() })
+        
+        self.subComponents = builder()
+    }
+}
+
+public class VSplit: Split {
+    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
+        super.init(directionHandler: { .vertical }, builder: builder, size: size)
+    }
+}
+
+public class HSplit: Split {
+    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
+        super.init(directionHandler: { .horizontal }, builder: builder, size: size)
+    }
+}
+
+public class Scroll: InterfaceBuilderComponent {
+    let directionHandler: ()->(InterfaceBuilder.Direction)
+    
+    public init(directionHandler: @escaping ()->(InterfaceBuilder.Direction), @InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
+        self.directionHandler = directionHandler
+        super.init({ size?() ?? .init(.equal, 0) }, viewBuilder: { UIView() })
+        
+        self.subComponents = builder()
+    }
+}
+
+public class VScroll: Scroll {
+    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
+        super.init(directionHandler: { .vertical }, builder: builder, size: size)
+    }
+}
+
+public class HScroll: Scroll {
+    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
+        super.init(directionHandler: { .horizontal }, builder: builder, size: size)
+    }
+}
+
+extension UIView {
+    func subviews<T:UIView>(of type:T.Type) -> [T] {
+        var result = self.subviews.compactMap {$0 as? T}
+        for sub in self.subviews {
+            result.append(contentsOf: sub.subviews(of: type))
+        }
+        return result
+    }
+}
+
+#endif

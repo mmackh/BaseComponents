@@ -339,10 +339,6 @@ extension SplitView {
         }
     }
     
-    public override func willRemoveSubview(_ subview: UIView) {
-        handlerContainer.removeValue(forKey: subview)
-    }
-    
     public override func layoutIfNeeded() {
         if preventAnimations {
             CATransaction.begin()
@@ -461,7 +457,7 @@ public extension SplitView {
         unowned let weakParentView = parentView
         let padding = UIView()
         self.addSubview(padding) { (parentRect) -> SplitViewLayoutInstruction in
-            var insetValue: CGFloat = 0.0;
+            var insetValue: CGFloat = 0.0
             if #available(iOS 11.0, *) {
                 let insets = weakParentView.safeAreaInsets
                 switch paddingDirection {
@@ -493,7 +489,7 @@ public extension SplitView {
         unowned let weakParentView = parentView
         let padding = UIView()
         self.addSubview(padding) { (parentRect) -> SplitViewLayoutInstruction in
-            var insetValue: CGFloat = 0.0;
+            var insetValue: CGFloat = 0.0
             if #available(iOS 11.0, *) {
                 let insets = weakParentView.layoutMargins
                 switch paddingDirection {
