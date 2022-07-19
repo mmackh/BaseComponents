@@ -43,7 +43,7 @@ extension UIView {
         }() else { return nil }
         
         let tree: InterfaceBuilder.Tree = InterfaceBuilder.Tree(superview: self)
-        if components.count == 1 {
+        if components.count == 1 && (component is Scroll || component is Split) {
             InterfaceBuilder.layout(on: parentView, components: component.subComponents, tree: tree)
         } else {
             InterfaceBuilder.layout(on: parentView, components: components, tree: tree)
