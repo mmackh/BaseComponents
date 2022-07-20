@@ -335,7 +335,7 @@ public class Split: InterfaceBuilderComponent {
     let directionHandler: ()->(InterfaceBuilder.Direction)
     let modifierHandler: ((SplitView)->())?
     
-    public init(directionHandler: @escaping ()->(InterfaceBuilder.Direction), @InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil, modifier: ((_ scrollingView: SplitView)->())? = nil) {
+    public init(directionHandler: @escaping ()->(InterfaceBuilder.Direction), @InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil, modifier: ((_ splitView: SplitView)->())? = nil) {
         self.directionHandler = directionHandler
         self.modifierHandler = modifier
         
