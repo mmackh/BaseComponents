@@ -197,14 +197,17 @@ public class InterfaceBuilder {
                 }
             }
             
-            if component is Padding, let paddingComponent = component as? Padding, let splitView = parentSplitView {
-                switch paddingComponent.observingEdgeInsetsType {
-                case .safeAreaInsets:
-                    splitView.observingSuperviewSafeAreaInsets = true
-                case .layoutMargins:
-                    splitView.observingSuperviewLayoutMargins = true
-                case .none:
-                    break
+            if component is Padding, let paddingComponent = component as? Padding {
+                paddingComponent.modifierHandler?(view)
+                if let splitView = parentSplitView {
+                    switch paddingComponent.observingEdgeInsetsType {
+                    case .safeAreaInsets:
+                        splitView.observingSuperviewSafeAreaInsets = true
+                    case .layoutMargins:
+                        splitView.observingSuperviewLayoutMargins = true
+                    case .none:
+                        break
+                    }
                 }
             }
         }
@@ -224,6 +227,7 @@ public class InterfaceBuilderComponent {
 
 public class Padding: InterfaceBuilderComponent {
     let observingEdgeInsetsType: Padding.EdgeInsetsType?
+    let modifierHandler: ((UIView)->())?
     
     public enum EdgeInsetsType {
         case safeAreaInsets(direction: Direction)
@@ -255,16 +259,19 @@ public class Padding: InterfaceBuilderComponent {
     
     public init(_ value: CGFloat) {
         self.observingEdgeInsetsType = nil
+        self.modifierHandler = nil
         super.init({ .init(.fixed, value) }, viewBuilder: nil)
     }
     
-    public init(_ size: @escaping ()->(InterfaceBuilder.LayoutInstruction)) {
+    public init(_ size: @escaping ()->(InterfaceBuilder.LayoutInstruction), modifier: ((_ view: UIView)->())? = nil) {
         self.observingEdgeInsetsType = nil
+        self.modifierHandler = modifier
         super.init(size, viewBuilder: nil)
     }
     
-    public init(observe view: UIView, _ type: EdgeInsetsType) {
+    public init(observe view: UIView, _ type: EdgeInsetsType, modifier: ((_ view: UIView)->())? = nil) {
         self.observingEdgeInsetsType = type
+        self.modifierHandler = modifier
         super.init({ [weak view] in
             let direction = type.direction
             let insets: UIEdgeInsets = (type.isSafeAreaInsetsType ? view?.safeAreaInsets : view?.layoutMargins) ?? .zero
