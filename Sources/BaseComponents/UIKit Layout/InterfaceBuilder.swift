@@ -346,13 +346,13 @@ public class Split: InterfaceBuilderComponent {
 }
 
 public class VSplit: Split {
-    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil, modifier: ((_ scrollingView: SplitView)->())? = nil) {
+    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil, modifier: ((_ splitView: SplitView)->())? = nil) {
         super.init(directionHandler: { .vertical }, builder: builder, size: size, modifier: modifier)
     }
 }
 
 public class HSplit: Split {
-    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil, modifier: ((_ scrollingView: SplitView)->())? = nil) {
+    public init(@InterfaceBuilder.Builder builder: ()->[InterfaceBuilderComponent], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil, modifier: ((_ splitView: SplitView)->())? = nil) {
         super.init(directionHandler: { .horizontal }, builder: builder, size: size, modifier: modifier)
     }
 }
