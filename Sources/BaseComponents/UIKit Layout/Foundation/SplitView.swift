@@ -123,6 +123,7 @@ open class SplitView: UIView {
     public static let onePixelHeight: CGFloat = .onePixel
     
     public var direction: SplitViewDirection = .vertical
+    public var directionHandler: (()->(SplitViewDirection))?
     
     public var subviewPadding: CGFloat = 0.0
     public var preventAnimations: Bool = false
@@ -375,6 +376,9 @@ extension SplitView {
         willLayoutSubviews?()
         
         let layoutCalculation = InternalLayoutCalculation.calculate(for: self)
+        if let directionHandler = directionHandler {
+            direction = directionHandler()
+        }
         let horizontalLayout = direction == .horizontal
         let padding: CGFloat = subviewPadding
         var offsetTracker: CGFloat = 0.0
