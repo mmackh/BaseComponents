@@ -33,9 +33,10 @@ extension UIView {
             }
             
             let splitComponent: Split? = (component as? Split)
-            let direction = splitComponent?.directionHandler().splitViewDirection ?? .vertical
             return self.addSplitView { splitView in
-                splitView.direction = direction
+                splitView.directionHandler = {
+                    splitComponent?.directionHandler().splitViewDirection ?? .vertical
+                }
                 splitView.observingSuperviewLayoutMargins = true
                 splitView.observingSuperviewSafeAreaInsets = true
                 splitComponent?.modifierHandler?(splitView)
@@ -162,7 +163,7 @@ public class InterfaceBuilder {
                     }
                 } else if let scrollingView = parentScrollingView {
                     scrollingView.addScrollingSplitView { splitView in
-                        splitView.directionHandler = { 
+                        splitView.directionHandler = {
                             splitComponent.directionHandler().splitViewDirection
                         }
                         InterfaceBuilder.layout(on: splitView, components: splitComponent.subComponents, tree: tree)
