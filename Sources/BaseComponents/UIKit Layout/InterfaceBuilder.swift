@@ -153,7 +153,7 @@ public class InterfaceBuilder {
                 if let splitView = parentSplitView {
                     splitView.addSplitView { splitView in
                         splitComponent.modifierHandler?(splitView)
-                        splitView.directionHandler = { [unowned splitComponent] in
+                        splitView.directionHandler = {
                             splitComponent.directionHandler().splitViewDirection
                         }
                         InterfaceBuilder.layout(on: splitView, components: splitComponent.subComponents, tree: tree)
@@ -162,7 +162,7 @@ public class InterfaceBuilder {
                     }
                 } else if let scrollingView = parentScrollingView {
                     scrollingView.addScrollingSplitView { splitView in
-                        splitView.directionHandler = { [unowned splitComponent] in
+                        splitView.directionHandler = { 
                             splitComponent.directionHandler().splitViewDirection
                         }
                         InterfaceBuilder.layout(on: splitView, components: splitComponent.subComponents, tree: tree)
