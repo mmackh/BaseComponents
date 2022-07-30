@@ -59,6 +59,34 @@ public class InterfaceBuilder {
         public static func buildBlock(_ components: InterfaceBuilderComponent...) -> [InterfaceBuilderComponent] {
             components
         }
+        
+        public static func buildBlock(_ components: [InterfaceBuilderComponent]...) -> [InterfaceBuilderComponent] {
+            components.flatMap { $0 }
+        }
+        
+        public static func buildOptional(_ component: [InterfaceBuilderComponent]?) -> [InterfaceBuilderComponent] {
+            component ?? []
+        }
+        
+        public static func buildEither(first component: [InterfaceBuilderComponent]) -> [InterfaceBuilderComponent] {
+            component
+        }
+        
+        public static func buildEither(second component: [InterfaceBuilderComponent]) -> [InterfaceBuilderComponent] {
+            component
+        }
+        
+        public static func buildExpression(_ expression: InterfaceBuilderComponent) -> [InterfaceBuilderComponent] {
+            [expression]
+        }
+        
+        public static func buildExpression(_ expression: [InterfaceBuilderComponent]) -> [InterfaceBuilderComponent] {
+            expression
+        }
+        
+        public static func buildArray(_ components: [[InterfaceBuilderComponent]]) -> [InterfaceBuilderComponent] {
+            components.flatMap { $0 }
+        }
     }
     
     public enum Direction {
