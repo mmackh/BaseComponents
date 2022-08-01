@@ -345,7 +345,7 @@ public class Equal: InterfaceBuilderComponent {
         super.init({ .init(.equal, 0, insets: insets?() ?? .zero) }, viewBuilder: { viewBuilder() ?? UIView().userInteractionEnabled(false) })
     }
     
-    public init(_ emptyViewBuilder: ()->()) {
+    public init() {
         super.init({ .init(.equal, 0) }, viewBuilder: { UIView().userInteractionEnabled(false) })
     }
 }
