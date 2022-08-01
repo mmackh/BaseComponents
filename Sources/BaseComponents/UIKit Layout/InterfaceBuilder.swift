@@ -21,34 +21,15 @@ extension UIView {
     @discardableResult
     public func build(@InterfaceBuilder.Builder _ builder: ()->[InterfaceBuilderComponent]) -> InterfaceBuilder.Tree? {
         let components = builder()
-        guard let component = components.first else { return nil }
-        
-        guard let parentView: UIView = {
-            if let scrollComponent = component as? Scroll {
-                let direction = scrollComponent.directionHandler().scrollingViewDirection
-                return self.addScrollingView { scrollingView in
-                    scrollComponent.modifierHandler?(scrollingView)
-                    scrollingView.direction = direction
-                }
+        let parentView: UIView = {
+            if self is SplitView {
+                return self
             }
-            
-            let splitComponent: Split? = (component as? Split)
-            return self.addSplitView { splitView in
-                splitView.directionHandler = {
-                    splitComponent?.directionHandler().splitViewDirection ?? .vertical
-                }
-                splitView.observingSuperviewLayoutMargins = true
-                splitView.observingSuperviewSafeAreaInsets = true
-                splitComponent?.modifierHandler?(splitView)
-            }
-        }() else { return nil }
+            return self.addSplitView { _ in }
+        }()
         
         let tree: InterfaceBuilder.Tree = InterfaceBuilder.Tree(superview: self)
-        if components.count == 1 && (component is Scroll || component is Split) {
-            InterfaceBuilder.layout(on: parentView, components: component.subComponents, tree: tree)
-        } else {
-            InterfaceBuilder.layout(on: parentView, components: components, tree: tree)
-        }
+        InterfaceBuilder.layout(on: parentView, components: components, tree: tree)
         return tree
     }
 }
@@ -321,7 +302,7 @@ public class Padding: InterfaceBuilderComponent {
                 }
             }()
             return .init(.fixed, value)
-        }, viewBuilder: { UIView() })
+        }, viewBuilder: { UIView().userInteractionEnabled(false) })
     }
     
 }
@@ -360,8 +341,12 @@ public class Automatic: InterfaceBuilderComponent {
 }
 
 public class Equal: InterfaceBuilderComponent {
-    public init(viewBuilder: @escaping () -> (UIView), insets: (()->(UIEdgeInsets))? = nil) {
-        super.init({ .init(.equal, 0, insets: insets?() ?? .zero) }, viewBuilder: viewBuilder)
+    public init(viewBuilder: @escaping () -> (UIView?), insets: (()->(UIEdgeInsets))? = nil) {
+        super.init({ .init(.equal, 0, insets: insets?() ?? .zero) }, viewBuilder: { viewBuilder() ?? UIView().userInteractionEnabled(false) })
+    }
+    
+    public init(_ emptyViewBuilder: ()->()) {
+        super.init({ .init(.equal, 0) }, viewBuilder: { UIView().userInteractionEnabled(false) })
     }
 }
 
