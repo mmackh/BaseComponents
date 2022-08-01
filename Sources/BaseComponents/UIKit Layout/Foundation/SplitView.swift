@@ -375,11 +375,11 @@ extension SplitView {
         
         willLayoutSubviews?()
         
-        let layoutCalculation = InternalLayoutCalculation.calculate(for: self)
         if let directionHandler = directionHandler {
             direction = directionHandler()
         }
         let horizontalLayout = direction == .horizontal
+        let layoutCalculation = InternalLayoutCalculation.calculate(for: self)
         let padding: CGFloat = subviewPadding
         var offsetTracker: CGFloat = 0.0
         
