@@ -128,7 +128,7 @@ public class InterfaceBuilder {
     
     public class Tree {
         weak var superview: UIView?
-        public var rootSplitView: SplitView
+        public weak var rootSplitView: SplitView?
         
         init(superview: UIView, rootSplitView: SplitView) {
             self.superview = superview
