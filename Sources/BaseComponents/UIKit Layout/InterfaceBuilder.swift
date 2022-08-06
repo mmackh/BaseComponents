@@ -21,15 +21,15 @@ extension UIView {
     @discardableResult
     public func build(@InterfaceBuilder.Builder _ builder: ()->[InterfaceBuilderComponent]) -> InterfaceBuilder.Tree? {
         let components = builder()
-        let parentView: UIView = {
-            if self is SplitView {
-                return self
+        let rootSplitView: SplitView = {
+            if let splitView = self as? SplitView {
+                return splitView
             }
             return self.addSplitView { _ in }
         }()
         
-        let tree: InterfaceBuilder.Tree = InterfaceBuilder.Tree(superview: self)
-        InterfaceBuilder.layout(on: parentView, components: components, tree: tree)
+        let tree: InterfaceBuilder.Tree = InterfaceBuilder.Tree(superview: self, rootSplitView: rootSplitView)
+        InterfaceBuilder.layout(on: rootSplitView, components: components, tree: tree)
         return tree
     }
 }
@@ -128,9 +128,11 @@ public class InterfaceBuilder {
     
     public class Tree {
         weak var superview: UIView?
+        public var rootSplitView: SplitView
         
-        init(superview: UIView) {
+        init(superview: UIView, rootSplitView: SplitView) {
             self.superview = superview
+            self.rootSplitView = rootSplitView
         }
         
         public func invalidateLayout() {
