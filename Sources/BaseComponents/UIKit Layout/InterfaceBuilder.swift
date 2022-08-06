@@ -228,6 +228,10 @@ public class InterfaceBuilder {
             }
         }
     }
+    
+    public static func build(@InterfaceBuilder.Builder _ builder:() -> [InterfaceBuilderComponent]) -> [InterfaceBuilderComponent] {
+        builder()
+    }
 }
 
 public class InterfaceBuilderComponent {
