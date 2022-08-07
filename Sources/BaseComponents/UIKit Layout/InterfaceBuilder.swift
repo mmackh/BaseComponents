@@ -124,6 +124,22 @@ public class InterfaceBuilder {
         var scrollingViewLayoutInstruction: ScrollingViewLayoutInstruction {
             .init(layoutType: type.scrollingViewLayoutType, value: value, edgeInsets: insets)
         }
+        
+        public static func fixed(_ value: CGFloat, insets: UIEdgeInsets = .zero) -> LayoutInstruction {
+            LayoutInstruction(.fixed, value, insets: insets)
+        }
+        
+        public static func percentage(_ value: CGFloat, insets: UIEdgeInsets = .zero) -> LayoutInstruction {
+            LayoutInstruction(.percentage, value, insets: insets)
+        }
+        
+        public static func equal(insets: UIEdgeInsets = .zero) -> LayoutInstruction {
+            LayoutInstruction(.equal, 0, insets: insets)
+        }
+        
+        public static func automatic(insets: UIEdgeInsets = .zero) -> LayoutInstruction {
+            LayoutInstruction(.automatic, 0, insets: insets)
+        }
     }
     
     public class Tree {
