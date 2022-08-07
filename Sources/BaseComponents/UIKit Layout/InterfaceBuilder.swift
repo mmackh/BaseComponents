@@ -296,13 +296,13 @@ public class Padding: InterfaceBuilderComponent {
     public init(_ value: CGFloat) {
         self.observingEdgeInsetsType = nil
         self.modifierHandler = nil
-        super.init({ .init(.fixed, value) }, viewBuilder: nil)
+        super.init({ .init(.fixed, value) }, viewBuilder: { UIView().userInteractionEnabled(false) })
     }
     
     public init(_ size: @escaping ()->(InterfaceBuilder.LayoutInstruction), modifier: ((_ view: UIView)->())? = nil) {
         self.observingEdgeInsetsType = nil
         self.modifierHandler = modifier
-        super.init(size, viewBuilder: nil)
+        super.init(size, viewBuilder: { UIView().userInteractionEnabled(false) })
     }
     
     public init(observe view: UIView, _ type: EdgeInsetsType, modifier: ((_ view: UIView)->())? = nil) {
