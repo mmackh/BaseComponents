@@ -250,7 +250,13 @@ public class InterfaceBuilder {
     }
 }
 
-public class InterfaceBuilderComponent {
+open class InterfaceBuilderComponent {
+    open class Custom: InterfaceBuilderComponent {
+        public override init(_ layoutInstruction: @escaping ()->(InterfaceBuilder.LayoutInstruction), viewBuilder: (()->(UIView))?) {
+            super.init(layoutInstruction, viewBuilder: viewBuilder)
+        }
+    }
+    
     public var subComponents: [InterfaceBuilderComponent] = []
     public let layoutInstruction: ()->(InterfaceBuilder.LayoutInstruction)
     public let viewBuilder: (()->(UIView))?
