@@ -384,6 +384,31 @@ public class Dynamic: InterfaceBuilderComponent {
     }
 }
 
+public class ZSplit: InterfaceBuilderComponent {
+    @resultBuilder
+    public struct SplitBuilder {
+        public static func buildBlock(_ components: Split...) -> [Split] {
+            components
+        }
+    }
+    
+    public init(@SplitBuilder builder: ()->[Split], size: (()->(InterfaceBuilder.LayoutInstruction))? = nil) {
+        let rootView: UIView = .init()
+        let rootSplitView = rootView.addSplitView { splitView in }
+        let tree: InterfaceBuilder.Tree = .init(superview: rootView, rootSplitView: rootSplitView)
+        
+        for split in builder() {
+            let containerView: SplitView = .init(frame: rootView.bounds)
+            containerView.directionHandler = { split.directionHandler().splitViewDirection }
+            containerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            rootView.addSubview(containerView)
+            
+            InterfaceBuilder.layout(on: containerView, components: split.subComponents, tree: tree)
+        }
+        super.init(size ?? { .equal() }, viewBuilder: { rootView })
+    }
+}
+
 public class Split: InterfaceBuilderComponent {
     let directionHandler: ()->(InterfaceBuilder.Direction)
     let modifierHandler: ((SplitView)->())?
