@@ -531,4 +531,12 @@ public extension SplitView {
     }
 }
 
+public extension SplitView {
+    /// effective only in vertical direction
+    override func sizeThatFits(_ size: CGSize) -> CGSize {
+        let layoutCalculation: InternalLayoutCalculation = InternalLayoutCalculation.calculate(for: self)
+        return CGSize(width: size.width, height: layoutCalculation.fixedValuesSum)
+    }
+}
+
 #endif
