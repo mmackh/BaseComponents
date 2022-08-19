@@ -314,6 +314,12 @@ public extension UIView {
     }
     
     @discardableResult
+    func alpha(_ value: CGFloat) -> Self {
+        alpha = value
+        return self
+    }
+    
+    @discardableResult
     func border(_ color: UIColor? = nil, width: CGFloat = 1.0, cornerRadius: CGFloat = 0.0) -> Self {
         if let color = color {
             layer.borderColor = color.cgColor
