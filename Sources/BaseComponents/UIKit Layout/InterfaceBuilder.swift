@@ -398,7 +398,8 @@ public class ZSplit: InterfaceBuilderComponent {
         let tree: InterfaceBuilder.Tree = .init(superview: rootView, rootSplitView: rootSplitView)
         
         for split in builder() {
-            let containerView: SplitView = .init(frame: rootView.bounds)
+            let containerView: SplitView = split.viewBuilder?() as? SplitView ?? SplitView()
+            split.modifierHandler?(containerView)
             containerView.directionHandler = { split.directionHandler().splitViewDirection }
             containerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             rootView.addSubview(containerView)
