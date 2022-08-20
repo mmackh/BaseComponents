@@ -300,8 +300,7 @@ extension SplitView {
                 }
                 
                 var fixedValueFloat = instruction.value
-                
-                if layoutHandler.layoutType == .automatic {
+                if instruction.layoutType == .automatic {
                     var additionalPadding: CGFloat = 0.0
                     if let button = subview as? UIButton {
                         additionalPadding += horizontalLayout ? (button.titleEdgeInsets.left + button.titleEdgeInsets.right) : (button.titleEdgeInsets.bottom + button.titleEdgeInsets.top)

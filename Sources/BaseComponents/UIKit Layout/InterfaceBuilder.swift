@@ -152,10 +152,10 @@ public class InterfaceBuilder {
         }
         
         public func invalidateLayout() {
-            superview?.subviews(of: SplitView.self).reversed().forEach({ splitView in
+            superview?.subviews(of: SplitView.self).forEach({ splitView in
                 splitView.invalidateLayout()
             })
-            superview?.subviews(of: ScrollingView.self).reversed().forEach({ scrollingView in
+            superview?.subviews(of: ScrollingView.self).forEach({ scrollingView in
                 scrollingView.invalidateLayout()
             })
         }
