@@ -175,6 +175,13 @@ public extension UILabel {
         self.font = font
         return self
     }
+    
+    @discardableResult
+    func minimumScaleFactor(_ factor: CGFloat) -> Self {
+        self.minimumScaleFactor = factor
+        self.adjustsFontSizeToFitWidth = true
+        return self
+    }
 }
 
 public extension PerformLabel {
