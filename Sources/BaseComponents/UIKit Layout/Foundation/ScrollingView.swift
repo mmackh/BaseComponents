@@ -119,7 +119,7 @@ public class ScrollingSplitViewLayoutInstruction: ScrollingViewLayoutInstruction
     }
 }
 
-public class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
+open class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
     public var direction: ScrollingViewDirection = .vertical
     
     private var frameCache = CGRect.zero

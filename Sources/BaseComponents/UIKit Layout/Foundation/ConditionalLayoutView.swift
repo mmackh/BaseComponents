@@ -28,7 +28,7 @@ public extension UIView {
     }
 }
 
-public class ConditionalLayoutView: UIView {
+open class ConditionalLayoutView: UIView {
     private var conditionalTargetViews: [ConditionalSplitView] = []
     private var boundsCache: CGRect = .zero
     private var splitView: SplitView? = nil
