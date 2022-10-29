@@ -209,7 +209,7 @@ public class InterfaceBuilder {
                 if let splitView = parentSplitView {
                     splitView.addScrollingView { scrollingView in
                         scrollComponent.modifierHandler?(scrollingView)
-                        splitView.direction = scrollComponent.directionHandler().splitViewDirection
+                        scrollingView.direction = scrollComponent.directionHandler().scrollingViewDirection
                         InterfaceBuilder.layout(on: scrollingView, components: scrollComponent.subComponents, tree: tree)
                     } valueHandler: { superviewBounds in
                         return component.layoutInstruction().splitViewLayoutInstruction
