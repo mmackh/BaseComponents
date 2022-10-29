@@ -217,11 +217,13 @@ public class InterfaceBuilder {
                 }
                 
                 if let scrollingView = parentScrollingView {
-                    scrollingView.addScrollingView { scrollingView in
-                        scrollComponent.modifierHandler?(scrollingView)
-                        scrollingView.direction = scrollComponent.directionHandler().scrollingViewDirection
-                        InterfaceBuilder.layout(on: scrollingView, components: scrollComponent.subComponents, tree: tree)
+                    let childScrollingView = ScrollingView()
+                    scrollComponent.modifierHandler?(childScrollingView)
+                    childScrollingView.direction = scrollComponent.directionHandler().scrollingViewDirection
+                    scrollingView.addSubview(childScrollingView) { superviewBounds in
+                        return component.layoutInstruction().scrollingViewLayoutInstruction
                     }
+                    InterfaceBuilder.layout(on: childScrollingView, components: scrollComponent.subComponents, tree: tree)
                 }
                 continue
             }
