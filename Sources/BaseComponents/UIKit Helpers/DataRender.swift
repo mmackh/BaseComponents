@@ -46,7 +46,7 @@ extension UITableViewCell {
     @objc open func bindObject(_ obj: AnyObject) {
     }
     
-    open func isLayoutPass() -> Bool {
+    public func isLayoutPass() -> Bool {
         if self.contentView.tag == 2 {
             return true
         }

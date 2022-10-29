@@ -190,6 +190,7 @@ public class InterfaceBuilder {
                     }
                 } else if let scrollingView = parentScrollingView {
                     scrollingView.addScrollingSplitView { splitView in
+                        splitComponent.modifierHandler?(splitView)
                         splitView.directionHandler = {
                             splitComponent.directionHandler().splitViewDirection
                         }
