@@ -215,6 +215,14 @@ public class InterfaceBuilder {
                         return component.layoutInstruction().splitViewLayoutInstruction
                     }
                 }
+                
+                if let scrollingView = parentScrollingView {
+                    scrollingView.addScrollingView { scrollingView in
+                        scrollComponent.modifierHandler?(scrollingView)
+                        scrollingView.direction = scrollComponent.directionHandler().scrollingViewDirection
+                        InterfaceBuilder.layout(on: scrollingView, components: scrollComponent.subComponents, tree: tree)
+                    }
+                }
                 continue
             }
             
