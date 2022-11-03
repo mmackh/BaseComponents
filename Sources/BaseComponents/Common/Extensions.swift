@@ -124,3 +124,66 @@ public extension Array where Element: Equatable {
         return false
     }
 }
+
+
+public extension URLSession {
+    
+    /// is valid response
+    /// - Parameter response: response
+    /// - Returns: if it's valid, return true, or return false 
+   func isValidResponse(response: HTTPURLResponse) -> Bool {
+    guard (200..<300).contains(response.statusCode),
+      let headers = response.allHeaderFields as? [String: String],
+      let contentType = headers["Content-Type"], contentType.hasPrefix("application/json") else {
+      return false
+    }
+
+    return true
+  }
+}
+
+public extension URLRequest {
+    init?(urlString: String) {
+        guard let url = URL(string: urlString) else { return nil }
+        self.init(url: url)
+    }
+
+    var curlString: String {
+        guard let url = url else { return "" }
+
+        var baseCommand = "curl \(url.absoluteString)"
+        if httpMethod == "HEAD" {
+            baseCommand += " --head"
+        }
+
+        var command = [baseCommand]
+        if let method = httpMethod, method != "GET" && method != "HEAD" {
+            command.append("-X \(method)")
+        }
+
+        if let headers = allHTTPHeaderFields {
+            for (key, value) in headers where key != "Cookie" {
+                command.append("-H '\(key): \(value)'")
+            }
+        }
+
+        if let data = httpBody,
+            let body = String(data: data, encoding: .utf8) {
+            command.append("-d '\(body)'")
+        }
+
+        return command.joined(separator: " \\\n\t")
+    }
+}
+
+public extension NSURLRequest {
+    @objc convenience init?(urlString: String) {
+        guard let url = URL(string: urlString) else { return nil }
+        self.init(url: url)
+    }
+
+    @objc var curlString: String {
+        return (self as URLRequest).curlString
+    }
+}
+
