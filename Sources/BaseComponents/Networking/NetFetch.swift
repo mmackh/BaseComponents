@@ -60,7 +60,9 @@ open class NetFetchRequest: Codable {
     public var cachePolicy: URLRequest.CachePolicy?
     public var retryOnFailure = false
     public var ignoreQueue = false
+    
     public weak var dataTask: URLSessionDataTask?
+    public var isCancelled: Bool = false
     
     enum CodingKeys: String, CodingKey {
         case urlString
@@ -138,6 +140,8 @@ open class NetFetchRequest: Codable {
     }
     
     public func cancel() {
+        isCancelled = true
+        
         if let task = dataTask {
             if task.state == .running {
                 task.cancel()
