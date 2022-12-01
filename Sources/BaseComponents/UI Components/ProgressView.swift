@@ -46,11 +46,11 @@ public extension UIView {
 }
 
 open class ProgressView: UIView {
-    let type: ProgressViewType
-    let spinner: UIActivityIndicatorView
-    let backgroundView: UIView
-    var spinnerBackgroundView: UIView?
-    var color: UIColor = .lightGray {
+    public let type: ProgressViewType
+    public let spinner: UIActivityIndicatorView
+    public let backgroundView: UIView
+    public var spinnerBackgroundView: UIView?
+    public var color: UIColor = .lightGray {
         didSet {
             spinner.color = color
         }
