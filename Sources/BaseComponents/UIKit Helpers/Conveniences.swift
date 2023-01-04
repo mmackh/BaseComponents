@@ -474,12 +474,17 @@ public extension UIButton {
     @discardableResult
     func accessibility(_ value: String?) -> Self {
         #if targetEnvironment(macCatalyst)
-        for interaction in interactions {
-            if let toolTipIntercation = interaction as? UIToolTipInteraction {
-                removeInteraction(toolTipIntercation)
+        if #available(macCatalyst 15.0, *) {
+            for interaction in interactions {
+                if let toolTipIntercation = interaction as? UIToolTipInteraction {
+                    removeInteraction(toolTipIntercation)
+                }
+            }
+            
+            if let value = value, !value.isEmpty {
+                addInteraction(UIToolTipInteraction(defaultToolTip: value))
             }
         }
-        addInteraction(UIToolTipInteraction(defaultToolTip: value))
         #else
         accessibilityLabel = value
         #endif
