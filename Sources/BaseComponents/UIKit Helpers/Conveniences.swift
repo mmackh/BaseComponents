@@ -411,11 +411,15 @@ public extension UIButton {
     }
     
     @available(iOS 13.0, *)
-    convenience init(symbol: String, weight: UIImage.SymbolWeight = .regular, pointSize: CGFloat) {
+    convenience init(symbol: String, accessibility: String?, weight: UIImage.SymbolWeight = .regular, pointSize: CGFloat) {
         self.init(type: .system)
         setImage(UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize, weight: weight, scale: .default)), for: .normal)
         
         imageView?.contentMode = .scaleAspectFit
+        
+        if let accessibility = accessibility {
+            self.accessibility(accessibility)
+        }
     }
     
     @discardableResult
@@ -464,6 +468,21 @@ public extension UIButton {
     @discardableResult
     func text(_ text: String?, _ state: UIButton.State = .normal) -> Self {
         setTitle(text, for: state)
+        return self
+    }
+    
+    @discardableResult
+    func accessibility(_ value: String?) -> Self {
+        #if targetEnvironment(macCatalyst)
+        for interaction in interactions {
+            if let toolTipIntercation = interaction as? UIToolTipInteraction {
+                removeInteraction(toolTipIntercation)
+            }
+        }
+        addInteraction(UIToolTipInteraction(defaultToolTip: value))
+        #else
+        accessibilityLabel = value
+        #endif
         return self
     }
 }
