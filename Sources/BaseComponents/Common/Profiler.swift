@@ -8,8 +8,8 @@
 
 import Foundation
 
-class Profiler: CustomDebugStringConvertible {
-    struct Measurement {
+open class Profiler: CustomDebugStringConvertible {
+    public struct Measurement {
         let label: String
         let initTimeInterval: TimeInterval
         let duration: TimeInterval
@@ -20,7 +20,8 @@ class Profiler: CustomDebugStringConvertible {
     var elapsed: TimeInterval {
         Profiler.uptime() - initTimeInterval
     }
-    var significantFigures: Int = 4
+    
+    public var significantFigures: Int = 4
     
     private var lastMeasurementTimeInterval: TimeInterval = 0
     private var measurements: [Measurement] = []
@@ -29,7 +30,7 @@ class Profiler: CustomDebugStringConvertible {
     private let function: String
     private let line: Int
     
-    init(label: String, file: String = #fileID, function: String = #function, line: Int = #line) {
+    public init(label: String, file: String = #fileID, function: String = #function, line: Int = #line) {
         self.initTimeInterval = Profiler.uptime()
         self.label = label
         
@@ -39,7 +40,7 @@ class Profiler: CustomDebugStringConvertible {
     }
     
     @discardableResult
-    init(label: String, file: String = #fileID, function: String = #function, line: Int = #line, _ profile: ()->()) {
+    public init(label: String, file: String = #fileID, function: String = #function, line: Int = #line, _ profile: ()->()) {
         self.initTimeInterval = Profiler.uptime()
         self.label = label
         
@@ -56,7 +57,7 @@ class Profiler: CustomDebugStringConvertible {
         ProcessInfo.processInfo.systemUptime
     }
     
-    func measure(_ measurementLabel: String) {
+    public func measure(_ measurementLabel: String) {
         let relativeTimeInterval: TimeInterval = lastMeasurementTimeInterval == 0 ? initTimeInterval : lastMeasurementTimeInterval
         
         let uptime = Profiler.uptime()
@@ -66,12 +67,12 @@ class Profiler: CustomDebugStringConvertible {
         measurements.append(measurement)
     }
     
-    func measure(_ measurementLabel: String, _ codeBlock: ()->()) {
+    public func measure(_ measurementLabel: String, _ codeBlock: ()->()) {
         codeBlock()
         measure(measurementLabel)
     }
     
-    var debugDescription: String {
+    public var debugDescription: String {
         let elapsed: TimeInterval = self.elapsed
         var measurementDebugDescription: String = ""
         for (idx, measurement) in measurements.sorted(by: { $0.duration > $1.duration }).enumerated() {
