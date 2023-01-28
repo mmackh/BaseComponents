@@ -389,7 +389,7 @@ extension SplitView {
             let layoutHandler = handlerContainer[childView]!
             let instruction = layoutHandler.getLayoutInstruction(bounds)
             
-            let edgeInsets = instruction.edgeInsets
+            var edgeInsets = instruction.edgeInsets
             
             var ratio: CGFloat = 1
             var layoutValue: CGFloat = horizontalLayout ? width : height
@@ -407,6 +407,7 @@ extension SplitView {
             }
             
             if instruction.layoutType == .automatic {
+                edgeInsets = .zero
                 layoutValue = layoutHandler.staticValue
             }
             
