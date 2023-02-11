@@ -407,7 +407,13 @@ extension SplitView {
             }
             
             if instruction.layoutType == .automatic {
-                edgeInsets = .zero
+                if horizontalLayout {
+                    edgeInsets.left = 0
+                    edgeInsets.right = 0
+                } else {
+                    edgeInsets.top = 0
+                    edgeInsets.bottom = 0
+                }
                 layoutValue = layoutHandler.staticValue
             }
             
