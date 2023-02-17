@@ -132,10 +132,14 @@ public extension Array where Element: Equatable {
  */
 @propertyWrapper
 public struct TransientCodable<Variable>: Codable {
-    public var wrappedValue: Variable? = nil
-        
-    public init(wrappedValue: Variable?) {
-        self.wrappedValue = wrappedValue
+    private(set) var value: Variable!
+    public var wrappedValue: Variable {
+        get { value }
+        set { value = newValue }
+    }
+    
+    public init(wrappedValue value: Variable) {
+        self.value = value
     }
     
     public init(from decoder: Decoder) throws { }
