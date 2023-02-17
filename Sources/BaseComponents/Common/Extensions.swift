@@ -124,3 +124,21 @@ public extension Array where Element: Equatable {
         return false
     }
 }
+
+/*
+ Excempt variable from Codable, e.g.:
+ @TransientCodable
+ var temporaryName: Any? = nil
+ */
+@propertyWrapper
+public struct TransientCodable<Variable>: Codable {
+    public var wrappedValue: Variable? = nil
+        
+    public init(wrappedValue: Variable?) {
+        self.wrappedValue = wrappedValue
+    }
+    
+    public init(from decoder: Decoder) throws { }
+    
+    public func encode(to encoder: Encoder) throws {  }
+}
