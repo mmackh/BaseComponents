@@ -19,18 +19,10 @@ import UIKit
 
 @objc
 fileprivate class ClosureContainer: NSObject {
-    static var closureCounter: Int = 10
     var closureControl: ((UIControl)->())?
     var closureGesture: ((UIGestureRecognizer)->())?
     var closureBarButtonItem: ((UIBarButtonItem)->())?
     weak var owner: AnyObject?
-    
-    var id: String
-    
-    override init () {
-        ClosureContainer.closureCounter += 1
-        self.id = String(format: "closure_%i",ClosureContainer.closureCounter)
-    }
     
     @objc func invoke () {
         if let owner = owner {
@@ -49,7 +41,7 @@ fileprivate class ClosureContainer: NSObject {
 
 fileprivate extension NSObject {
     func addClosureContainer(_ closureContainer: ClosureContainer) {
-        objc_setAssociatedObject(self, &closureContainer.id, closureContainer, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(self, Unmanaged.passUnretained(closureContainer).toOpaque(), closureContainer, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 }
 
