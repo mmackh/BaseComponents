@@ -519,17 +519,15 @@ open class DataRender: UIView {
         let array = genericArray as Array<AnyObject>
         self.renderMultiDimensionalArray = false
         if let item: AnyObject = array.first {
-            if item is Array < Any> || item is NSArray {
+            if item is Array<Any> || item is NSArray {
                 self.renderMultiDimensionalArray = true
             }
         }
         
         if self.configuration.reverseScrollingDirection! {
             if self.renderMultiDimensionalArray {
-                var tempArray: Array<Array> = [] as! Array<Array<Any>>
-                for subArray in array.reversed() {
-                    let subArrayCast = subArray as! Array<AnyObject>
-                    tempArray.append(subArrayCast.reversed() as Array)
+                let tempArray = array.reversed().map {
+                    ($0 as! Array<AnyObject>).reversed() as Array
                 }
                 self.array = tempArray as Array<AnyObject>
                 self.arrayBackup = tempArray as Array<AnyObject>

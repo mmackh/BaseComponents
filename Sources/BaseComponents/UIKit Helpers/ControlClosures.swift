@@ -17,21 +17,19 @@
 
 import UIKit
 
-var closureCounter: Int = 10
-
 @objc
 fileprivate class ClosureContainer: NSObject {
+    static var closureCounter: Int = 10
     var closureControl: ((UIControl)->())?
     var closureGesture: ((UIGestureRecognizer)->())?
     var closureBarButtonItem: ((UIBarButtonItem)->())?
     weak var owner: AnyObject?
     
-    override init () {
-        closureCounter += 1
-    }
+    var id: String
     
-    func closureID() -> String {
-        return String(format: "closure_%i",closureCounter)
+    override init () {
+        ClosureContainer.closureCounter += 1
+        self.id = String(format: "closure_%i",ClosureContainer.closureCounter)
     }
     
     @objc func invoke () {
@@ -51,7 +49,7 @@ fileprivate class ClosureContainer: NSObject {
 
 fileprivate extension NSObject {
     func addClosureContainer(_ closureContainer: ClosureContainer) {
-        objc_setAssociatedObject(self, closureContainer.closureID(), closureContainer, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(self, &closureContainer.id, closureContainer, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 }
 
@@ -216,45 +214,37 @@ fileprivate class SearchBarClosureContainer: ClosureContainer, UISearchBarDelega
     var cancelButtonClicked: ((UISearchBar)->())?
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        if let closure = textDidChange {
-            closure(searchBar)
-        }
+        textDidChange?(searchBar)
     }
     
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
-        if let closure = didBeginEditing {
-            closure(searchBar)
-        }
+        didBeginEditing?(searchBar)
     }
     
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
-        if let closure = didEndEditing {
-            closure(searchBar)
-        }
+        didEndEditing?(searchBar)
     }
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        if let closure = searchButtonClicked {
-            closure(searchBar)
-        }
+        searchButtonClicked?(searchBar)
     }
     
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        if let closure = cancelButtonClicked {
-            closure(searchBar)
-        }
+        cancelButtonClicked?(searchBar)
     }
 }
 
 public extension UISearchBar {
     fileprivate func closureContainer() -> SearchBarClosureContainer {
-        if (self.delegate == nil) {
-            let closureContainer = SearchBarClosureContainer()
-            closureContainer.owner = self
-            self.delegate = closureContainer
-            self.addClosureContainer(closureContainer)
+        if let closureContainer = self.delegate as? SearchBarClosureContainer {
+            return closureContainer
         }
-        return self.delegate as! SearchBarClosureContainer
+        
+        let closureContainer = SearchBarClosureContainer()
+        closureContainer.owner = self
+        self.addClosureContainer(closureContainer)
+        self.delegate = closureContainer
+        return closureContainer
     }
     
     @discardableResult
@@ -296,30 +286,26 @@ public extension UISearchBar {
 
 fileprivate class TextFieldClosureContainer: ClosureContainer, UITextFieldDelegate {
     var shouldReturn: ((UITextField)->(Bool))?
+    var shouldChangeCharacters: ((_ textField: UITextField, _ range: NSRange, _ replacementString: String)->(Bool))?
     var shouldBegin: ((UITextField)->(Bool))?
     var shouldClear: ((UITextField)->(Bool))?
     var didBegin: ((UITextField)->())?
     var didEnd: ((UITextField)->())?
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        if let closure = shouldReturn {
-            return closure(textField)
-        }
-        return false
+        shouldReturn?(textField) ?? false
+    }
+    
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        shouldChangeCharacters?(textField,range,string) ?? true
     }
     
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        if let closure = shouldBegin {
-            return closure(textField)
-        }
-        return true
+        shouldBegin?(textField) ?? true
     }
     
     func textFieldShouldClear(_ textField: UITextField) -> Bool {
-        if let closure = shouldClear {
-            return closure(textField)
-        }
-        return true
+        shouldClear?(textField) ?? true
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -333,18 +319,26 @@ fileprivate class TextFieldClosureContainer: ClosureContainer, UITextFieldDelega
 
 public extension UITextField {
     fileprivate func closureContainer() -> TextFieldClosureContainer {
-        if (self.delegate == nil) {
-            let closureContainer = TextFieldClosureContainer()
-            closureContainer.owner = self
-            self.delegate = closureContainer
-            self.addClosureContainer(closureContainer)
+        if let closureContainer = self.delegate as? TextFieldClosureContainer {
+            return closureContainer
         }
-        return self.delegate as! TextFieldClosureContainer
+        
+        let closureContainer = TextFieldClosureContainer()
+        closureContainer.owner = self
+        self.addClosureContainer(closureContainer)
+        self.delegate = closureContainer
+        return closureContainer
     }
     
     @discardableResult
     func shouldReturn(_ closure: @escaping(_ control: UITextField)->(Bool)) -> Self {
         closureContainer().shouldReturn = closure
+        return self
+    }
+    
+    @discardableResult
+    func shouldChangeCharacters(_ closure: @escaping(_ textField: UITextField, _ range: NSRange, _ replacementString: String)->(Bool)) -> Self {
+        closureContainer().shouldChangeCharacters = closure
         return self
     }
     
