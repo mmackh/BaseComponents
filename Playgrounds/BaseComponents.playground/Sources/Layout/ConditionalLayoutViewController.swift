@@ -344,17 +344,17 @@ class MusicPlayerView: UIView {
     }()
     
     let albumImageView: UIImageView = UIImageView().image(urlString: "https://upload.wikimedia.org/wikipedia/en/c/cb/PinkFloydAnotherBrickCover.jpg").mode(.scaleAspectFit)
-    let playButton: UIButton = UIButton(symbol: "play.fill")
-    let backwardButton: UIButton = UIButton(symbol: "backward.fill")
-    let forwardButton: UIButton = UIButton(symbol: "forward.fill")
+    let playButton: UIButton = UIButton(symbol: "play.fill", accessibility: "Play")
+    let backwardButton: UIButton = UIButton(symbol: "backward.fill", accessibility: "Go Back")
+    let forwardButton: UIButton = UIButton(symbol: "forward.fill", accessibility: "Go Forward")
     lazy var toggleStateButton: UIButton = {
-        let button = UIButton(symbol: "chevron.compact.up", weight: .bold, mode: .scaleAspectFit).tint(.lightGray).addAction(for: .touchUpInside) { [unowned self] (button) in
+        let button = UIButton(symbol: "chevron.compact.up", accessibility: "Expand", weight: .bold, mode: .scaleAspectFit).tint(.lightGray).addAction(for: .touchUpInside) { [unowned self] (button) in
             self.currentState = self.currentState == .compact ? .expanded : .compact
         }
         return button
     }()
     lazy var albumButton: UIButton = {
-        let button = UIButton(symbol: "music.note.list", weight: .bold, mode: .scaleAspectFit).addAction(for: .touchUpInside) { [unowned self] (button) in
+        let button = UIButton(symbol: "music.note.list", accessibility: "Collapse", weight: .bold, mode: .scaleAspectFit).addAction(for: .touchUpInside) { [unowned self] (button) in
             self.currentState = self.currentState == .expandedAlbum ? .expanded : .expandedAlbum
         }
         return button

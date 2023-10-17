@@ -28,7 +28,7 @@ public class SplitViewController: UIViewController {
             splitView.addSplitView(configurationHandler: { (splitView) in
                 splitView.direction = .horizontal
                 
-                splitView.addSubview(UIButton(symbol: "plus").addAction(for: .touchUpInside, { (button) in
+                splitView.addSubview(UIButton(symbol: "plus", accessibility: "Add").addAction(for: .touchUpInside, { (button) in
                     var targetColor = self.currentColor.rawValue + 1
                     if (targetColor > 2) {
                         targetColor = 0
@@ -60,7 +60,7 @@ public class SplitViewController: UIViewController {
                 
                 splitView.addSubview(UIView().color(.background, .hairline), layoutType: .fixed, value: .onePixel)
                 
-                splitView.addSubview(UIButton(symbol: "minus").addAction(for: .touchUpInside, { (button) in
+                splitView.addSubview(UIButton(symbol: "minus", accessibility: "Remove").addAction(for: .touchUpInside, { (button) in
                     
                     if let subview = self.containerSplitView.subviews.last {
                         subview.removeFromSuperview()
@@ -74,7 +74,7 @@ public class SplitViewController: UIViewController {
                 
                 splitView.addSubview(UIView().color(.background, .hairline), layoutType: .fixed, value: .onePixel)
                 
-                splitView.addSubview(UIButton(symbol: "arrow.2.squarepath").addAction(for: .touchUpInside, { (button) in
+                splitView.addSubview(UIButton(symbol: "arrow.2.squarepath", accessibility: "Change Direction").addAction(for: .touchUpInside, { (button) in
                     
                     self.containerSplitView.direction = self.containerSplitView.direction == .horizontal ? .vertical : .horizontal
                     UIView.animate(withDuration: 0.4) {

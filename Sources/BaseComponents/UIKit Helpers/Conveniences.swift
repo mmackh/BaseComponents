@@ -13,7 +13,7 @@
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 
 import UIKit
 
@@ -65,11 +65,15 @@ public extension UIFont {
 
 public extension UIColor {
     static let hairline: UIColor = {
+        #if os(visionOS)
+        return .init(white: 0.79, alpha: 1)
+        #else
         if #available(iOS 13.0, *) {
             return .separator
         } else {
             return .init(white: 0.79, alpha: 1)
         }
+        #endif
     }()
     
     static func dynamic(light: UIColor, dark: UIColor) -> UIColor {

@@ -13,7 +13,7 @@
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 
 import UIKit
 
@@ -75,7 +75,9 @@ open class DebugController: UIViewController {
         if #available(iOS 13.0, *) {
             view.color(.background, .systemGroupedBackground)
         } else {
+            #if !os(visionOS)
             view.color(.background, .groupTableViewBackground)
+            #endif
         }
         
         title = "Debug"
@@ -127,11 +129,15 @@ open class DebugController: UIViewController {
     }
     
     public static func keyWindow() -> UIWindow? {
+        #if os(visionOS)
+            return UIApplication.shared.windows.filter {$0.isKeyWindow}.first
+        #else
         if #available(iOS 13, *) {
             return UIApplication.shared.windows.filter {$0.isKeyWindow}.first
         } else {
             return UIApplication.shared.keyWindow
         }
+        #endif
     }
     
     fileprivate static func iterateChildViewControllers(_ viewController: UIViewController) -> UIViewController {
