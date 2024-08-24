@@ -77,7 +77,8 @@ public class File: DiskData {
                 return save(image.jpegData(compressionQuality: 0.7))
             }
             if saved == false {
-                let data = try JSONEncoder().encode(obj)
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = [.sortedKeys]
                 return save(data)
             }
         } catch {
