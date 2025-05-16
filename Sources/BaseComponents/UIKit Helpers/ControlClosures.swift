@@ -66,6 +66,9 @@ fileprivate extension UIControl {
 public extension UIButton {
     @discardableResult
     func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ button: UIButton) -> ()) -> Self {
+        if allControlEvents.contains(.touchUpInside) {
+            print("[BaseComponents Error]: BUtton \(titleLabel?.text ?? "-no title-"). addAction was called in the incorrect order. Set .touchUpInside last!", allControlEvents, controlEvents)
+        }
         return addGenericAction(for: controlEvents) { (control) in
             closure(control as! UIButton)
         }
