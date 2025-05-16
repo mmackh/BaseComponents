@@ -67,7 +67,9 @@ public extension UIButton {
     @discardableResult
     func addAction(for controlEvents: UIControl.Event, _ closure: @escaping (_ button: UIButton) -> ()) -> Self {
         if allControlEvents.contains(.touchUpInside) {
-            print("[BaseComponents Error]: BUtton \(titleLabel?.text ?? "-no title-"). addAction was called in the incorrect order. Set .touchUpInside last!", allControlEvents, controlEvents)
+            if #available(iOS 14.0, *) {
+                print("[BaseComponents Error]: UIButton \(titleLabel?.text ?? "-no title-"). addAction was called in the incorrect order. Set .touchUpInside last!", allControlEvents.debugDescription, controlEvents)
+            }
         }
         return addGenericAction(for: controlEvents) { (control) in
             closure(control as! UIButton)
@@ -361,6 +363,43 @@ public extension UITextField {
         return self
     }
     
+}
+
+@available(iOS 14.0, *)
+extension UIControl.Event {
+    private static let eventNameMap: [(event: UIControl.Event, name: StaticString)] = [
+    (.touchDown, "touchDown"),
+    (.touchDownRepeat, "touchDownRepeat"),
+    (.touchDragInside, "touchDragInside"),
+    (.touchDragOutside, "touchDragOutside"),
+    (.touchDragEnter, "touchDragEnter"),
+    (.touchDragExit, "touchDragExit"),
+    (.touchUpInside, "touchUpInside"),
+    (.touchUpOutside, "touchUpOutside"),
+    (.touchCancel, "touchCancel"),
+    (.valueChanged, "valueChanged"),
+    (.primaryActionTriggered, "primaryActionTriggered"),
+    (.menuActionTriggered, "menuActionTriggered"),
+    (.editingDidBegin, "editingDidBegin"),
+    (.editingChanged, "editingChanged"),
+    (.editingDidEnd, "editingDidEnd"),
+    (.editingDidEndOnExit, "editingDidEndOnExit"),
+    (.allTouchEvents, "allTouchEvents"),
+    (.allEditingEvents, "allEditingEvents"),
+    (.applicationReserved, "applicationReserved"),
+    (.systemReserved, "systemReserved"),
+    (.allEvents, "allEvents")
+  ]
+
+  public var debugDescription: String {
+    var result: [StaticString] = []
+    for (event, name) in UIControl.Event.eventNameMap {
+      if self.contains(event) {
+        result.append(name)
+      }
+    }
+    return result.isEmpty ? "unknown(\(rawValue))" : result.map { "\($0)" }.joined(separator: " | ")
+  }
 }
 
 #endif
