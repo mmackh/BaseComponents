@@ -79,7 +79,7 @@ public class File: DiskData {
             if saved == false {
                 let encoder = JSONEncoder()
                 encoder.outputFormatting = [.sortedKeys]
-                return save(data)
+                return save(try encoder.encode(obj))
             }
         } catch {
             if DiskData.debug {
