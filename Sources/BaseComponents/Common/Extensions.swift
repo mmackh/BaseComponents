@@ -58,13 +58,16 @@ public extension String {
 /*
  NotificationCenter
  */
-public extension NSObject {
-    static var notificationObserverCounter: Int = 10
-    
-    fileprivate class NotificationReference {
-        let reference: Any
 
-        init(_ reference: Any) {
+public extension NSObject {
+    private enum AssociatedKeys {
+        static var notificationTokens: UInt8 = 0
+    }
+
+    fileprivate final class NotificationReference {
+        let reference: NSObjectProtocol
+
+        init(_ reference: NSObjectProtocol) {
             self.reference = reference
         }
 
@@ -72,24 +75,36 @@ public extension NSObject {
             NotificationCenter.default.removeObserver(reference)
         }
     }
-    
-    func observe<T>(_ notification: T, _ object: Any? = nil, _ handler: @escaping (Notification)->()) {
-        guard let notificationName = NSObject.notificationName(notification) else { return }
-        let token = NotificationCenter.default.addObserver(forName: notificationName, object: object, queue: .main, using: handler)
-        objc_setAssociatedObject(self, "bc_notf_\(NSObject.notificationObserverCounter)", NotificationReference(token), objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        NSObject.notificationObserverCounter += 1
+
+    private var notificationReferences: NSMutableArray {
+        get {
+            if let array: NSMutableArray = objc_getAssociatedObject(self, &AssociatedKeys.notificationTokens) as? NSMutableArray {
+                return array
+            }
+            let array: NSMutableArray = NSMutableArray()
+            objc_setAssociatedObject(self, &AssociatedKeys.notificationTokens, array, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            return array
+        }
+    }
+
+    @discardableResult
+    func observe<T>(_ notification: T, _ object: Any? = nil, _ handler: @escaping (Notification) -> ()) -> NSObjectProtocol? {
+        guard let notificationName: Notification.Name = NSObject.notificationName(notification) else { return nil }
+        let token: NSObjectProtocol = NotificationCenter.default.addObserver(forName: notificationName, object: object, queue: OperationQueue.main, using: handler)
+        notificationReferences.add(NotificationReference(token))
+        return token
     }
 
     func emit<T>(_ notification: T, obj: Any? = nil) {
-        guard let notificationName = NSObject.notificationName(notification) else { return }
+        guard let notificationName: Notification.Name = NSObject.notificationName(notification) else { return }
         NotificationCenter.default.post(name: notificationName, object: obj)
     }
-    
+
     fileprivate static func notificationName<T>(_ input: T) -> Notification.Name? {
-        if let notificationNameString = input as? String {
-            return Notification.Name.init(notificationNameString)
+        if let notificationNameString: String = input as? String {
+            return Notification.Name(notificationNameString)
         }
-        if let notificationNameObject = input as? Notification.Name {
+        if let notificationNameObject: Notification.Name = input as? Notification.Name {
             return notificationNameObject
         }
         return nil
