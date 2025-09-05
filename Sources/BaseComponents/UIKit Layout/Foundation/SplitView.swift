@@ -265,8 +265,8 @@ open class SplitView: UIView {
         layoutIfNeeded()
     }
     
-    public func layoutInstruction(for view: UIView) -> SplitViewLayoutInstruction {
-        return handlerContainer[view]!.getLayoutInstruction(bounds)
+    public func layoutInstruction(for view: UIView) -> SplitViewLayoutInstruction? {
+        handlerContainer[view]?.getLayoutInstruction(bounds)
     }
     
     deinit {
@@ -391,7 +391,9 @@ extension SplitView {
         let height = bounds.size.height - (horizontalLayout ? 0.0 : layoutCalculation.fixedValuesSum)
         
         for childView in subviews {
-            let layoutHandler = handlerContainer[childView]!
+            guard let layoutHandler = handlerContainer[childView] else {
+                continue
+            }
             let instruction = layoutHandler.getLayoutInstruction(bounds)
             
             var edgeInsets = instruction.edgeInsets

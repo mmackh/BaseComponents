@@ -289,7 +289,7 @@ open class ScrollingView: UIScrollView, UIGestureRecognizerDelegate {
                         }
                         if let sizeView = layout.determineSizeBasedOnView {
                             size = sizeView.sizeThatFits(.init(width: vertical ? sizeView.bounds.size.width : .infinity, height: vertical ? .infinity : sizeView.bounds.size.height))
-                            let instruction = scrollingSplitView.layoutInstruction(for: sizeView)
+                            let instruction = scrollingSplitView.layoutInstruction(for: sizeView) ?? .init()
                             if vertical {
                                 size.height += instruction.edgeInsets.top + instruction.edgeInsets.bottom;
                             } else {
