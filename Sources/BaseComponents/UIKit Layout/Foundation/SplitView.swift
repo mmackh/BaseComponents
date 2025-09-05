@@ -288,7 +288,10 @@ extension SplitView {
             let bounds: CGRect = splitView.bounds
             
             for subview in splitView.subviews {
-                let layoutHandler = splitView.handlerContainer[subview]!
+                guard let layoutHandler = splitView.handlerContainer[subview] else {
+                    // iOS26 adds views like _UIReparentingView to the tree, which causes a crash if no layoutHandler is found
+                    continue
+                }
                 let instruction = layoutHandler.getLayoutInstruction(bounds)
                 
                 if instruction.layoutType == .percentage {
