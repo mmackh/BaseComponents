@@ -675,7 +675,7 @@ public extension UIAlertController {
     static let dismissButtonIndex: Int = -1
     private static let destructiveOptionPrefix = "destructive://"
     
-    static func show(style: UIAlertController.Style, title: String?, message: String?, options: Array<String>, dismiss: String, viewController: UIViewController? = nil, closure: ((_ buttonIdx: Int)->())?) {
+    static func show(style: UIAlertController.Style, title: String?, message: String?, options: Array<String>, dismiss: String?, viewController: UIViewController? = nil, closure: ((_ buttonIdx: Int)->())?) {
         let controller = UIAlertController(title: title, message: message, preferredStyle: style)
         for (idx, option) in options.enumerated() {
             let isDestructive = option.hasPrefix(UIAlertController.destructiveOptionPrefix)
@@ -684,9 +684,12 @@ public extension UIAlertController {
                 closure?(idx)
             }))
         }
-        controller.addAction(UIAlertAction(title: dismiss, style: .cancel, handler: { (action) in
-            closure?(UIAlertController.dismissButtonIndex)
-        }))
+        
+        if let dismiss {
+            controller.addAction(UIAlertAction(title: dismiss, style: .cancel, handler: { (action) in
+                closure?(UIAlertController.dismissButtonIndex)
+            }))
+        }
         
         if let targetViewController = viewController ?? DebugController.currentViewController() {
             targetViewController.present(controller, animated: true, completion: nil)
